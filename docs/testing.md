@@ -25,3 +25,5 @@ Migration `0007_identity_audit.sql` was applied locally. Tests find transactiona
 Migration `0008_app_catalog_instances.sql` and product metadata contract pass local tests. An organization Owner can record Scalar enable intent once; the record remains pending, and another organization's user sees no instance under RLS and cannot enable it. No Scalar organization or member has been provisioned.
 
 The version 1 product adapter contract has a compile-checked operation surface and local tests that reject incompatible versions and missing methods. No remote product behavior, idempotency, audit delivery, or usage reporting is verified by this interface test.
+
+Migration `0009_permissions.sql` passed locally. The role integration test now checks that all six memberships carry their canonical primary role ID, persisted grants resolve into request context, a removed grant disappears on the next context read, and a restricted role cannot see another organization's grants. Live authorization is still pending Clerk and production credentials.

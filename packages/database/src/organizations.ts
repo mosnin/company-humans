@@ -34,6 +34,13 @@ export async function createOrganization(databaseUrl: string, input: z.input<typ
       await client.query("INSERT INTO roles (id, organization_id, key) VALUES ($1, $2, $3)", [role.id, organizationId, role.key]);
     }
     await client.query(
+      `INSERT INTO role_permissions (organization_id, role_id, permission_key)
+       SELECT r.organization_id, r.id, d.permission_key
+       FROM roles AS r JOIN role_permission_defaults AS d ON d.role_key = r.key
+       WHERE r.organization_id = $1`,
+      [organizationId],
+    );
+    await client.query(
       `INSERT INTO memberships (id, organization_id, user_id, status, role_key, sponsor_type, joined_at)
        VALUES ($1, $2, $3, 'active', 'owner', 'organization', now())`,
       [ownerMembershipId, organizationId, ownerUserId],

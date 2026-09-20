@@ -1,4 +1,4 @@
-import { MembershipIdSchema, OrganizationIdSchema, ROLE_CAPABILITIES, ROLE_KEYS, RoleIdSchema, TeamIdSchema, UserIdSchema, type Capability, type MembershipId, type OrganizationId, type RoleId, type RoleKey, type TeamId, type UserId } from "@company-human/contracts";
+import { CAPABILITIES, MembershipIdSchema, OrganizationIdSchema, ROLE_KEYS, RoleIdSchema, TeamIdSchema, UserIdSchema, type Capability, type MembershipId, type OrganizationId, type RoleId, type RoleKey, type TeamId, type UserId } from "@company-human/contracts";
 import { Client } from "pg";
 
 /**
@@ -77,7 +77,7 @@ export async function resolveAccessContext(databaseUrl: string, userId: UserId, 
     const membership = await client.query<{ membership_id: string; role_id: string; role_key: string }>(
       `SELECT m.id AS membership_id, r.id AS role_id, r.key AS role_key
        FROM public.memberships AS m
-       JOIN public.roles AS r ON r.organization_id = m.organization_id AND r.key = m.role_key
+       JOIN public.roles AS r ON r.organization_id = m.organization_id AND r.id = m.role_id AND r.key = m.role_key
        JOIN public.organizations AS o ON o.id = m.organization_id
        WHERE m.organization_id = $1 AND m.user_id = $2 AND m.status = 'active' AND o.status = 'active'`,
       [organizationId, userId],
@@ -92,6 +92,15 @@ export async function resolveAccessContext(databaseUrl: string, userId: UserId, 
        WHERE tm.organization_id = $1 AND tm.membership_id = $2 AND tm.ended_at IS NULL ORDER BY tm.team_id`,
       [organizationId, row.membership_id],
     );
+    const granted = await client.query<{ permission_key: string }>(
+      `SELECT rp.permission_key FROM public.role_permissions AS rp
+       WHERE rp.organization_id = $1 AND rp.role_id = $2 ORDER BY rp.permission_key`,
+      [organizationId, row.role_id],
+    );
+    const capabilities = granted.rows.map(({ permission_key }) => {
+      if (!CAPABILITIES.includes(permission_key as Capability)) throw new Error("Unknown stored permission");
+      return permission_key as Capability;
+    });
     return {
       userId,
       organizationId,
@@ -99,7 +108,7 @@ export async function resolveAccessContext(databaseUrl: string, userId: UserId, 
       roleId: RoleIdSchema.parse(row.role_id),
       roleKey,
       teamIds: teams.rows.map((team) => TeamIdSchema.parse(team.team_id)),
-      capabilities: ROLE_CAPABILITIES[roleKey],
+      capabilities,
     };
   });
 }

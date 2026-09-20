@@ -52,8 +52,24 @@ describe.skipIf(!databaseUrl)("organization role and team resolution", () => {
         expect(context?.roleKey).toBe(roleKey);
         expect(context?.capabilities).toContain(roleKey === "finance" ? "payouts.read.all" : "usage.read.own");
         expect(context?.capabilities.includes("payouts.read.all")).toBe(roleHasCapability(roleKey, "payouts.read.all"));
+        const stored = await admin.query<{ role_id: string }>(
+          "SELECT role_id FROM memberships WHERE id = $1 AND organization_id = $2",
+          [roleUsers.get(roleKey)!.membershipId, org.organizationId],
+        );
+        expect(stored.rows[0]?.role_id).toBe(context?.roleId);
       }
       const contributorBeforeChange = roleUsers.get("contributor")!;
+      const contributorRoleId = (await resolveAccessContext(runtimeUrl.toString(), contributorBeforeChange.userId, org.organizationId))!.roleId;
+      await admin.query(
+        "DELETE FROM role_permissions WHERE organization_id = $1 AND role_id = $2 AND permission_key = 'crm.read.own'",
+        [org.organizationId, contributorRoleId],
+      );
+      expect((await resolveAccessContext(runtimeUrl.toString(), contributorBeforeChange.userId, org.organizationId))?.capabilities)
+        .not.toContain("crm.read.own");
+      await admin.query(
+        "INSERT INTO role_permissions (organization_id, role_id, permission_key) VALUES ($1, $2, 'crm.read.own')",
+        [org.organizationId, contributorRoleId],
+      );
       await renameOrganization(databaseUrl!, { actorUserId: owner, organizationId: org.organizationId, name: "Renamed Roles Org" });
       await changeMembershipRole(databaseUrl!, {
         actorUserId: owner, organizationId: org.organizationId,
@@ -79,6 +95,10 @@ describe.skipIf(!databaseUrl)("organization role and team resolution", () => {
         await runtime.query("SELECT set_config('company_human.user_id', $1, true)", [owner]);
         expect((await runtime.query("SELECT id FROM identity_audit_events WHERE organization_id = $1", [org.organizationId])).rowCount)
           .toBeGreaterThan(0);
+        expect((await runtime.query("SELECT permission_key FROM role_permissions WHERE organization_id = $1", [org.organizationId])).rowCount)
+          .toBeGreaterThan(0);
+        expect((await runtime.query("SELECT permission_key FROM role_permissions WHERE organization_id = $1", [otherOrg.organizationId])).rowCount)
+          .toBe(0);
         await runtime.query("ROLLBACK");
         await runtime.query("BEGIN");
         await runtime.query("SELECT set_config('company_human.user_id', $1, true)", [roleUsers.get("finance")!.userId]);
