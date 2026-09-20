@@ -18,7 +18,7 @@ Updated 2026-09-20. Destination: `mosnin/company-humans`, branch `codex/company-
 | Phase | Status | Remaining acceptance |
 | --- | --- | --- |
 | Source scaffold | Implemented; local checks pass | Live authenticated layout and deployment verification. |
-| 00 Foundation | Verified at b498034 | Public GitHub run 35521157349 passed install, typecheck, lint, migrations, seed, tests, build and browser checks. |
+| 00 Foundation | Verified at 3fbc494 | Public GitHub run 35522115426 passed install, typecheck, lint, migrations, seed, tests, build and browser checks. |
 | 01 Identity kernel | In progress | Real Convex OAuth sign-in/sign-out, browser create/invite/accept/assign/switch/suspend scenario, deployed database-role verification. |
 | 02 Provisioning | In progress; groundwork only | Real Scalar adapter, product membership, entitlements, state machine, health, and full lifecycle proof. Catalog/pending intent grants no access. |
 | 03 Metering and billing | Not started | Measured Scalar usage, budgets, hard stops, cost and billing projections. |
@@ -39,7 +39,7 @@ Updated 2026-09-20. Destination: `mosnin/company-humans`, branch `codex/company-
 ## External gates
 
 1. **Convex capacity and OAuth configuration:** the connected Vercel-managed Convex team refused the free Company Human project because its 40-deployment quota is reached. No deployment was created. An unused slot/project has been requested. The code and offline generated bindings are locally checked; remote function deployment, signing keys, provider application credentials and actual OAuth round-trip remain required. See [authentication setup](authentication.md).
-2. **GitHub Actions resolved:** the owner authorized making `mosnin/company-humans` public. Rerun 35521157349 at b498034 passed all steps. The earlier private-repository restriction no longer blocks CI.
+2. **GitHub Actions resolved:** the owner authorized making `mosnin/company-humans` public. Run 35522115426 at 3fbc494 passed all steps, including the Convex replacement. The earlier private-repository restriction no longer blocks CI.
 3. **Production:** no Company Human deployment or production database-role acceptance has been demonstrated. No existing product deployment or credential has been reused.
 
 CH-8, CH-9, CH-10 and CH-12 have progress evidence in Notion and remain In progress. The original findings remain in [implementation review](implementation-review.md); the authorization and invitation defects described there have subsequent repair commits. No later phase has been marked verified.

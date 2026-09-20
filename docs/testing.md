@@ -32,6 +32,6 @@ Browser component tests import the actual components and CSS, but mock authentic
 
 The production server has been smoke-tested with authentication unconfigured: public pages/health render and authenticated APIs refuse access. That is a fail-closed configuration check, not successful authentication.
 
-Hosted GitHub Actions run [35521157349](https://github.com/mosnin/company-humans/actions/runs/35521157349) passed on b498034 after the repository became public. Live Convex deployment, provider OAuth sign-in, organization switching and full browser acceptance remain required before Phase 01 is verified. The free Convex team is at its 40-deployment quota. Later phase financial, failure-recovery, adapter and load tests remain unimplemented.
+Hosted GitHub Actions run [35522115426](https://github.com/mosnin/company-humans/actions/runs/35522115426) passed on 3fbc494 after the repository became public. Live Convex deployment, provider OAuth sign-in, organization switching and full browser acceptance remain required before Phase 01 is verified. The free Convex team is at its 40-deployment quota. Later phase financial, failure-recovery, adapter and load tests remain unimplemented.
 
 The current authentication code is generated/typechecked locally and tested with `convex-test`; it has not been pushed to a Convex deployment. Normal deployment codegen and a real provider round-trip remain acceptance gates.
