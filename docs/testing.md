@@ -33,3 +33,7 @@ The organization creation API has route tests for unauthenticated requests, inva
 The sign-in route follows Clerk's optional catch-all App Router pattern and directs successful authentication to organization selection. With no Clerk keys configured, a local production server returned HTTP 200 and rendered a clear unavailable state. Real sign-in and redirect behavior remain unverified.
 
 The invitation acceptance route test denies an unauthenticated caller before the token reaches the database service. The contributor page reads a token from a URL fragment or a pasted code and presents sign-in, unavailable, and invalid states. The route uses a no-referrer, no-store header; live browser acceptance remains pending Clerk configuration.
+
+## Review repair verification
+
+On 2026-09-20, all 27 tests pass against a newly created local PostgreSQL database after applying migrations 0001–0014 and seeding reference products. The restricted service login executes organization creation, invitation acceptance, team assignment, pending product intent, suspension, reactivation, removal, and reinvitation. Tests revoke stored grants and verify server denial; direct SQL as the contributor context cannot rename the organization, promote itself, activate a product, assign manager status, or insert grants. Ownership rewrites and audit mutation are denied. Deleted global users cannot resolve tenant access. Typecheck, lint, and production build pass. The package typecheck excludes test files; Vitest executes them. Live Clerk/browser acceptance remains outstanding.

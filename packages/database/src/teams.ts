@@ -2,6 +2,7 @@ import { createCanonicalId, MembershipIdSchema, OrganizationIdSchema, TeamIdSche
 import { Client } from "pg";
 import { z } from "zod";
 import { appendIdentityAudit } from "./identity-audit.js";
+import { setServiceContext } from "./service-context.js";
 
 const CreateTeamSchema = z.object({
   actorUserId: UserIdSchema,
@@ -13,7 +14,10 @@ async function requireTeamAdmin(client: Client, actorUserId: UserId, organizatio
   const permission = await client.query<{ id: string }>(
     `SELECT m.id FROM public.memberships AS m JOIN public.organizations AS o ON o.id = m.organization_id
      WHERE m.user_id = $1 AND m.organization_id = $2 AND m.status = 'active'
-       AND m.role_key IN ('owner', 'admin') AND o.status = 'active'`,
+       AND o.status = 'active'
+       AND EXISTS (SELECT 1 FROM public.users u WHERE u.id = m.user_id AND u.status = 'active')
+       AND EXISTS (SELECT 1 FROM public.role_permissions rp WHERE rp.organization_id = m.organization_id
+         AND rp.role_id = m.role_id AND rp.permission_key = 'teams.create')`,
     [actorUserId, organizationId],
   );
   if (permission.rowCount !== 1) throw new Error("Team administration denied");
@@ -23,19 +27,24 @@ async function requireTeamAdmin(client: Client, actorUserId: UserId, organizatio
 async function requireTeamAssignmentAuthority(
   client: Client, actorUserId: UserId, organizationId: OrganizationId, teamId: TeamId, teamRole: "manager" | "member",
 ): Promise<MembershipId> {
-  const permission = await client.query<{ id: string; role_key: string; managed_team_id: string | null }>(
-    `SELECT m.id, m.role_key, tm.team_id AS managed_team_id
+  const permission = await client.query<{ id: string; role_key: string; managed_team_id: string | null; manage_all: boolean; manage_assigned: boolean }>(
+    `SELECT m.id, m.role_key, tm.team_id AS managed_team_id,
+       EXISTS (SELECT 1 FROM public.role_permissions rp WHERE rp.organization_id = m.organization_id
+         AND rp.role_id = m.role_id AND rp.permission_key = 'teams.manage.all') AS manage_all,
+       EXISTS (SELECT 1 FROM public.role_permissions rp WHERE rp.organization_id = m.organization_id
+         AND rp.role_id = m.role_id AND rp.permission_key = 'teams.manage.assigned') AS manage_assigned
      FROM public.memberships AS m
      JOIN public.organizations AS o ON o.id = m.organization_id AND o.status = 'active'
      JOIN public.teams AS t ON t.id = $3 AND t.organization_id = o.id AND t.status = 'active'
      LEFT JOIN public.team_memberships AS tm ON tm.membership_id = m.id
        AND tm.team_id = t.id AND tm.team_role = 'manager' AND tm.ended_at IS NULL
-     WHERE m.user_id = $1 AND m.organization_id = $2 AND m.status = 'active'`,
+     WHERE m.user_id = $1 AND m.organization_id = $2 AND m.status = 'active'
+       AND EXISTS (SELECT 1 FROM public.users u WHERE u.id = m.user_id AND u.status = 'active')`,
     [actorUserId, organizationId, teamId],
   );
   const actor = permission.rows[0];
-  if (!actor || (actor.role_key !== "owner" && actor.role_key !== "admin"
-    && !(actor.role_key === "manager" && actor.managed_team_id === teamId && teamRole === "member"))) {
+  if (!actor || (!actor.manage_all
+    && !(actor.manage_assigned && actor.managed_team_id === teamId && teamRole === "member"))) {
     throw new Error("Team assignment denied");
   }
   return MembershipIdSchema.parse(actor.id);
@@ -50,6 +59,7 @@ export async function createTeam(databaseUrl: string, input: z.input<typeof Crea
   await client.connect();
   try {
     await client.query("BEGIN");
+    await setServiceContext(client, actorUserId, organizationId);
     const actorMembershipId = await requireTeamAdmin(client, actorUserId, organizationId);
     await client.query("INSERT INTO public.teams (id, organization_id, name) VALUES ($1, $2, $3)", [teamId, organizationId, name]);
     await appendIdentityAudit(client, {
@@ -80,6 +90,7 @@ export async function assignTeamMember(databaseUrl: string, input: {
   await client.connect();
   try {
     await client.query("BEGIN");
+    await setServiceContext(client, actorUserId, organizationId);
     const actorMembershipId = await requireTeamAssignmentAuthority(client, actorUserId, organizationId, teamId, input.teamRole);
     const target = await client.query(
       `SELECT 1 FROM public.memberships WHERE id = $1 AND organization_id = $2 AND status = 'active'`,

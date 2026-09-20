@@ -2,14 +2,18 @@ import { MembershipIdSchema, OrganizationIdSchema, ROLE_KEYS, UserIdSchema, type
 import { Client } from "pg";
 import { z } from "zod";
 import { appendIdentityAudit } from "./identity-audit.js";
+import { setServiceContext } from "./service-context.js";
 
-async function requireAdmin(client: Client, userId: UserId, organizationId: OrganizationId): Promise<{ id: MembershipId; roleKey: RoleKey }> {
+async function requireAdmin(client: Client, userId: UserId, organizationId: OrganizationId, capability: "organization.manage" | "members.manage"): Promise<{ id: MembershipId; roleKey: RoleKey }> {
   const result = await client.query<{ id: string; role_key: RoleKey }>(
     `SELECT m.id, m.role_key FROM public.memberships AS m
      JOIN public.organizations AS o ON o.id = m.organization_id
      WHERE m.user_id = $1 AND m.organization_id = $2 AND m.status = 'active'
-       AND m.role_key IN ('owner', 'admin') AND o.status = 'active'`,
-    [userId, organizationId],
+       AND o.status = 'active'
+       AND EXISTS (SELECT 1 FROM public.users u WHERE u.id = m.user_id AND u.status = 'active')
+       AND EXISTS (SELECT 1 FROM public.role_permissions rp WHERE rp.organization_id = m.organization_id
+         AND rp.role_id = m.role_id AND rp.permission_key = $3)`,
+    [userId, organizationId, capability],
   );
   if (result.rowCount !== 1) throw new Error("Organization administration denied");
   return { id: MembershipIdSchema.parse(result.rows[0]!.id), roleKey: result.rows[0]!.role_key };
@@ -24,7 +28,8 @@ export async function renameOrganization(databaseUrl: string, input: { actorUser
   await client.connect();
   try {
     await client.query("BEGIN");
-    const actor = await requireAdmin(client, actorUserId, organizationId);
+    await setServiceContext(client, actorUserId, organizationId);
+    const actor = await requireAdmin(client, actorUserId, organizationId, "organization.manage");
     const old = await client.query<{ name: string }>("SELECT name FROM public.organizations WHERE id = $1 FOR UPDATE", [organizationId]);
     if (!old.rows[0]) throw new Error("Organization unavailable");
     if (old.rows[0].name !== name) {
@@ -57,7 +62,8 @@ export async function changeMembershipRole(databaseUrl: string, input: {
   await client.connect();
   try {
     await client.query("BEGIN");
-    const actor = await requireAdmin(client, actorUserId, organizationId);
+    await setServiceContext(client, actorUserId, organizationId);
+    const actor = await requireAdmin(client, actorUserId, organizationId, "members.manage");
     const target = await client.query<{ user_id: string; role_key: RoleKey; status: string }>(
       "SELECT user_id, role_key, status FROM public.memberships WHERE id = $1 AND organization_id = $2 FOR UPDATE",
       [membershipId, organizationId],

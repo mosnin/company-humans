@@ -10,7 +10,7 @@ export type AuthenticatedUserResolution =
 
 /** Clerk proves the session; Company Human resolves its own global user record. */
 export async function resolveAuthenticatedUser(): Promise<AuthenticatedUserResolution> {
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_IDENTITY_URL;
   if (!databaseUrl || !process.env.CLERK_SECRET_KEY || !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
     return { status: "unavailable" };
   }

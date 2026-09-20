@@ -11,6 +11,17 @@ export const ClerkUserChangeSchema = z.object({
 }).strict();
 export type ClerkUserChange = z.infer<typeof ClerkUserChangeSchema>;
 
+async function assertIdentityConnection(client: Client): Promise<void> {
+  if (process.env.NODE_ENV !== "production") return;
+  const result = await client.query<{ allowed: boolean }>(
+    `SELECT pg_has_role(current_user, 'company_human_identity', 'member')
+      AND NOT r.rolsuper AND NOT r.rolbypassrls
+      AND (SELECT c.relowner <> r.oid FROM pg_class AS c WHERE c.oid = 'public.users'::regclass) AS allowed
+     FROM pg_roles AS r WHERE r.rolname = current_user`,
+  );
+  if (!result.rows[0]?.allowed) throw new Error("Identity synchronization requires a restricted identity role");
+}
+
 /** Webhook delivery is at least once; provider time and deletion prevent stale resurrection. */
 export async function syncClerkUser(databaseUrl: string, change: ClerkUserChange): Promise<UserId> {
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
@@ -18,6 +29,7 @@ export async function syncClerkUser(databaseUrl: string, change: ClerkUserChange
   const client = new Client({ connectionString: databaseUrl });
   await client.connect();
   try {
+    await assertIdentityConnection(client);
     const result = await client.query<{ id: string }>(
       `INSERT INTO users (id, clerk_user_id, primary_email, display_name, status, provider_event_timestamp)
        VALUES ($1, $2, $3, $4, $5, $6)
@@ -48,6 +60,7 @@ export async function findCanonicalUser(databaseUrl: string, clerkUserId: string
   const client = new Client({ connectionString: databaseUrl });
   await client.connect();
   try {
+    await assertIdentityConnection(client);
     const result = await client.query<{ id: string }>(
       "SELECT id FROM users WHERE clerk_user_id = $1 AND status = 'active'",
       [clerkUserId],

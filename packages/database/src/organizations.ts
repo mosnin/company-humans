@@ -2,6 +2,7 @@ import { createCanonicalId, MembershipIdSchema, OrganizationIdSchema, ROLE_KEYS,
 import { Client } from "pg";
 import { z } from "zod";
 import { appendIdentityAudit } from "./identity-audit.js";
+import { setServiceContext } from "./service-context.js";
 
 const CreateOrganizationSchema = z.object({
   ownerUserId: UserIdSchema,
@@ -23,6 +24,7 @@ export async function createOrganization(databaseUrl: string, input: z.input<typ
   await client.connect();
   try {
     await client.query("BEGIN");
+    await setServiceContext(client, ownerUserId, organizationId);
     const owner = await client.query("SELECT 1 FROM users WHERE id = $1 AND status = 'active'", [ownerUserId]);
     if (owner.rowCount !== 1) throw new Error("Active canonical owner required");
     await client.query(

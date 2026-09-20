@@ -6,7 +6,7 @@ import { normalizeClerkUserEvent } from "@/lib/clerk-user-event";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest): Promise<Response> {
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_IDENTITY_URL;
   const signingSecret = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
   if (!databaseUrl || !signingSecret) return new Response("Webhook unavailable", { status: 503 });
 

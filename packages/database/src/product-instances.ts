@@ -2,6 +2,7 @@ import { createCanonicalId, MembershipIdSchema, OrganizationIdSchema, ProductIdS
 import { Client } from "pg";
 import { z } from "zod";
 import { appendIdentityAudit } from "./identity-audit.js";
+import { setServiceContext } from "./service-context.js";
 
 const EnableSchema = z.object({
   actorUserId: UserIdSchema,
@@ -19,10 +20,14 @@ export async function enableProductInstance(databaseUrl: string, input: z.input<
   await client.connect();
   try {
     await client.query("BEGIN");
+    await setServiceContext(client, parsed.actorUserId, parsed.organizationId);
     const actor = await client.query<{ id: string }>(
       `SELECT m.id FROM public.memberships AS m JOIN public.organizations AS o ON o.id = m.organization_id
        WHERE m.organization_id = $1 AND m.user_id = $2 AND m.status = 'active'
-         AND m.role_key IN ('owner', 'admin') AND o.status = 'active'`,
+         AND o.status = 'active'
+       AND EXISTS (SELECT 1 FROM public.users u WHERE u.id = m.user_id AND u.status = 'active')
+       AND EXISTS (SELECT 1 FROM public.role_permissions rp WHERE rp.organization_id = m.organization_id
+         AND rp.role_id = m.role_id AND rp.permission_key = 'applications.manage')`,
       [parsed.organizationId, parsed.actorUserId],
     );
     if (actor.rowCount !== 1) throw new Error("Application administration denied");

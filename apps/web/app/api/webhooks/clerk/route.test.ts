@@ -5,12 +5,12 @@ import { POST } from "./route";
 vi.mock("@clerk/nextjs/webhooks", () => ({ verifyWebhook: vi.fn() }));
 vi.mock("@company-human/database/clerk-users", () => ({ syncClerkUser: vi.fn() }));
 
-const originalDatabaseUrl = process.env.DATABASE_URL;
+const originalDatabaseUrl = process.env.DATABASE_IDENTITY_URL;
 const originalSecret = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
 
 afterEach(() => {
-  if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
-  else process.env.DATABASE_URL = originalDatabaseUrl;
+  if (originalDatabaseUrl === undefined) delete process.env.DATABASE_IDENTITY_URL;
+  else process.env.DATABASE_IDENTITY_URL = originalDatabaseUrl;
   if (originalSecret === undefined) delete process.env.CLERK_WEBHOOK_SIGNING_SECRET;
   else process.env.CLERK_WEBHOOK_SIGNING_SECRET = originalSecret;
   vi.resetAllMocks();
@@ -27,7 +27,7 @@ describe("Clerk webhook boundary", () => {
   });
 
   it("rejects an unverified delivery before database mutation", async () => {
-    process.env.DATABASE_URL = "postgresql://invalid-local-test";
+    process.env.DATABASE_IDENTITY_URL = "postgresql://invalid-local-test";
     process.env.CLERK_WEBHOOK_SIGNING_SECRET = "test-secret";
     const { verifyWebhook } = await import("@clerk/nextjs/webhooks");
     const { syncClerkUser } = await import("@company-human/database/clerk-users");

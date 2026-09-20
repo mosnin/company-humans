@@ -3,6 +3,7 @@ import { createCanonicalId, MembershipIdSchema, OrganizationIdSchema, UserIdSche
 import { Client } from "pg";
 import { z } from "zod";
 import { appendIdentityAudit } from "./identity-audit.js";
+import { setInvitationActorContext, setServiceContext } from "./service-context.js";
 
 const InviteSchema = z.object({
   actorUserId: UserIdSchema,
@@ -17,7 +18,10 @@ async function requireMembershipAdmin(client: Client, actorUserId: UserId, organ
     `SELECT m.id, m.role_key FROM public.memberships AS m
      JOIN public.organizations AS o ON o.id = m.organization_id
      WHERE m.user_id = $1 AND m.organization_id = $2 AND m.status = 'active'
-       AND m.role_key IN ('owner', 'admin') AND o.status = 'active'`,
+       AND o.status = 'active'
+       AND EXISTS (SELECT 1 FROM public.users u WHERE u.id = m.user_id AND u.status = 'active')
+       AND EXISTS (SELECT 1 FROM public.role_permissions rp WHERE rp.organization_id = m.organization_id
+         AND rp.role_id = m.role_id AND rp.permission_key = 'members.manage')`,
     [actorUserId, organizationId],
   );
   if (result.rowCount !== 1) throw new Error("Membership administration denied");
@@ -34,6 +38,7 @@ export async function inviteMember(databaseUrl: string, input: z.input<typeof In
   await client.connect();
   try {
     await client.query("BEGIN");
+    await setServiceContext(client, parsed.actorUserId, parsed.organizationId);
     const actor = await requireMembershipAdmin(client, parsed.actorUserId, parsed.organizationId);
     if (parsed.roleKey === "admin" && actor.roleKey !== "owner") throw new Error("Only owner can invite an admin");
     const expired = await client.query<{ id: string }>(
@@ -85,6 +90,7 @@ export async function acceptInvitation(databaseUrl: string, token: string, userI
   await client.connect();
   try {
     await client.query("BEGIN");
+    await setInvitationActorContext(client, userId, tokenHash);
     const invitation = await client.query<{
       id: string; organization_id: string; recipient_email: string; role_key: string; status: string; expires_at: Date;
     }>("SELECT * FROM public.membership_invitations WHERE token_hash = $1 FOR UPDATE", [tokenHash]);
@@ -147,6 +153,7 @@ export async function changeMembershipStatus(databaseUrl: string, input: {
   await client.connect();
   try {
     await client.query("BEGIN");
+    await setServiceContext(client, actorUserId, organizationId);
     const actor = await requireMembershipAdmin(client, actorUserId, organizationId);
     const target = await client.query<{ role_key: RoleKey; status: string }>(
       "SELECT role_key, status FROM public.memberships WHERE id = $1 AND organization_id = $2 FOR UPDATE",

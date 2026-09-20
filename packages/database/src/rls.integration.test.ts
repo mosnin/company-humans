@@ -8,7 +8,7 @@ import { listVisibleOrganizations, resolveAccessContext } from "./rls.js";
 const databaseUrl = process.env.DATABASE_URL;
 
 describe.skipIf(!databaseUrl)("Postgres tenant RLS", () => {
-  it("allows own tenant reads and updates while denying cross tenant rows and writes", async () => {
+  it("allows active tenant reads and denies writes, cross tenant rows, and deleted users", async () => {
     const suffix = randomBytes(6).toString("hex");
     const roleName = `ch_rls_${suffix}`;
     const password = randomBytes(20).toString("hex");
@@ -45,6 +45,9 @@ describe.skipIf(!databaseUrl)("Postgres tenant RLS", () => {
       await expect(runtime.query("UPDATE organizations SET name = $1 WHERE id = $2 RETURNING id", ["Alice Updated", aliceOrg.organizationId])).rejects.toThrow();
       await expect(runtime.query("INSERT INTO organizations (id, slug, name, owner_user_id) VALUES ('ch_org_00000000000000000000000000000000', 'forbidden-test', 'No', $1)", [alice])).rejects.toThrow();
       expect((await runtime.query("SELECT id FROM organizations")).rows).toEqual([]);
+      await admin.query("UPDATE users SET status = 'deleted' WHERE id = $1", [alice]);
+      expect(await listVisibleOrganizations(runtimeUrl.toString(), alice)).toEqual([]);
+      expect(await resolveAccessContext(runtimeUrl.toString(), alice, aliceOrg.organizationId)).toBeNull();
     } finally {
       await runtime.end();
       const organizationIds = [aliceOrg.organizationId, aliceSecondOrg.organizationId, bobOrg.organizationId];

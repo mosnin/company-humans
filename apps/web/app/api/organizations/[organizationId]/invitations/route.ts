@@ -9,7 +9,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ or
   if (identity.status === "unavailable") return NextResponse.json({ error: "Identity unavailable" }, { status: 503 });
   if (identity.status === "unauthenticated") return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   if (identity.status === "forbidden") return NextResponse.json({ error: "User unavailable" }, { status: 403 });
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_SERVICE_URL;
   if (!databaseUrl) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }

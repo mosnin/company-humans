@@ -40,7 +40,7 @@ describe.skipIf(!databaseUrl)("membership invitation and access lifecycle", () =
       expect(invitation.token).toHaveLength(43);
       expect((await admin.query("SELECT token_hash FROM membership_invitations WHERE id = $1", [invitation.invitationId])).rows[0]?.token_hash)
         .not.toBe(invitation.token);
-      await expect(acceptInvitation(databaseUrl!, invitation.token, outsider)).rejects.toThrow("Invitation recipient mismatch");
+      await expect(acceptInvitation(databaseUrl!, invitation.token, outsider)).rejects.toThrow("Invitation unavailable");
       const membershipId = await acceptInvitation(databaseUrl!, invitation.token, recipient);
       await expect(acceptInvitation(databaseUrl!, invitation.token, recipient)).rejects.toThrow("Invitation unavailable");
       expect((await resolveAccessContext(runtimeUrl.toString(), recipient, org.organizationId))?.roleKey).toBe("contributor");
