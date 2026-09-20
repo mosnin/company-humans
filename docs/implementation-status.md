@@ -39,3 +39,7 @@ The user confirmed `mosnin/company-humans` as the destination. Local work is on 
 ## Authorization repair evidence
 
 Server mutations consult stored capability grants. Separate identity and service logins replace migration-owner credentials in web routes. Database restrictions deny contributor organization edits, self-promotion, team-manager escalation, grant insertion, and product activation. Restricted-role tests cover invitation acceptance, suspension, reactivation, removal, reinvitation without restoring ended team access, and immutable ownership. Read policies deny deleted users. The environment example documents all four database connections. These local checks do not establish live Clerk or deployed acceptance.
+
+## Audited permission editing
+
+Migration 0015 and the role permission API allow an authorized owner or administrator to change another permitted role using stored roles.manage capability. Owner policy and the acting role are protected; an administrator cannot grant a capability they do not hold or edit the Admin policy. Changes require the previously observed permission set, reject stale edits, and append before/after audit state atomically. Restricted-role tests cover change, revocation, stale edits, contributor denial, cross-tenant denial, and audit provenance. Live browser acceptance remains pending.

@@ -37,3 +37,7 @@ The invitation acceptance route test denies an unauthenticated caller before the
 ## Review repair verification
 
 On 2026-09-20, all 27 tests pass against a newly created local PostgreSQL database after applying migrations 0001–0014 and seeding reference products. The restricted service login executes organization creation, invitation acceptance, team assignment, pending product intent, suspension, reactivation, removal, and reinvitation. Tests revoke stored grants and verify server denial; direct SQL as the contributor context cannot rename the organization, promote itself, activate a product, assign manager status, or insert grants. Ownership rewrites and audit mutation are denied. Deleted global users cannot resolve tenant access. Typecheck, lint, and production build pass. The package typecheck excludes test files; Vitest executes them. Live Clerk/browser acceptance remains outstanding.
+
+## Audited permission editing
+
+Migration 0015 and the role permission API allow an authorized owner or administrator to change another permitted role using stored roles.manage capability. Owner policy and the acting role are protected; an administrator cannot grant a capability they do not hold or edit the Admin policy. Changes require the previously observed permission set, reject stale edits, and append before/after audit state atomically. Restricted-role tests cover change, revocation, stale edits, contributor denial, cross-tenant denial, and audit provenance. Live browser acceptance remains pending.

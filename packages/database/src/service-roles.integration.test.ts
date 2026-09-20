@@ -6,6 +6,7 @@ import { createOrganization } from "./organizations.js";
 import { inviteMember, acceptInvitation, changeMembershipStatus } from "./membership-lifecycle.js";
 import { renameOrganization } from "./organization-authority.js";
 import { createTeam, assignTeamMember } from "./teams.js";
+import { setRolePermissions } from "./role-permissions.js";
 import { enableProductInstance } from "./product-instances.js";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -92,6 +93,20 @@ describe.skipIf(!databaseUrl)("restricted runtime write roles", () => {
       await expect(renameOrganization(serviceUrl.toString(), {
         actorUserId: owner, organizationId: otherOrganizationId, name: "Forbidden",
       })).rejects.toThrow();
+
+      const contributorRole = (await admin.query<{ id: string }>("SELECT id FROM roles WHERE organization_id = $1 AND key = 'contributor'", [organizationId])).rows[0]!.id;
+      const originalGrants = (await admin.query<{ permission_key: string }>("SELECT permission_key FROM role_permissions WHERE role_id = $1", [contributorRole])).rows.map(row => row.permission_key);
+      const policy = { actorUserId: owner, organizationId, roleId: contributorRole, expectedCapabilities: originalGrants, capabilities: originalGrants.filter(key => key !== "crm.read.own") };
+      await setRolePermissions(serviceUrl.toString(), policy);
+      expect((await admin.query("SELECT permission_key FROM role_permissions WHERE role_id = $1 AND permission_key = 'crm.read.own'", [contributorRole])).rowCount).toBe(0);
+      await expect(setRolePermissions(serviceUrl.toString(), policy)).rejects.toThrow("reload before saving");
+      await expect(setRolePermissions(serviceUrl.toString(), { ...policy, actorUserId: invitee })).rejects.toThrow("change denied");
+      await expect(setRolePermissions(serviceUrl.toString(), { ...policy, organizationId: otherOrganizationId })).rejects.toThrow("change denied");
+      const audit = await admin.query("SELECT before_state,after_state FROM identity_audit_events WHERE target_id = $1 AND action = 'role.permissions.changed'", [contributorRole]);
+      expect(audit.rows).toHaveLength(1);
+      expect(audit.rows[0].before_state.capabilities).toContain("crm.read.own");
+      expect(audit.rows[0].after_state.capabilities).not.toContain("crm.read.own");
+      await setRolePermissions(serviceUrl.toString(), { ...policy, expectedCapabilities: policy.capabilities, capabilities: originalGrants });
 
       // Capability revocation must affect server authorization, not only UI context.
       for (const [capability, action] of [

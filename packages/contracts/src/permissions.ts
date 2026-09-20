@@ -3,7 +3,7 @@ export const ROLE_KEYS = ["owner", "admin", "manager", "contributor", "finance",
 export type RoleKey = (typeof ROLE_KEYS)[number];
 
 export const CAPABILITIES = [
-  "organization.manage", "members.manage", "teams.create", "teams.manage.assigned", "teams.manage.all", "applications.manage", "budgets.manage",
+  "organization.manage", "roles.manage", "members.manage", "teams.create", "teams.manage.assigned", "teams.manage.all", "applications.manage", "budgets.manage",
   "assignments.read.own", "assignments.read.team", "assignments.read.all",
   "assignments.manage.team", "assignments.manage.all",
   "crm.read.own", "crm.read.team", "crm.read.all", "crm.write.own", "crm.write.team", "crm.write.all",
@@ -24,7 +24,7 @@ const manager = [
 ] as const satisfies readonly Capability[];
 
 const admin = [
-  ...manager, "organization.manage", "members.manage", "teams.create", "teams.manage.all", "applications.manage", "budgets.manage",
+  ...manager, "organization.manage", "roles.manage", "members.manage", "teams.create", "teams.manage.all", "applications.manage", "budgets.manage",
   "assignments.read.all", "assignments.manage.all", "crm.read.all", "crm.write.all",
   "usage.read.all", "context.policy.manage", "integrations.manage", "audit.read.all",
 ] as const satisfies readonly Capability[];

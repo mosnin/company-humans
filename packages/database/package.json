@@ -31,6 +31,10 @@
     "./product-instances": {
       "types": "./dist/product-instances.d.ts",
       "default": "./dist/product-instances.js"
+    },
+    "./role-permissions": {
+      "types": "./dist/role-permissions.d.ts",
+      "default": "./dist/role-permissions.js"
     }
   },
   "scripts": {
