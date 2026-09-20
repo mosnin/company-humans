@@ -16,3 +16,14 @@ npm run dev
 Checks: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
 
 The current site is a visual scaffold only. Organization identity, authorization, provisioning, metering, and payouts are not yet active.
+
+## Database foundation
+
+Configure `DATABASE_URL` for a dedicated Postgres database, then run:
+
+```sh
+npm run db:migrate
+npm run db:seed
+```
+
+Migrations are append only and checksum checked. The seed uses stable canonical IDs for the seven reference products. No tenant records are created yet.
