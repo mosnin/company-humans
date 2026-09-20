@@ -1,3 +1,5 @@
+import { createCanonicalId, type Capability, type OrganizationId, type TeamId } from "@company-human/contracts";
+import { signEventEnvelope, verifyEventEnvelope } from "@company-human/contracts/signing";
 import { randomBytes } from "node:crypto";
 import { Client } from "pg";
 import { describe, expect, it } from "vitest";
@@ -30,9 +32,9 @@ describe.skipIf(!databaseUrl)("restricted runtime write roles", () => {
     const serviceUrl = new URL(databaseUrl!);
     serviceUrl.username = serviceRole;
     serviceUrl.password = password;
-    let organizationId: string | undefined;
-    let otherOrganizationId: string | undefined;
-    let teamId: string | undefined;
+    let organizationId: OrganizationId | undefined;
+    let otherOrganizationId: OrganizationId | undefined;
+    let teamId: TeamId | undefined;
     let instanceId: string | undefined;
     const userIds: string[] = [];
     try {
@@ -84,6 +86,17 @@ describe.skipIf(!databaseUrl)("restricted runtime write roles", () => {
       });
       await expect(acceptInvitation(serviceUrl.toString(), invitation.token, invitee, "different@example.test")).rejects.toThrow("Invitation unavailable");
       const membershipId = await acceptInvitation(serviceUrl.toString(), invitation.token, invitee, `invitee-${suffix}@example.test`);
+      // Phase 00 exit scenario: real canonical identity and membership feed a signed shared event.
+      const signingKey = randomBytes(32);
+      const event = signEventEnvelope({
+        schemaVersion: 1, eventId: createCanonicalId("event"), organizationId,
+        eventType: "membership.created", source: { system: "company-human", eventId: membershipId },
+        actor: { type: "human", userId: invitee, membershipId }, environment: "test",
+        occurredAt: new Date().toISOString(), reportedAt: new Date().toISOString(),
+        idempotencyKey: membershipId, payload: { membershipId },
+      }, "test-service", signingKey);
+      expect(verifyEventEnvelope(event, key => key === "test-service" ? signingKey : undefined).organizationId).toBe(organizationId);
+      expect(() => verifyEventEnvelope({ ...event, organizationId: otherOrganizationId }, () => signingKey)).toThrow("Invalid event signature");
       teamId = await createTeam(serviceUrl.toString(), { actorUserId: owner, organizationId, name: "Sales" });
       await assignTeamMember(serviceUrl.toString(), {
         actorUserId: owner, organizationId, teamId, membershipId, teamRole: "member",
@@ -105,7 +118,7 @@ describe.skipIf(!databaseUrl)("restricted runtime write roles", () => {
       await expect(listTeams(serviceUrl.toString(), owner, otherOrganizationId)).rejects.toThrow("administration denied");
 
       const contributorRole = (await admin.query<{ id: string }>("SELECT id FROM roles WHERE organization_id = $1 AND key = 'contributor'", [organizationId])).rows[0]!.id;
-      const originalGrants = (await admin.query<{ permission_key: string }>("SELECT permission_key FROM role_permissions WHERE role_id = $1", [contributorRole])).rows.map(row => row.permission_key);
+      const originalGrants = (await admin.query<{ permission_key: Capability }>("SELECT permission_key FROM role_permissions WHERE role_id = $1", [contributorRole])).rows.map(row => row.permission_key);
       const policy = { actorUserId: owner, organizationId, roleId: contributorRole, expectedCapabilities: originalGrants, capabilities: originalGrants.filter(key => key !== "crm.read.own") };
       await setRolePermissions(serviceUrl.toString(), policy);
       expect((await admin.query("SELECT permission_key FROM role_permissions WHERE role_id = $1 AND permission_key = 'crm.read.own'", [contributorRole])).rowCount).toBe(0);

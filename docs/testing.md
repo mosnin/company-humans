@@ -1,55 +1,35 @@
 # Testing
 
-The scaffold passed `npm ci`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, and local HTTP checks for `/` and `/api/health` on 2026-09-20 using Node 24. `npm ci` uses the committed `.npmrc` to reproduce the source compatible peer dependency tree. Later phase gates add contract, RLS, adapter, financial, outage, security, and load tests according to the canonical Notion test plan. No end to end product acceptance is claimed by a scaffold build.
+Use Node 24 and a dedicated PostgreSQL test database. Never point integration tests at production: they create disposable identities, organizations and login roles, then clean up their own records.
 
-The monorepo structure passes local package typecheck, lint, tests, and build. Hosted GitHub CI was triggered on draft PR 1, but run `35494535295` never started a runner. GitHub reported failed account payments or a spending limit. No hosted test result exists.
+```sh
+npm ci
+npm run db:migrate
+npm run db:seed
+npm test
+npm run typecheck
+npm run lint
+npm run build
+npx playwright install chromium
+npm run test:browser -w @company-human/web
+```
 
-A fresh local Postgres 18 database accepted migration `0001_product_catalog.sql` and seven reference products. Repeating migration and seed made no additional migration or product rows. CI now has a Postgres service and runs this database contract test, but hosted execution is not yet observed.
+Migration, seed and database tests require `DATABASE_URL`. Without it, integration tests skip; a passing skip-only run is not database verification. CI supplies a PostgreSQL service. Test migrations retain applied checksums and use deterministic catalog IDs.
 
-Five contract tests now cover typed IDs, schema version rejection, event/audit signing, tamper detection, wrong key rejection, and tenant ID type rejection. These validate contracts only; they do not prove ingestion authorization or durable audit storage.
+## Current evidence
 
-Local Postgres tests prove duplicate Clerk events preserve one canonical user ID, newer updates apply, deletion hides the user, and an older update cannot revive the tombstone. Webhook route tests cover missing configuration and failed signature verification. A live Clerk callback is still required for task 6 acceptance.
+- 9 shared-contract tests: canonical IDs, versioned envelopes, signatures/tampering, role policy definitions, product metadata and adapter interface shape.
+- 9 database integration scenarios: migration/seed idempotency, user synchronization/tombstones, organization identity, RLS, role/team scope, invitation lifecycle, product intent, and restricted write credentials.
+- 15 web unit/route tests: configuration/authentication boundaries, webhook normalization, verified-email ownership, organization creation, invitation denial, and audited role-policy conflict/actor binding.
+- The restricted-role scenario uses actual non-owner database logins. It exercises creation, invitation, teams, grant changes, audit reads, suspension, removal, reinvitation, cross-tenant denial and direct privilege-escalation attempts. It also proves the Phase 00 user/organization/membership/signed-event scenario.
+- Twelve Playwright component tests exercise desktop and 390px mobile interaction. They cover invite links, removal confirmation/denial, team assignment, stale permission edits, role-aware navigation and invitation persistence through a simulated sign-in return.
+- Package typecheck includes test sources. Production builds exclude those tests from package artifacts.
+- All 17 migrations and the seed have run on a fresh local development database. A second dedicated verification database runs the automated tests.
 
-The production build also served `/` and `/api/health` successfully with Clerk unconfigured. `/api/me` and the webhook returned 503, as intended, rather than creating unauthenticated identity state. This is a configuration boundary, not a successful Clerk integration test.
+## Evidence boundaries
 
-A local Postgres integration test creates two organizations for one user and a third for another user. Owner memberships are created transactionally. Migration `0004_tenant_rls.sql` was applied to the test database. Another test connects as an ephemeral non-owner runtime login: active users see only their own organizations, cross tenant organization and membership reads return no rows, cross tenant updates return no rows, unauthorized inserts fail, and transaction local identity clears on rollback. The web route uses the restricted connection but live Clerk and production runtime credentials remain unverified.
+Browser component tests import the actual components and CSS, but mock authentication, API responses and Next navigation. The harness lives under `apps/web/tests/browser`, outside production routes. Screenshots and traces are ignored under `apps/web/test-results`. These tests do not prove real Clerk, email delivery, remote adapters, merchant payments, or payouts.
 
-Migration `0005_teams_roles.sql` and six role policy tests pass locally. The integration test resolves all six roles through the restricted runtime connection, verifies separate finance and developer permissions, resolves an assigned team, denies cross tenant team creation and assignment, and denies a manager from changing a team outside their scope or promoting another manager.
+The production server has been smoke-tested with Clerk unconfigured: public pages/health render and authenticated APIs refuse access. That is a fail-closed configuration check, not successful authentication.
 
-Migration `0006_member_lifecycle.sql` passes a local test covering recipient email binding, token hash storage, one use acceptance, active role resolution, suspension denial, reactivation, removal denial, Owner protection, and removal of prior team access after reinvitation. The Clerk authenticated API routes compile in the production build. Delivery of an invitation and revocation of provider sessions have not been tested or implemented.
-
-The organization switch test resolves two organizations for one canonical user under the restricted role and returns no context for the other user's organization. The production build includes `/workspace/select`, `/workspace`, `/api/organizations/switch`, and `/api/context`. A local production server served the pages with HTTP 200; context and switch returned HTTP 503 with Clerk unconfigured, the expected fail closed behavior. Live browser switching remains unverified.
-
-Migration `0007_identity_audit.sql` was applied locally. Tests find transactional audit entries for organization creation and rename, six default role creations, membership creation and role change, invitation creation and acceptance, suspension, reactivation, and removal. A restricted runtime role can read identity audit rows as Owner but Finance sees zero rows. Runtime organization UPDATE now fails even for its owner; the server rename path writes an audit record atomically.
-
-Migration `0008_app_catalog_instances.sql` and product metadata contract pass local tests. An organization Owner can record Scalar enable intent once; the record remains pending, and another organization's user sees no instance under RLS and cannot enable it. No Scalar organization or member has been provisioned.
-
-The version 1 product adapter contract has a compile-checked operation surface and local tests that reject incompatible versions and missing methods. No remote product behavior, idempotency, audit delivery, or usage reporting is verified by this interface test.
-
-Migration `0009_permissions.sql` passed locally. The role integration test now checks that all six memberships carry their canonical primary role ID, persisted grants resolve into request context, a removed grant disappears on the next context read, and a restricted role cannot see another organization's grants. Live authorization is still pending Clerk and production credentials.
-
-The organization creation API has route tests for unauthenticated requests, invalid URL names, and binding the new owner to the authenticated canonical user rather than a body-supplied user ID. The selector now offers a creation form. A local production server returned HTTP 200 for `/` and `/workspace/select`; unauthenticated creation returned HTTP 503 while Clerk was unconfigured, as intended. Browser completion remains unverified without Clerk and a production tenant runtime role.
-
-The sign-in route follows Clerk's optional catch-all App Router pattern and directs successful authentication to organization selection. With no Clerk keys configured, a local production server returned HTTP 200 and rendered a clear unavailable state. Real sign-in and redirect behavior remain unverified.
-
-The invitation acceptance route test denies an unauthenticated caller before the token reaches the database service. The contributor page reads a token from a URL fragment or a pasted code and presents sign-in, unavailable, and invalid states. The route uses a no-referrer, no-store header; live browser acceptance remains pending Clerk configuration.
-
-## Review repair verification
-
-On 2026-09-20, all 27 tests pass against a newly created local PostgreSQL database after applying migrations 0001–0014 and seeding reference products. The restricted service login executes organization creation, invitation acceptance, team assignment, pending product intent, suspension, reactivation, removal, and reinvitation. Tests revoke stored grants and verify server denial; direct SQL as the contributor context cannot rename the organization, promote itself, activate a product, assign manager status, or insert grants. Ownership rewrites and audit mutation are denied. Deleted global users cannot resolve tenant access. Typecheck, lint, and production build pass. The package typecheck excludes test files; Vitest executes them. Live Clerk/browser acceptance remains outstanding.
-
-## Audited permission editing
-
-Migration 0015 and the role permission API allow an authorized owner or administrator to change another permitted role using stored roles.manage capability. Owner policy and the acting role are protected; an administrator cannot grant a capability they do not hold or edit the Admin policy. Changes require the previously observed permission set, reject stale edits, and append before/after audit state atomically. Restricted-role tests cover change, revocation, stale edits, contributor denial, cross-tenant denial, and audit provenance. Live browser acceptance remains pending.
-
-## Identity administration UI
-
-`npm run test:browser -w @company-human/web` runs ten desktop/mobile Chromium tests for invitation link creation, member-removal confirmation and denial, team assignment, permission conflict handling, and contributor navigation. The harness imports the actual product components and CSS, but mocks Next navigation and API responses; it lives outside app routes and is not a production authentication bypass. Tests save People, Teams, and Permissions screenshots under ignored `apps/web/test-results`. The production app still requires real Clerk and restricted database credentials. Database tests separately verify administrative listing, contributor denial, and cross-tenant denial using the restricted service login.
-
-## Verified invitation onboarding
-
-Invitation acceptance now fetches the current Clerk profile and requires its verified primary email, even when a canonical user is already cached. Database redemption checks that verified email against the invitation and canonical user. Webhook normalization does not treat unverified email as invitation identity. The invite token survives sign-in only in tab-scoped storage for 30 minutes; it is removed from the URL and cleared after successful acceptance. The sign-in return target is fixed to `/invite`, not a caller-supplied URL. Thirty-three unit/database/route tests and twelve desktop/mobile component tests pass, along with typecheck, lint, and production build. Real Clerk sign-in is still unverified.
-
-## Identity audit reader
-
-Migration 0017 permits scoped audit reads through the service role only with audit.read.all. The `/workspace/audit` page shows paginated identity events, actor names, timestamps, targets, and before/after state. It cannot modify history. Restricted-role tests cover allowed owner reads, contributor denial, cross-tenant denial, and continued denial of audit updates.
+Hosted GitHub Actions has not run its steps because of an account billing/spending-limit restriction. Live Clerk sign-in, webhook delivery, organization switching and full browser acceptance remain required before Phase 01 is verified. Later phase financial, failure-recovery, adapter and load tests remain unimplemented.

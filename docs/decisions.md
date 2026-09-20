@@ -45,3 +45,7 @@ The Phase 00 roadmap requires the adapter interface while tracker CH-14 assigns 
 ## 2026-09-20: Repair capability enforcement before continuing provisioning
 
 Stored grants now govern identity mutations, with operation-specific database restrictions in addition to server checks. DATABASE_URL is reserved for migrations/tests; the app uses separate tenant read, tenant service, and identity credentials. Missing, consumed, expired, and wrong-recipient invitation tokens use one unavailable error. Existing applied migrations are checksum-preserved; restrictive policies and record guard fixes are appended. This supersedes the earlier mutation-owner and static-permission limitations. Browser acceptance and audited grant customization remain open.
+
+## 2026-09-20: Include security test sources in typechecking
+
+The package build continues to exclude tests from published artifacts, while a separate no-emit TypeScript config now includes every test source in the typecheck gate. The restricted service test also verifies the Foundation exit scenario using actual canonical identity and a signed shared event. Hosted CI remains blocked by GitHub account billing rather than a runner test result.
