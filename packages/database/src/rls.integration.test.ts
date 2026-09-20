@@ -44,6 +44,7 @@ describe.skipIf(!databaseUrl)("Postgres tenant RLS", () => {
     } finally {
       await runtime.end();
       await admin.query("DELETE FROM memberships WHERE organization_id = ANY($1)", [[aliceOrg.organizationId, bobOrg.organizationId]]);
+      await admin.query("DELETE FROM roles WHERE organization_id = ANY($1)", [[aliceOrg.organizationId, bobOrg.organizationId]]);
       await admin.query("DELETE FROM organizations WHERE id = ANY($1)", [[aliceOrg.organizationId, bobOrg.organizationId]]);
       await admin.query("DELETE FROM users WHERE id = ANY($1)", [[alice, bob]]);
       await admin.query(`DROP ROLE ${roleName}`);

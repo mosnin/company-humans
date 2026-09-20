@@ -1,4 +1,4 @@
-import { MembershipIdSchema, OrganizationIdSchema, UserIdSchema, type OrganizationId, type UserId } from "@company-human/contracts";
+import { MembershipIdSchema, OrganizationIdSchema, ROLE_CAPABILITIES, ROLE_KEYS, RoleIdSchema, TeamIdSchema, UserIdSchema, type Capability, type MembershipId, type OrganizationId, type RoleId, type RoleKey, type TeamId, type UserId } from "@company-human/contracts";
 import { Client } from "pg";
 
 /**
@@ -13,7 +13,7 @@ export interface VisibleOrganization {
   roleKey: string;
 }
 
-export async function listVisibleOrganizations(databaseUrl: string, userId: UserId): Promise<VisibleOrganization[]> {
+async function withTenantContext<T>(databaseUrl: string, userId: UserId, query: (client: Client) => Promise<T>): Promise<T> {
   if (!databaseUrl) throw new Error("RLS database URL is required");
   UserIdSchema.parse(userId);
   const client = new Client({ connectionString: databaseUrl });
@@ -30,6 +30,19 @@ export async function listVisibleOrganizations(databaseUrl: string, userId: User
       throw new Error("Tenant query requires a nonprivileged RLS role");
     }
     await client.query("SELECT set_config('company_human.user_id', $1, true)", [userId]);
+    const result = await query(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
+export async function listVisibleOrganizations(databaseUrl: string, userId: UserId): Promise<VisibleOrganization[]> {
+  return withTenantContext(databaseUrl, userId, async (client) => {
     const result = await client.query<{ id: string; name: string; slug: string; membership_id: string; role_key: string }>(
       `SELECT o.id, o.name, o.slug, m.id AS membership_id, m.role_key
        FROM public.organizations AS o
@@ -38,7 +51,6 @@ export async function listVisibleOrganizations(databaseUrl: string, userId: User
        ORDER BY o.name, o.id`,
       [userId],
     );
-    await client.query("COMMIT");
     return result.rows.map((row) => ({
       id: OrganizationIdSchema.parse(row.id),
       name: row.name,
@@ -46,10 +58,48 @@ export async function listVisibleOrganizations(databaseUrl: string, userId: User
       membershipId: MembershipIdSchema.parse(row.membership_id),
       roleKey: row.role_key,
     }));
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    await client.end();
-  }
+  });
+}
+
+export interface AccessContext {
+  userId: UserId;
+  organizationId: OrganizationId;
+  membershipId: MembershipId;
+  roleId: RoleId;
+  roleKey: RoleKey;
+  teamIds: TeamId[];
+  capabilities: readonly Capability[];
+}
+
+export async function resolveAccessContext(databaseUrl: string, userId: UserId, organizationId: OrganizationId): Promise<AccessContext | null> {
+  OrganizationIdSchema.parse(organizationId);
+  return withTenantContext(databaseUrl, userId, async (client) => {
+    const membership = await client.query<{ membership_id: string; role_id: string; role_key: string }>(
+      `SELECT m.id AS membership_id, r.id AS role_id, r.key AS role_key
+       FROM public.memberships AS m
+       JOIN public.roles AS r ON r.organization_id = m.organization_id AND r.key = m.role_key
+       JOIN public.organizations AS o ON o.id = m.organization_id
+       WHERE m.organization_id = $1 AND m.user_id = $2 AND m.status = 'active' AND o.status = 'active'`,
+      [organizationId, userId],
+    );
+    if (membership.rows.length !== 1) return null;
+    const row = membership.rows[0]!;
+    if (!ROLE_KEYS.includes(row.role_key as RoleKey)) throw new Error("Unknown organization role");
+    const roleKey = row.role_key as RoleKey;
+    const teams = await client.query<{ team_id: string }>(
+      `SELECT tm.team_id FROM public.team_memberships AS tm
+       JOIN public.teams AS t ON t.id = tm.team_id AND t.status = 'active'
+       WHERE tm.organization_id = $1 AND tm.membership_id = $2 ORDER BY tm.team_id`,
+      [organizationId, row.membership_id],
+    );
+    return {
+      userId,
+      organizationId,
+      membershipId: MembershipIdSchema.parse(row.membership_id),
+      roleId: RoleIdSchema.parse(row.role_id),
+      roleKey,
+      teamIds: teams.rows.map((team) => TeamIdSchema.parse(team.team_id)),
+      capabilities: ROLE_CAPABILITIES[roleKey],
+    };
+  });
 }

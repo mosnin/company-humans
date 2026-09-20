@@ -1,4 +1,4 @@
-import { createCanonicalId, MembershipIdSchema, OrganizationIdSchema, UserIdSchema, type MembershipId, type OrganizationId, type UserId } from "@company-human/contracts";
+import { createCanonicalId, MembershipIdSchema, OrganizationIdSchema, ROLE_KEYS, UserIdSchema, type MembershipId, type OrganizationId, type UserId } from "@company-human/contracts";
 import { Client } from "pg";
 import { z } from "zod";
 
@@ -28,6 +28,9 @@ export async function createOrganization(databaseUrl: string, input: z.input<typ
       "INSERT INTO organizations (id, slug, name, owner_user_id) VALUES ($1, $2, $3, $4)",
       [organizationId, slug, name, ownerUserId],
     );
+    for (const roleKey of ROLE_KEYS) {
+      await client.query("INSERT INTO roles (id, organization_id, key) VALUES ($1, $2, $3)", [createCanonicalId("role"), organizationId, roleKey]);
+    }
     await client.query(
       `INSERT INTO memberships (id, organization_id, user_id, status, role_key, sponsor_type, joined_at)
        VALUES ($1, $2, $3, 'active', 'owner', 'organization', now())`,
