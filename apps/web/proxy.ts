@@ -9,4 +9,4 @@ export default function proxy(request: NextRequest, event: Parameters<NonNullabl
   return clerkProxy(request, event);
 }
 
-export const config = { matcher: ["/api/me", "/workspace/:path*"] };
+export const config = { matcher: ["/api/:path*", "/workspace/:path*"] };
