@@ -5,7 +5,7 @@ Source specification: [Company Human Notion hub](https://app.notion.com/p/3e1a0d
 | Phase | Status | Evidence and remaining gate |
 | --- | --- | --- |
 | Scaffold migration | Verified locally | Source audit, npm clean install, typecheck, lint, unit health test, production build, and local HTTP smoke test passed. Remote commit and deployment pending repository identity. |
-| 00 Foundation | Not started | Repository/API/package contract, canonical IDs, migrations, seeds, envelopes, and CI acceptance remain. |
+| 00 Foundation | In progress | Repository and package boundaries build locally. Canonical IDs, migrations, seeds, envelopes, and hosted CI acceptance remain. |
 | 01 Identity kernel | Not started | Clerk sync, canonical tenant model, RLS, authorization, and cross tenant tests remain. |
 | 02 Application provisioning | Not started | Scalar adapter and real lifecycle remain. |
 | 03 Metering and billing | Not started | Real usage and policy stop remain. |

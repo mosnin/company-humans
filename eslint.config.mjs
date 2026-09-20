@@ -1,19 +1,7 @@
-import coreWebVitals from "eslint-config-next/core-web-vitals";
 import typescript from "eslint-config-next/typescript";
 
-const config = [
-  ...coreWebVitals,
+export default [
   ...typescript,
-  { ignores: [".next/**", "node_modules/**", "next-env.d.ts"] },
-  {
-    rules: {
-      "@typescript-eslint/no-unused-vars": ["error", {
-        argsIgnorePattern: "^_",
-        varsIgnorePattern: "^_",
-        caughtErrorsIgnorePattern: "^_",
-      }],
-    },
-  },
+  { ignores: ["**/dist/**", "**/node_modules/**", "**/next-env.d.ts"] },
+  { rules: { "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }] } },
 ];
-
-export default config;
