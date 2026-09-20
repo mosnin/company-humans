@@ -11,3 +11,5 @@ Five contract tests now cover typed IDs, schema version rejection, event/audit s
 Local Postgres tests prove duplicate Clerk events preserve one canonical user ID, newer updates apply, deletion hides the user, and an older update cannot revive the tombstone. Webhook route tests cover missing configuration and failed signature verification. A live Clerk callback is still required for task 6 acceptance.
 
 The production build also served `/` and `/api/health` successfully with Clerk unconfigured. `/api/me` and the webhook returned 503, as intended, rather than creating unauthenticated identity state. This is a configuration boundary, not a successful Clerk integration test.
+
+A local Postgres integration test now creates two organizations for one user and a third for another user. The membership scoped listing returns only the expected organizations, and owner memberships are created transactionally. RLS denial is still pending.

@@ -5,3 +5,5 @@ The scaffold has no authenticated or tenant scoped product routes. The health en
 The Phase 00 envelope library validates versioned event and audit fields and can sign and verify them with a caller supplied 32 byte or longer key. No production signing key exists in this repository. API authentication, key storage, rotation, replay/idempotency enforcement, and audit persistence remain unimplemented.
 
 Phase 01 has begun with a Clerk webhook and canonical user table. The webhook refuses requests when its signing secret or database URL is absent and rejects failed signature verification before database mutation. The on-request resolver checks Clerk session identity and then loads or creates a canonical active user. Live Clerk delivery and sign-in remain unverified because no Clerk application keys or webhook configuration are available in this workspace.
+
+Organization creation and owner membership are atomic, and organization listing is filtered by active user membership. This is not yet a database isolation guarantee. Phase 01 task 8 must add RLS and test cross tenant reads and writes using a nonprivileged application role before identity kernel acceptance.
