@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { createCanonicalId, ROLE_KEYS, roleHasCapability, type MembershipId, type RoleKey, type TeamId } from "@company-human/contracts";
 import { Client } from "pg";
 import { describe, expect, it } from "vitest";
-import { syncClerkUser } from "./clerk-users.js";
+import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { changeMembershipRole, renameOrganization } from "./organization-authority.js";
 import { resolveAccessContext } from "./rls.js";
@@ -22,11 +22,11 @@ describe.skipIf(!databaseUrl)("organization role and team resolution", () => {
     const runtimeUrl = new URL(databaseUrl!);
     runtimeUrl.username = roleName;
     runtimeUrl.password = password;
-    const users = [] as Array<Awaited<ReturnType<typeof syncClerkUser>>>;
-    const owner = await syncClerkUser(databaseUrl!, { clerkUserId: `user_Owner${suffix}`, primaryEmail: null, displayName: "Owner", status: "active", eventTimestamp: 1 });
+    const users = [] as Array<Awaited<ReturnType<typeof syncAuthUser>>>;
+    const owner = await syncAuthUser(databaseUrl!, { authIssuer: "https://identity.example.test", authSubject: `user_Owner${suffix}`, primaryEmail: null, displayName: "Owner", status: "active", eventTimestamp: 1 });
     users.push(owner);
     const org = await createOrganization(databaseUrl!, { ownerUserId: owner, slug: `roles-${suffix}`, name: "Roles Org" });
-    const otherOwner = await syncClerkUser(databaseUrl!, { clerkUserId: `user_Other${suffix}`, primaryEmail: null, displayName: "Other", status: "active", eventTimestamp: 1 });
+    const otherOwner = await syncAuthUser(databaseUrl!, { authIssuer: "https://identity.example.test", authSubject: `user_Other${suffix}`, primaryEmail: null, displayName: "Other", status: "active", eventTimestamp: 1 });
     users.push(otherOwner);
     const otherOrg = await createOrganization(databaseUrl!, { ownerUserId: otherOwner, slug: `other-roles-${suffix}`, name: "Other Org" });
     let teamId: TeamId | undefined;
@@ -35,8 +35,8 @@ describe.skipIf(!databaseUrl)("organization role and team resolution", () => {
       const roleUsers = new Map<RoleKey, { userId: typeof owner; membershipId: MembershipId }>();
       roleUsers.set("owner", { userId: owner, membershipId: org.ownerMembershipId });
       for (const roleKey of ROLE_KEYS.filter((key) => key !== "owner")) {
-        const userId = await syncClerkUser(databaseUrl!, {
-          clerkUserId: `user_${roleKey}${suffix}`, primaryEmail: null, displayName: roleKey, status: "active", eventTimestamp: 1,
+        const userId = await syncAuthUser(databaseUrl!, {
+          authIssuer: "https://identity.example.test", authSubject: `user_${roleKey}${suffix}`, primaryEmail: null, displayName: roleKey, status: "active", eventTimestamp: 1,
         });
         users.push(userId);
         const membershipId = createCanonicalId("membership");

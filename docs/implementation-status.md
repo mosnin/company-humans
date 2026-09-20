@@ -9,17 +9,17 @@ Updated 2026-09-20. Destination: `mosnin/company-humans`, branch `codex/company-
 - Identity synchronization, tenant isolation, stored capabilities, audited permission changes, invitation lifecycle, team scope, and append-only runtime audit permissions.
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
-- Invitation acceptance requires a fresh verified Clerk email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 33 contract/database/route tests pass. Twelve desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass.
-- A fresh local development database accepts all 17 migrations and seven reference-product seeds. Restricted connection credentials are stored only in ignored `apps/web/.env.local`; no Clerk keys or tenant demo records were created.
+- Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
+- 37 contract/database/route/Convex tests pass. Sixteen desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass.
+- A fresh local development database accepts all 18 migrations and seven reference-product seeds. Restricted connection credentials are stored only in ignored `apps/web/.env.local`; no OAuth provider secrets or tenant demo records were created.
 
 ## Phase gates
 
 | Phase | Status | Remaining acceptance |
 | --- | --- | --- |
 | Source scaffold | Implemented; local checks pass | Live authenticated layout and deployment verification. |
-| 00 Foundation | In progress | Hosted CI must run. Local foundation exit scenario passes. |
-| 01 Identity kernel | In progress | Real Clerk sign-in/webhook, browser create/invite/accept/assign/switch/suspend scenario, deployed database-role verification. |
+| 00 Foundation | Verified at b498034 | Public GitHub run 35521157349 passed install, typecheck, lint, migrations, seed, tests, build and browser checks. |
+| 01 Identity kernel | In progress | Real Convex OAuth sign-in/sign-out, browser create/invite/accept/assign/switch/suspend scenario, deployed database-role verification. |
 | 02 Provisioning | In progress; groundwork only | Real Scalar adapter, product membership, entitlements, state machine, health, and full lifecycle proof. Catalog/pending intent grants no access. |
 | 03 Metering and billing | Not started | Measured Scalar usage, budgets, hard stops, cost and billing projections. |
 | 04 Human workspace | Not started | Contributor Work, Apps, Context, Earnings, Leaderboard, Team, manager workflows. Identity administration is not this phase's completed shell. |
@@ -38,8 +38,8 @@ Updated 2026-09-20. Destination: `mosnin/company-humans`, branch `codex/company-
 
 ## External gates
 
-1. **Clerk configuration:** the checkout has no Company Human Clerk keys, and the connected browser reaches Clerk's sign-in page. The application name/configuration has been requested. Configure the publishable key, secret key and webhook signing secret, then verify actual sessions and delivery. Do not substitute mock authentication for this gate.
-2. **GitHub Actions:** run `35520300589` at `0b8ab73` completed with no runner steps. Its annotation says account payments failed or the spending limit must be increased. Local green checks are not hosted CI success.
-3. **Production:** no Company Human deployment or production database-role acceptance has been demonstrated. The Vercel project listing inspected did not include a matching project; that listing is not proof that no project exists elsewhere.
+1. **Convex capacity and OAuth configuration:** the connected Vercel-managed Convex team refused the free Company Human project because its 40-deployment quota is reached. No deployment was created. An unused slot/project has been requested. The code and offline generated bindings are locally checked; remote function deployment, signing keys, provider application credentials and actual OAuth round-trip remain required. See [authentication setup](authentication.md).
+2. **GitHub Actions resolved:** the owner authorized making `mosnin/company-humans` public. Rerun 35521157349 at b498034 passed all steps. The earlier private-repository restriction no longer blocks CI.
+3. **Production:** no Company Human deployment or production database-role acceptance has been demonstrated. No existing product deployment or credential has been reused.
 
 CH-8, CH-9, CH-10 and CH-12 have progress evidence in Notion and remain In progress. The original findings remain in [implementation review](implementation-review.md); the authorization and invitation defects described there have subsequent repair commits. No later phase has been marked verified.

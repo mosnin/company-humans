@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { Client } from "pg";
 import { describe, expect, it } from "vitest";
-import { syncClerkUser } from "./clerk-users.js";
+import { syncAuthUser } from "./auth-users.js";
 import { acceptInvitation, changeMembershipStatus, inviteMember } from "./membership-lifecycle.js";
 import { createOrganization } from "./organizations.js";
 import { resolveAccessContext } from "./rls.js";
@@ -21,14 +21,14 @@ describe.skipIf(!databaseUrl)("membership invitation and access lifecycle", () =
     const runtimeUrl = new URL(databaseUrl!);
     runtimeUrl.username = roleName;
     runtimeUrl.password = password;
-    const owner = await syncClerkUser(databaseUrl!, {
-      clerkUserId: `user_Owner${suffix}`, primaryEmail: `owner-${suffix}@example.test`, displayName: "Owner", status: "active", eventTimestamp: 1,
+    const owner = await syncAuthUser(databaseUrl!, {
+      authIssuer: "https://identity.example.test", authSubject: `user_Owner${suffix}`, primaryEmail: `owner-${suffix}@example.test`, displayName: "Owner", status: "active", eventTimestamp: 1,
     });
-    const recipient = await syncClerkUser(databaseUrl!, {
-      clerkUserId: `user_Recipient${suffix}`, primaryEmail: `PERSON-${suffix}@EXAMPLE.TEST`, displayName: "Recipient", status: "active", eventTimestamp: 1,
+    const recipient = await syncAuthUser(databaseUrl!, {
+      authIssuer: "https://identity.example.test", authSubject: `user_Recipient${suffix}`, primaryEmail: `PERSON-${suffix}@EXAMPLE.TEST`, displayName: "Recipient", status: "active", eventTimestamp: 1,
     });
-    const outsider = await syncClerkUser(databaseUrl!, {
-      clerkUserId: `user_Outsider${suffix}`, primaryEmail: `outsider-${suffix}@example.test`, displayName: "Outsider", status: "active", eventTimestamp: 1,
+    const outsider = await syncAuthUser(databaseUrl!, {
+      authIssuer: "https://identity.example.test", authSubject: `user_Outsider${suffix}`, primaryEmail: `outsider-${suffix}@example.test`, displayName: "Outsider", status: "active", eventTimestamp: 1,
     });
     const org = await createOrganization(databaseUrl!, { ownerUserId: owner, slug: `invite-${suffix}`, name: "Invite Org" });
     const teamId = await createTeam(databaseUrl!, { actorUserId: owner, organizationId: org.organizationId, name: "Sales" });

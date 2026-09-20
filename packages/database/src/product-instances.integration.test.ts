@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { Client } from "pg";
 import { describe, expect, it } from "vitest";
-import { syncClerkUser } from "./clerk-users.js";
+import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { enableProductInstance, listProductInstances } from "./product-instances.js";
 import { referenceProductId } from "./seed.js";
@@ -20,8 +20,8 @@ describe.skipIf(!databaseUrl)("organization product instances", () => {
     const runtimeUrl = new URL(databaseUrl!);
     runtimeUrl.username = roleName;
     runtimeUrl.password = password;
-    const alice = await syncClerkUser(databaseUrl!, { clerkUserId: `user_Alice${suffix}`, primaryEmail: null, displayName: "Alice", status: "active", eventTimestamp: 1 });
-    const bob = await syncClerkUser(databaseUrl!, { clerkUserId: `user_Bob${suffix}`, primaryEmail: null, displayName: "Bob", status: "active", eventTimestamp: 1 });
+    const alice = await syncAuthUser(databaseUrl!, { authIssuer: "https://identity.example.test", authSubject: `user_Alice${suffix}`, primaryEmail: null, displayName: "Alice", status: "active", eventTimestamp: 1 });
+    const bob = await syncAuthUser(databaseUrl!, { authIssuer: "https://identity.example.test", authSubject: `user_Bob${suffix}`, primaryEmail: null, displayName: "Bob", status: "active", eventTimestamp: 1 });
     const aliceOrg = await createOrganization(databaseUrl!, { ownerUserId: alice, slug: `app-alice-${suffix}`, name: "Alice" });
     const bobOrg = await createOrganization(databaseUrl!, { ownerUserId: bob, slug: `app-bob-${suffix}`, name: "Bob" });
     const scalarId = referenceProductId("scalar");

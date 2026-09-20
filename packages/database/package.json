@@ -8,9 +8,9 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./clerk-users": {
-      "types": "./dist/clerk-users.d.ts",
-      "default": "./dist/clerk-users.js"
+    "./auth-users": {
+      "types": "./dist/auth-users.d.ts",
+      "default": "./dist/auth-users.js"
     },
     "./rls": {
       "types": "./dist/rls.d.ts",

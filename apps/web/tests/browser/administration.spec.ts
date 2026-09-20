@@ -77,3 +77,20 @@ test("invitation survives sign-in navigation without a URL token and clears on a
   await page.waitForURL("**/workspace/select");
   expect(await page.evaluate(() => sessionStorage.getItem("ch_pending_invitation"))).toBeNull();
 });
+
+test("OAuth sign-in preserves invitation return and handles provider failure", async ({page}) => {
+  let input: Record<string,unknown> = {};
+  await page.route("**/mock-auth/sign-in", async route => {input=route.request().postDataJSON();await route.fulfill({status:503});});
+  await page.goto("/?screen=oauth");
+  await page.getByRole("button",{name:"Continue with Google"}).click();
+  await expect(page.getByRole("alert")).toContainText("Sign-in could not start");
+  expect(input).toEqual({provider:"google",redirectTo:"/auth/complete?returnTo=invite"});
+  await expect(page.getByRole("button",{name:"Continue with GitHub"})).toBeEnabled();
+});
+test("sign-out waits for session revocation before leaving", async ({page}) => {
+  await page.route("**/mock-auth/sign-out", route => route.fulfill({status:503}));
+  await page.goto("/?screen=people");
+  await page.getByRole("button",{name:"Sign out",exact:true}).click();
+  await expect(page.getByRole("alert")).toContainText("Sign-out failed");
+  await expect(page).toHaveURL(/screen=people/);
+});

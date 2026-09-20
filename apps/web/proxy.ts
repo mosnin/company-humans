@@ -1,12 +1,7 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
-import { NextResponse, type NextRequest } from "next/server";
-
-const configured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
-const clerkProxy = configured ? clerkMiddleware() : null;
-
-export default function proxy(request: NextRequest, event: Parameters<NonNullable<typeof clerkProxy>>[1]) {
-  if (!clerkProxy) return NextResponse.next();
-  return clerkProxy(request, event);
+import { convexAuthNextjsMiddleware } from "@convex-dev/auth/nextjs/server";
+import { NextResponse, type NextRequest, type NextFetchEvent } from "next/server";
+const authProxy = process.env.NEXT_PUBLIC_CONVEX_URL ? convexAuthNextjsMiddleware() : null;
+export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  return authProxy ? authProxy(request, event) : NextResponse.next();
 }
-
-export const config = { matcher: ["/api/:path*", "/workspace/:path*"] };
+export const config = { matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"] };

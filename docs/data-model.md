@@ -16,7 +16,7 @@ Migration `0004_tenant_rls.sql` adds RLS for organizations and memberships. The 
 
 Migration `0005_teams_roles.sql` creates six canonical organization role records per organization, team records, and scoped team memberships. An organization and role composite key prevents a membership from referencing another tenant's role. Composite foreign keys prevent team membership from crossing organization boundaries. Restricted role and team reads are covered by RLS. The initial role to capability policy is versioned in `@company-human/contracts`; migration `0009_permissions.sql` persists it per organization and resolves active capabilities through tenant RLS. Organization role customization and per member overrides remain future work.
 
-Migration `0006_member_lifecycle.sql` adds invitation records with a hashed one use token, recipient email, role, expiry, and acceptance state. A prior removed membership may be reactivated by a fresh matching invitation while retaining its canonical ID. Removing a member ends team membership records without deleting them. Per member permission overrides and Clerk session revocation remain pending.
+Migration `0006_member_lifecycle.sql` adds invitation records with a hashed one use token, recipient email, role, expiry, and acceptance state. A prior removed membership may be reactivated by a fresh matching invitation while retaining its canonical ID. Removing a member ends team membership records without deleting them. Per member permission overrides remain pending. The authentication replacement below supersedes the original Clerk integration.
 
 Migration `0007_identity_audit.sql` creates identity audit records with the versioned audit envelope and before/after state. The runtime role can read audit records only as an active Owner or Admin. Direct runtime updates to organizations are revoked so names change through an audited server transaction. A migration owner can still change tables directly; production must isolate that credential and add stronger immutability controls before security acceptance.
 
@@ -27,3 +27,7 @@ Migration `0009_permissions.sql` adds the global permission catalog, versioned d
 ## Identity audit reader
 
 Migration 0017 permits scoped audit reads through the service role only with audit.read.all. The `/workspace/audit` page shows paginated identity events, actor names, timestamps, targets, and before/after state. It cannot modify history. Restricted-role tests cover allowed owner reads, contributor denial, cross-tenant denial, and continued denial of audit updates.
+
+## Provider-neutral identity (0018)
+
+The product owner replaced Clerk with Convex Auth on 2026-09-20. Migration 0018 renames the provider subject field and adds a provider issuer. Existing canonical IDs, audit references and legacy mappings remain intact; legacy issuer `https://clerk.legacy.invalid` deliberately cannot match a new Convex deployment. Unique `(auth_issuer, auth_subject)` prevents collisions across deployments. Email is not a linking key. A deliberate, audited account-linking flow would be needed to transfer a legacy account; none is implemented automatically.

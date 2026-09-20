@@ -1,5 +1,7 @@
 # Decisions
 
+Dated entries are historical. The latest authentication decision below supersedes the earlier Clerk selection.
+
 ## 2026-09-20: Copy the visual foundation, isolate Company OS behavior
 
 Company OS Web uses Convex Auth and a Convex company data model. Company Human's canonical specification requires Clerk authentication and database tenant policy. Reusing the source auth, billing, or product routes would create conflicting sources of truth. The scaffold copies the Next.js stack and audited UI primitives, then implements Company Human's domain contracts independently in roadmap order. See [migration assessment](migration-assessment.md).
@@ -49,3 +51,9 @@ Stored grants now govern identity mutations, with operation-specific database re
 ## 2026-09-20: Include security test sources in typechecking
 
 The package build continues to exclude tests from published artifacts, while a separate no-emit TypeScript config now includes every test source in the typecheck gate. The restricted service test also verifies the Foundation exit scenario using actual canonical identity and a signed shared event. Hosted CI remains blocked by GitHub account billing rather than a runner test result.
+
+## 2026-09-20 — Replace Clerk with Convex OAuth
+
+The product owner explicitly requested Convex OAuth instead of Clerk and authorized making `mosnin/company-humans` public. Convex Auth will manage OAuth sessions; PostgreSQL remains the canonical user/organization/authorization store required by the existing tenant model. Provider issuer and subject replace the Clerk-specific key without changing canonical IDs or merging accounts by email. Invitation redemption still requires provider-verified email. Applied migrations remain immutable. The Notion identity doctrine and hub record this override.
+
+OAuth is authentication, not product provisioning: workspace-sponsored access, role-scoped product views, usage/activity reporting, and administrator oversight across Stored, Cadre, Operate, Marketer, Company OS and the other specified products remain required adapter behavior.

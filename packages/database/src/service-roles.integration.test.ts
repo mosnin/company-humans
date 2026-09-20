@@ -3,7 +3,7 @@ import { signEventEnvelope, verifyEventEnvelope } from "@company-human/contracts
 import { randomBytes } from "node:crypto";
 import { Client } from "pg";
 import { describe, expect, it } from "vitest";
-import { syncClerkUser } from "./clerk-users.js";
+import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { inviteMember, acceptInvitation, changeMembershipStatus } from "./membership-lifecycle.js";
 import { renameOrganization } from "./organization-authority.js";
@@ -41,25 +41,25 @@ describe.skipIf(!databaseUrl)("restricted runtime write roles", () => {
       const originalNodeEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = "production";
       try {
-        await expect(syncClerkUser(databaseUrl!, {
-          clerkUserId: `user_ForbiddenIdentity${suffix}`, primaryEmail: null,
+        await expect(syncAuthUser(databaseUrl!, {
+          authIssuer: "https://identity.example.test", authSubject: `user_ForbiddenIdentity${suffix}`, primaryEmail: null,
           displayName: "Forbidden", status: "active", eventTimestamp: 1,
         })).rejects.toThrow("restricted identity role");
       } finally {
         process.env.NODE_ENV = originalNodeEnv;
       }
-      const owner = await syncClerkUser(identityUrl.toString(), {
-        clerkUserId: `user_ServiceOwner${suffix}`, primaryEmail: `owner-${suffix}@example.test`,
+      const owner = await syncAuthUser(identityUrl.toString(), {
+        authIssuer: "https://identity.example.test", authSubject: `user_ServiceOwner${suffix}`, primaryEmail: `owner-${suffix}@example.test`,
         displayName: "Owner", status: "active", eventTimestamp: 1,
       });
       userIds.push(owner);
-      const invitee = await syncClerkUser(identityUrl.toString(), {
-        clerkUserId: `user_ServiceInvitee${suffix}`, primaryEmail: `invitee-${suffix}@example.test`,
+      const invitee = await syncAuthUser(identityUrl.toString(), {
+        authIssuer: "https://identity.example.test", authSubject: `user_ServiceInvitee${suffix}`, primaryEmail: `invitee-${suffix}@example.test`,
         displayName: "Invitee", status: "active", eventTimestamp: 1,
       });
       userIds.push(invitee);
-      const otherOwner = await syncClerkUser(identityUrl.toString(), {
-        clerkUserId: `user_ServiceOther${suffix}`, primaryEmail: `other-${suffix}@example.test`,
+      const otherOwner = await syncAuthUser(identityUrl.toString(), {
+        authIssuer: "https://identity.example.test", authSubject: `user_ServiceOther${suffix}`, primaryEmail: `other-${suffix}@example.test`,
         displayName: "Other", status: "active", eventTimestamp: 1,
       });
       userIds.push(otherOwner);

@@ -1,40 +1,17 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { findCanonicalUser, syncClerkUser } from "@company-human/database/clerk-users";
-import { UserIdSchema, type UserId } from "@company-human/contracts";
-
+import { findCanonicalUser } from "@company-human/database/auth-users";
+import { type UserId } from "@company-human/contracts";
+import { readProviderIdentity } from "./provider-identity";
 export type AuthenticatedUserResolution =
-  | { status: "unauthenticated" }
-  | { status: "unavailable" }
-  | { status: "forbidden" }
+  | { status: "unauthenticated" } | { status: "unavailable" } | { status: "forbidden" }
   | { status: "ok"; userId: UserId; verifiedEmail?: string };
 
-/** Clerk proves the session; Company Human resolves its own global user record. */
+/** Read-only on every request; canonical synchronization happens via same-origin POST. */
 export async function resolveAuthenticatedUser(options: { requireVerifiedEmail?: boolean } = {}): Promise<AuthenticatedUserResolution> {
   const databaseUrl = process.env.DATABASE_IDENTITY_URL;
-  if (!databaseUrl || !process.env.CLERK_SECRET_KEY || !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    return { status: "unavailable" };
-  }
-  const session = await auth();
-  if (!session.userId) return { status: "unauthenticated" };
-  const known = await findCanonicalUser(databaseUrl, session.userId);
-  if (known && !options.requireVerifiedEmail) return { status: "ok", userId: UserIdSchema.parse(known) };
-
-  // A fresh sign-in can precede webhook delivery. Fetch only the fields needed
-  // for canonical identity; private metadata is never stored or returned.
-  const providerUser = await currentUser();
-  if (!providerUser || providerUser.id !== session.userId) return { status: "forbidden" };
-  const primary = providerUser.emailAddresses.find((email) => email.id === providerUser.primaryEmailAddressId);
-  const primaryEmail = primary?.verification?.status === "verified" ? primary.emailAddress : null;
-  if (options.requireVerifiedEmail && !primaryEmail) return { status: "forbidden" };
-  const displayName = [providerUser.firstName, providerUser.lastName].filter(Boolean).join(" ").trim()
-    || providerUser.username || primaryEmail || "User";
-  await syncClerkUser(databaseUrl, {
-    clerkUserId: providerUser.id,
-    primaryEmail,
-    displayName,
-    status: "active",
-    eventTimestamp: providerUser.updatedAt,
-  });
-  const userId = await findCanonicalUser(databaseUrl, providerUser.id);
-  return userId ? { status: "ok", userId, verifiedEmail: primaryEmail ?? undefined } : { status: "forbidden" };
+  if (!databaseUrl) return { status: "unavailable" };
+  const identity = await readProviderIdentity();
+  if (identity.status !== "ok") return identity;
+  if (options.requireVerifiedEmail && !identity.profile.verifiedEmail) return { status: "forbidden" };
+  const userId = await findCanonicalUser(databaseUrl, identity.issuer, identity.profile.subject);
+  return userId ? { status: "ok", userId, verifiedEmail: identity.profile.verifiedEmail ?? undefined } : { status: "forbidden" };
 }

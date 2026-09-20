@@ -19,4 +19,4 @@ npm run dev
 
 For database integration tests and tenant routes, create a dedicated PostgreSQL database and configure the migration `DATABASE_URL` plus separate restricted `DATABASE_RUNTIME_URL`, `DATABASE_SERVICE_URL`, and `DATABASE_IDENTITY_URL` as described in [.env.example](.env.example). Then run `npm run db:migrate` and `npm run db:seed`. Migrations are append only and checksum checked. The seed creates only the seven draft product catalog records; it creates no tenants.
 
-Clerk keys and webhook configuration are required to exercise live sign-in. Product provisioning, usage billing, CRM, attribution, and payouts are unfinished; a pending product instance grants no access. See [implementation status](docs/implementation-status.md) before using the app beyond local development.
+Convex Auth OAuth configuration is required to exercise live sign-in; see [authentication setup](docs/authentication.md). Product provisioning, usage billing, CRM, attribution, and payouts are unfinished; a pending product instance grants no access. See [implementation status](docs/implementation-status.md) before using the app beyond local development.

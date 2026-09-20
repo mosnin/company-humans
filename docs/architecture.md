@@ -1,8 +1,8 @@
 # Architecture
 
-Company Human is a separate product. The code contains a Next.js web app with API routes and shared contract and database packages. The web visual primitives come from Company OS Web. The implemented identity slice maps Clerk users to canonical users, offers an organization creation route and selector form, stores organizations, memberships, roles, teams, invitations, and audit records in Postgres, and resolves tenant access through a restricted RLS login. The control plane now stores catalog entries and organization product enable intent. External product provisioning, usage, billing, human work, CRM, attribution, payout, and the remaining planes are not implemented. Specialized products remain independent sources of truth.
+Company Human is a separate product. The code contains a Next.js web app with API routes and shared contract and database packages. The web visual primitives come from Company OS Web. The implemented identity slice maps Convex OAuth identities to canonical users, offers an organization creation route and selector form, stores organizations, memberships, roles, teams, invitations, and audit records in Postgres, and resolves tenant access through a restricted RLS login. The control plane now stores catalog entries and organization product enable intent. External product provisioning, usage, billing, human work, CRM, attribution, payout, and the remaining planes are not implemented. Specialized products remain independent sources of truth.
 
-See [migration assessment](migration-assessment.md) for the source audit and recorded auth/database incompatibility.
+See [migration assessment](migration-assessment.md) for the source audit and recorded scaffold boundaries and authentication override.
 
 Phase 00 defines a version 1 product adapter interface plus version 1 event and audit envelopes in `@company-human/contracts`. Both carry canonical organization IDs and actor provenance. The server only signing subpath uses domain separated HMAC SHA-256 with stable JSON ordering and constant time comparison. Identity audit envelopes are persisted transactionally. Event ingestion, replay, key management, and stronger audit immutability remain later work.
 
@@ -11,3 +11,7 @@ Identity administration uses server-rendered routes under `/workspace` with requ
 ## Identity audit reader
 
 Migration 0017 permits scoped audit reads through the service role only with audit.read.all. The `/workspace/audit` page shows paginated identity events, actor names, timestamps, targets, and before/after state. It cannot modify history. Restricted-role tests cover allowed owner reads, contributor denial, cross-tenant denial, and continued denial of audit updates.
+
+## Authentication override
+
+The product owner's 2026-09-20 direction replaces Clerk with Convex Auth. Convex stores OAuth account/session data; PostgreSQL retains canonical users and tenant authorization. The server queries the authenticated Convex identity, including current session existence and expiry, before resolving the canonical issuer/subject mapping. A same-origin POST synchronizes that profile after sign-in; GET requests do not create users. The user migration preserves legacy mappings and canonical IDs without linking by email. See [authentication setup](authentication.md).

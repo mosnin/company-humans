@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { Client } from "pg";
 import { createOrganization, listOrganizationsForUser } from "./organizations.js";
-import { syncClerkUser } from "./clerk-users.js";
+import { syncAuthUser } from "./auth-users.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 
 describe.skipIf(!databaseUrl)("organization and membership isolation", () => {
   it("allows one user in multiple organizations while hiding another user's organization", async () => {
     const suffix = crypto.randomUUID().replaceAll("-", "").slice(0, 12);
-    const aliceClerkId = `user_Alice${suffix}`;
-    const bobClerkId = `user_Bob${suffix}`;
-    const alice = await syncClerkUser(databaseUrl!, { clerkUserId: aliceClerkId, primaryEmail: null, displayName: "Alice", status: "active", eventTimestamp: 1 });
-    const bob = await syncClerkUser(databaseUrl!, { clerkUserId: bobClerkId, primaryEmail: null, displayName: "Bob", status: "active", eventTimestamp: 1 });
+    const aliceAuthSubject = `user_Alice${suffix}`;
+    const bobAuthSubject = `user_Bob${suffix}`;
+    const alice = await syncAuthUser(databaseUrl!, { authIssuer: "https://identity.example.test", authSubject: aliceAuthSubject, primaryEmail: null, displayName: "Alice", status: "active", eventTimestamp: 1 });
+    const bob = await syncAuthUser(databaseUrl!, { authIssuer: "https://identity.example.test", authSubject: bobAuthSubject, primaryEmail: null, displayName: "Bob", status: "active", eventTimestamp: 1 });
     const first = await createOrganization(databaseUrl!, { ownerUserId: alice, slug: `alice-${suffix}`, name: "Alice One" });
     const second = await createOrganization(databaseUrl!, { ownerUserId: alice, slug: `alice-two-${suffix}`, name: "Alice Two" });
     const other = await createOrganization(databaseUrl!, { ownerUserId: bob, slug: `bob-${suffix}`, name: "Bob One" });

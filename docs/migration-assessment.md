@@ -35,3 +35,7 @@ The source uses Convex Auth and Convex as its database. The Company Human specif
 ## Source shell restoration
 
 The identity administration UI now generalizes the source `components/shell/app-shell.tsx` geometry into `WorkspaceShell`: full-width 56px header, 240px desktop rail, rounded body sheet, independent scrolling canvas, keyboard skip link, and mobile menu. Source table scroll/border geometry and native input control states are generalized into administration controls. Company OS route parsing, Convex hooks, product navigation, search, and company cookies are excluded. Only implemented identity pages appear. Desktop and 390px mobile browser component tests render these components and verify interactions; their API/authentication is explicitly mocked, so they do not establish live identity acceptance.
+
+## 2026-09-20 owner override
+
+The original Clerk-specific rejection above is superseded by the product owner's request to use Convex OAuth. Company Human now uses Convex Auth for OAuth sessions while retaining the implemented PostgreSQL canonical tenant model and RLS. Company OS source remains untouched. No Company OS deployment or OAuth credential has been reused.

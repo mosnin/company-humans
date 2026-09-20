@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Capability } from "@company-human/contracts";
+import { SignOutButton } from "@/components/auth/sign-out";
 import { cn } from "@/lib/utils";
 
 // Generalized from company-os-web/components/shell/app-shell.tsx at 94827a3.
@@ -23,7 +24,7 @@ export function WorkspaceShell({ organizationName, capabilities, children }: { o
     <header className="flex h-[var(--header-h)] shrink-0 items-center justify-between gap-4 px-4 text-[var(--bar-ink)] sm:px-6">
       <Link href="/workspace" className="t-body-medium">Company Human</Link>
       <span className="t-body hidden truncate sm:block">{organizationName}</span>
-      <Link href="/workspace/select" className="t-caption underline underline-offset-4">Switch organization</Link>
+      <div className="flex items-center gap-4"><Link href="/workspace/select" className="t-caption underline underline-offset-4">Switch organization</Link><SignOutButton /></div>
     </header>
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[var(--body-radius)] bg-canvas md:flex-row">
       <div className="flex items-center justify-between border-b border-border bg-rail px-4 py-3 md:hidden">

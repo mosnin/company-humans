@@ -1,3 +1,4 @@
+import { OAuthSignIn } from "@/components/auth/sign-in";
 import AcceptInvitationPage from "@/app/invite/page";
 import { createRoot } from "react-dom/client";
 import { ROLE_CAPABILITIES } from "@company-human/contracts";
@@ -14,6 +15,7 @@ const screen = new URLSearchParams(location.search).get("screen") ?? "people";
 const restricted = new URLSearchParams(location.search).get("role") === "contributor";
 createRoot(document.getElementById("root")!).render(<WorkspaceShell organizationName="Test organization" capabilities={ROLE_CAPABILITIES[restricted ? "contributor" : "owner"]}>
   <PageHeader title={screen.charAt(0).toUpperCase()+screen.slice(1)} description="Local component test fixture. Authentication and API responses are mocked." />
+  {screen === "oauth" && <OAuthSignIn returnToInvite providers={["google", "github"]} />}
   {screen === "invite" && <AcceptInvitationPage />}
   {screen === "people" && <><InvitePerson organizationId={org} owner /><PeopleTable organizationId={org} actorUserId={owner} owner people={[member]} /></>}
   {screen === "teams" && <TeamsEditor organizationId={org} canCreate canAssign people={[member]} teams={[{ id: `ch_team_${"a".repeat(32)}`, name: "Sales", memberCount: 0, members: [] }]} />}

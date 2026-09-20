@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { Client } from "pg";
-import { syncClerkUser } from "./clerk-users.js";
+import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { listVisibleOrganizations, resolveAccessContext } from "./rls.js";
 
@@ -21,8 +21,8 @@ describe.skipIf(!databaseUrl)("Postgres tenant RLS", () => {
     runtimeUrl.password = password;
     const aliceId = `user_Alice${suffix}`;
     const bobId = `user_Bob${suffix}`;
-    const alice = await syncClerkUser(databaseUrl!, { clerkUserId: aliceId, primaryEmail: null, displayName: "Alice", status: "active", eventTimestamp: 1 });
-    const bob = await syncClerkUser(databaseUrl!, { clerkUserId: bobId, primaryEmail: null, displayName: "Bob", status: "active", eventTimestamp: 1 });
+    const alice = await syncAuthUser(databaseUrl!, { authIssuer: "https://identity.example.test", authSubject: aliceId, primaryEmail: null, displayName: "Alice", status: "active", eventTimestamp: 1 });
+    const bob = await syncAuthUser(databaseUrl!, { authIssuer: "https://identity.example.test", authSubject: bobId, primaryEmail: null, displayName: "Bob", status: "active", eventTimestamp: 1 });
     const aliceOrg = await createOrganization(databaseUrl!, { ownerUserId: alice, slug: `alice-rls-${suffix}`, name: "Alice Org" });
     const aliceSecondOrg = await createOrganization(databaseUrl!, { ownerUserId: alice, slug: `alice-second-${suffix}`, name: "Alice Second" });
     const bobOrg = await createOrganization(databaseUrl!, { ownerUserId: bob, slug: `bob-rls-${suffix}`, name: "Bob Org" });
