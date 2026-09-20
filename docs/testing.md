@@ -5,3 +5,5 @@ The scaffold passed `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (o
 The monorepo structure passes local package typecheck, lint, tests, and build. Hosted GitHub CI has not run because destination repository identity is unresolved.
 
 A fresh local Postgres 18 database accepted migration `0001_product_catalog.sql` and seven reference products. Repeating migration and seed made no additional migration or product rows. CI now has a Postgres service and runs this database contract test, but hosted execution is not yet observed.
+
+Five contract tests now cover typed IDs, schema version rejection, event/audit signing, tamper detection, wrong key rejection, and tenant ID type rejection. These validate contracts only; they do not prove ingestion authorization or durable audit storage.
