@@ -12,11 +12,11 @@ export const ClerkUserChangeSchema = z.object({
 export type ClerkUserChange = z.infer<typeof ClerkUserChangeSchema>;
 
 async function assertIdentityConnection(client: Client): Promise<void> {
-  if (process.env.NODE_ENV !== "production") return;
+  if (process.env.NODE_ENV === "test") return;
   const result = await client.query<{ allowed: boolean }>(
     `SELECT pg_has_role(current_user, 'company_human_identity', 'member')
       AND NOT r.rolsuper AND NOT r.rolbypassrls
-      AND (SELECT c.relowner <> r.oid FROM pg_class AS c WHERE c.oid = 'public.users'::regclass) AS allowed
+      AND (SELECT NOT pg_has_role(current_user, c.relowner, 'member') FROM pg_class AS c WHERE c.oid = 'public.users'::regclass) AS allowed
      FROM pg_roles AS r WHERE r.rolname = current_user`,
   );
   if (!result.rows[0]?.allowed) throw new Error("Identity synchronization requires a restricted identity role");

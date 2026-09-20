@@ -81,7 +81,7 @@ export async function inviteMember(databaseUrl: string, input: z.input<typeof In
   }
 }
 
-export async function acceptInvitation(databaseUrl: string, token: string, userId: UserId): Promise<MembershipId> {
+export async function acceptInvitation(databaseUrl: string, token: string, userId: UserId, verifiedEmail: string): Promise<MembershipId> {
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
   UserIdSchema.parse(userId);
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new Error("Invalid invitation token");
@@ -90,7 +90,7 @@ export async function acceptInvitation(databaseUrl: string, token: string, userI
   await client.connect();
   try {
     await client.query("BEGIN");
-    await setInvitationActorContext(client, userId, tokenHash);
+    await setInvitationActorContext(client, userId, tokenHash, z.email().parse(verifiedEmail).toLowerCase());
     const invitation = await client.query<{
       id: string; organization_id: string; recipient_email: string; role_key: string; status: string; expires_at: Date;
     }>("SELECT * FROM public.membership_invitations WHERE token_hash = $1 FOR UPDATE", [tokenHash]);

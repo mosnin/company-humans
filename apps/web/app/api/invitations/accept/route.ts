@@ -5,10 +5,11 @@ import { resolveAuthenticatedUser } from "@/lib/authenticated-user";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const identity = await resolveAuthenticatedUser().catch(() => ({ status: "unavailable" as const }));
+  const identity = await resolveAuthenticatedUser({ requireVerifiedEmail: true }).catch(() => ({ status: "unavailable" as const }));
   if (identity.status === "unavailable") return NextResponse.json({ error: "Identity unavailable" }, { status: 503 });
   if (identity.status === "unauthenticated") return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   if (identity.status === "forbidden") return NextResponse.json({ error: "User unavailable" }, { status: 403 });
+  if (!identity.verifiedEmail) return NextResponse.json({ error: "Verified email required" }, { status: 403 });
   const databaseUrl = process.env.DATABASE_SERVICE_URL;
   if (!databaseUrl) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   let body: unknown;
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
   try {
-    const membershipId = await acceptInvitation(databaseUrl, (body as { token: string }).token, identity.userId);
+    const membershipId = await acceptInvitation(databaseUrl, (body as { token: string }).token, identity.userId, identity.verifiedEmail);
     return NextResponse.json({ membershipId }, { headers: { "cache-control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Invitation unavailable" }, { status: 403 });

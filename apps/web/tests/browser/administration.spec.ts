@@ -56,3 +56,24 @@ test("contributor navigation excludes administrative pages", async ({ page }, te
   await expect(nav.getByRole("link",{name:"Teams",exact:true})).toHaveCount(0);
   await expect(nav.getByRole("link",{name:"Permissions",exact:true})).toHaveCount(0);
 });
+
+
+test("invitation survives sign-in navigation without a URL token and clears on acceptance", async ({ page }) => {
+  let signedIn = false;
+  const token = "a".repeat(43);
+  await page.route("**/api/invitations/accept", async route => {
+    expect(route.request().postDataJSON().token).toBe(token);
+    await route.fulfill({ status: signedIn ? 200 : 401, json: signedIn ? { membershipId: "test" } : { error: "Authentication required" } });
+  });
+  await page.goto(`/?screen=invite#${token}`);
+  await expect(page.getByLabel("Invitation code")).toHaveValue(token);
+  expect(new URL(page.url()).hash).toBe("");
+  await page.getByRole("button", { name: "Accept invitation" }).click();
+  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveAttribute("href", "/sign-in?returnTo=invite");
+  signedIn = true;
+  await page.goto("/?screen=invite");
+  await expect(page.getByLabel("Invitation code")).toHaveValue(token);
+  await page.getByRole("button", { name: "Accept invitation" }).click();
+  await page.waitForURL("**/workspace/select");
+  expect(await page.evaluate(() => sessionStorage.getItem("ch_pending_invitation"))).toBeNull();
+});

@@ -103,7 +103,7 @@ export async function listProductInstances(databaseUrl: string, userId: UserId, 
     await client.query("BEGIN");
     const role = await client.query<{ rolsuper: boolean; rolbypassrls: boolean; owns_table: boolean }>(
       `SELECT r.rolsuper, r.rolbypassrls,
-        (SELECT c.relowner = r.oid FROM pg_class c WHERE c.oid = 'public.product_instances'::regclass) AS owns_table
+        (SELECT pg_has_role(current_user, c.relowner, 'member') FROM pg_class c WHERE c.oid = 'public.product_instances'::regclass) AS owns_table
        FROM pg_roles r WHERE r.rolname = current_user`,
     );
     if (!role.rows[0] || role.rows[0].rolsuper || role.rows[0].rolbypassrls || role.rows[0].owns_table) {

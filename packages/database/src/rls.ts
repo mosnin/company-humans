@@ -22,7 +22,7 @@ async function withTenantContext<T>(databaseUrl: string, userId: UserId, query: 
     await client.query("BEGIN");
     const role = await client.query<{ rolsuper: boolean; rolbypassrls: boolean; owns_table: boolean }>(
       `SELECT r.rolsuper, r.rolbypassrls,
-              (SELECT c.relowner = r.oid FROM pg_class c WHERE c.oid = 'public.organizations'::regclass) AS owns_table
+              (SELECT pg_has_role(current_user, c.relowner, 'member') FROM pg_class c WHERE c.oid = 'public.organizations'::regclass) AS owns_table
        FROM pg_roles r WHERE r.rolname = current_user`,
     );
     const state = role.rows[0];

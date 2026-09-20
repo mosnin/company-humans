@@ -10,13 +10,14 @@ const ClerkUserEventSchema = z.object({
     last_name: z.string().nullable().optional(),
     username: z.string().nullable().optional(),
     primary_email_address_id: z.string().nullable().optional(),
-    email_addresses: z.array(z.object({ id: z.string(), email_address: z.string() })).optional(),
+    email_addresses: z.array(z.object({ id: z.string(), email_address: z.string(), verification: z.object({ status: z.string() }).nullable().optional() })).optional(),
   }).passthrough(),
 }).passthrough();
 
 export function normalizeClerkUserEvent(input: unknown): ClerkUserChange {
   const event = ClerkUserEventSchema.parse(input);
-  const email = event.data.email_addresses?.find((item) => item.id === event.data.primary_email_address_id)?.email_address ?? null;
+  const primary = event.data.email_addresses?.find((item) => item.id === event.data.primary_email_address_id);
+  const email = primary?.verification?.status === "verified" ? primary.email_address : null;
   const fullName = [event.data.first_name, event.data.last_name].filter(Boolean).join(" ").trim();
   const displayName = fullName || event.data.username || email || "User";
   return ClerkUserChangeSchema.parse({

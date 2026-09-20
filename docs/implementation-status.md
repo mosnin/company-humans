@@ -47,3 +47,7 @@ Migration 0015 and the role permission API allow an authorized owner or administ
 ## Identity administration screens
 
 People now supports paginated search, invitation links, role changes, suspension, resumption, and confirmed removal. Teams supports creation, roster display, and team responsibility assignment. Permissions supports protected owner/acting policies, capability edits, and conflict errors. All pages authorize on the server and use restricted database services. The source shell is generalized for these identity pages, with loading, error, empty, and permission states. Ten browser component tests pass at desktop and mobile sizes; real Clerk authentication and the full live Phase 01 scenario remain unverified. These screens do not imply completion of the later human-workspace modules.
+
+## Verified invitation onboarding
+
+Invitation acceptance now fetches the current Clerk profile and requires its verified primary email, even when a canonical user is already cached. Database redemption checks that verified email against the invitation and canonical user. Webhook normalization does not treat unverified email as invitation identity. The invite token survives sign-in only in tab-scoped storage for 30 minutes; it is removed from the URL and cleared after successful acceptance. The sign-in return target is fixed to `/invite`, not a caller-supplied URL. Thirty-three unit/database/route tests and twelve desktop/mobile component tests pass, along with typecheck, lint, and production build. Real Clerk sign-in is still unverified.

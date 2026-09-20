@@ -40,9 +40,9 @@ describe.skipIf(!databaseUrl)("membership invitation and access lifecycle", () =
       expect(invitation.token).toHaveLength(43);
       expect((await admin.query("SELECT token_hash FROM membership_invitations WHERE id = $1", [invitation.invitationId])).rows[0]?.token_hash)
         .not.toBe(invitation.token);
-      await expect(acceptInvitation(databaseUrl!, invitation.token, outsider)).rejects.toThrow("Invitation unavailable");
-      const membershipId = await acceptInvitation(databaseUrl!, invitation.token, recipient);
-      await expect(acceptInvitation(databaseUrl!, invitation.token, recipient)).rejects.toThrow("Invitation unavailable");
+      await expect(acceptInvitation(databaseUrl!, invitation.token, outsider, `outsider-${suffix}@example.test`)).rejects.toThrow("Invitation unavailable");
+      const membershipId = await acceptInvitation(databaseUrl!, invitation.token, recipient, `person-${suffix}@example.test`);
+      await expect(acceptInvitation(databaseUrl!, invitation.token, recipient, `person-${suffix}@example.test`)).rejects.toThrow("Invitation unavailable");
       expect((await resolveAccessContext(runtimeUrl.toString(), recipient, org.organizationId))?.roleKey).toBe("contributor");
       await assignTeamMember(databaseUrl!, {
         actorUserId: owner, organizationId: org.organizationId, teamId, membershipId, teamRole: "member",
@@ -61,7 +61,7 @@ describe.skipIf(!databaseUrl)("membership invitation and access lifecycle", () =
         actorUserId: owner, organizationId: org.organizationId,
         recipientEmail: `person-${suffix}@example.test`, roleKey: "contributor", expiresAt: new Date(Date.now() + 86_400_000),
       });
-      expect(await acceptInvitation(databaseUrl!, second.token, recipient)).toBe(membershipId);
+      expect(await acceptInvitation(databaseUrl!, second.token, recipient, `person-${suffix}@example.test`)).toBe(membershipId);
       expect((await resolveAccessContext(runtimeUrl.toString(), recipient, org.organizationId))?.teamIds).toEqual([]);
       const auditActions = (await admin.query<{ action: string }>(
         "SELECT action FROM identity_audit_events WHERE organization_id = $1", [org.organizationId],

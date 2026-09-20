@@ -82,7 +82,8 @@ describe.skipIf(!databaseUrl)("restricted runtime write roles", () => {
         actorUserId: owner, organizationId, recipientEmail: `invitee-${suffix}@example.test`,
         roleKey: "contributor", expiresAt: new Date(Date.now() + 60_000),
       });
-      const membershipId = await acceptInvitation(serviceUrl.toString(), invitation.token, invitee);
+      await expect(acceptInvitation(serviceUrl.toString(), invitation.token, invitee, "different@example.test")).rejects.toThrow("Invitation unavailable");
+      const membershipId = await acceptInvitation(serviceUrl.toString(), invitation.token, invitee, `invitee-${suffix}@example.test`);
       teamId = await createTeam(serviceUrl.toString(), { actorUserId: owner, organizationId, name: "Sales" });
       await assignTeamMember(serviceUrl.toString(), {
         actorUserId: owner, organizationId, teamId, membershipId, teamRole: "member",
@@ -128,7 +129,7 @@ describe.skipIf(!databaseUrl)("restricted runtime write roles", () => {
         try { await expect(action()).rejects.toThrow("administration denied"); }
         finally { await admin.query("INSERT INTO role_permissions (organization_id, role_id, permission_key) VALUES ($1,$2,$3)", [organizationId, grant.rows[0]!.role_id, capability]); }
       }
-      await expect(acceptInvitation(serviceUrl.toString(), invitation.token, otherOwner)).rejects.toThrow("Invitation unavailable");
+      await expect(acceptInvitation(serviceUrl.toString(), invitation.token, otherOwner, `other-${suffix}@example.test`)).rejects.toThrow("Invitation unavailable");
       await changeMembershipStatus(serviceUrl.toString(), { actorUserId: owner, organizationId, membershipId, action: "suspend" });
       await changeMembershipStatus(serviceUrl.toString(), { actorUserId: owner, organizationId, membershipId, action: "reactivate" });
 
@@ -168,7 +169,7 @@ describe.skipIf(!databaseUrl)("restricted runtime write roles", () => {
           actorUserId: owner, organizationId, recipientEmail: `invitee-${suffix}@example.test`,
           roleKey: "contributor", expiresAt: new Date(Date.now() + 60_000),
         });
-        expect(await acceptInvitation(serviceUrl.toString(), reinvitation.token, invitee)).toBe(membershipId);
+        expect(await acceptInvitation(serviceUrl.toString(), reinvitation.token, invitee, `invitee-${suffix}@example.test`)).toBe(membershipId);
         expect((await admin.query("SELECT ended_at FROM team_memberships WHERE membership_id = $1", [membershipId])).rows[0].ended_at).not.toBeNull();
       } finally {
         await service.end();

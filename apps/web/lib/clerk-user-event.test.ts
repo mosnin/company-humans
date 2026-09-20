@@ -6,7 +6,7 @@ const data = {
   first_name: "Ada",
   last_name: "Lovelace",
   primary_email_address_id: "idn_1",
-  email_addresses: [{ id: "idn_1", email_address: "ada@example.test" }],
+  email_addresses: [{ id: "idn_1", email_address: "ada@example.test", verification: { status: "verified" } }],
   private_metadata: { secret: "must-not-sync" },
 };
 
@@ -19,6 +19,12 @@ describe("Clerk webhook normalization", () => {
       status: "active",
       eventTimestamp: 1000,
     });
+  });
+
+  it("does not authorize invitation ownership from an unverified email", () => {
+    expect(normalizeClerkUserEvent({ type: "user.updated", timestamp: 1001,
+      data: { ...data, email_addresses: [{ id: "idn_1", email_address: "ada@example.test", verification: { status: "unverified" } }] },
+    }).primaryEmail).toBeNull();
   });
 
   it("tombstones deleted users without retaining profile data", () => {
