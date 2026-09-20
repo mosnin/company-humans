@@ -27,7 +27,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ or
       roleKey: data.roleKey as "admin" | "manager" | "contributor" | "finance" | "developer",
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
-    return NextResponse.json(invitation, { status: 201, headers: { "cache-control": "no-store" } });
+    return NextResponse.json({ ...invitation, invitePath: `/invite#${invitation.token}` },
+      { status: 201, headers: { "cache-control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Invitation denied or invalid" }, { status: 403 });
   }
