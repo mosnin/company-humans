@@ -6,7 +6,7 @@ Source specification: [Company Human Notion hub](https://app.notion.com/p/3e1a0d
 | --- | --- | --- |
 | Scaffold migration | Verified locally | Source audit, npm clean install, typecheck, lint, unit health test, production build, and local HTTP smoke test passed. Remote commit and deployment pending repository identity. |
 | 00 Foundation | In progress | Repository and package boundaries build locally. Canonical ID schemas are locally verified. The first migration and deterministic product seed passed twice in a fresh local Postgres database. Version 1 signed event/audit envelopes pass local contract tests. Hosted CI acceptance remains. |
-| 01 Identity kernel | Not started | Clerk sync, canonical tenant model, RLS, authorization, and cross tenant tests remain. |
+| 01 Identity kernel | In progress | Canonical Clerk user mapping and webhook boundary are implemented and locally tested. Live Clerk sign-in/webhook, tenant model, RLS, authorization, and cross tenant tests remain. |
 | 02 Application provisioning | Not started | Scalar adapter and real lifecycle remain. |
 | 03 Metering and billing | Not started | Real usage and policy stop remain. |
 | 04 Human workspace | Not started | Role aware workspace remains. |
@@ -24,3 +24,8 @@ Source specification: [Company Human Notion hub](https://app.notion.com/p/3e1a0d
 | 16 Platform expansion | Not started | Deferred until first party contracts stabilize. |
 
 The named GitHub destination `mosnin/company-human` was not visible on 2026-09-20. `mosnin/company-humans` exists and was cloned for local preparation. Remote selection needs confirmation before a push.
+
+## Current external configuration gates
+
+- The intended GitHub destination must be resolved before pushing or observing hosted CI.
+- A Company Human Clerk application must provide a publishable key, secret key, and webhook signing secret. Configure `user.created`, `user.updated`, and `user.deleted` delivery to `/api/webhooks/clerk`. No live Clerk authentication or delivery has been demonstrated.

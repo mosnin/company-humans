@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./clerk-users": {
+      "types": "./dist/clerk-users.d.ts",
+      "default": "./dist/clerk-users.js"
     }
   },
   "scripts": {
