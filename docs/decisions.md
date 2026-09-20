@@ -27,3 +27,7 @@ Organization switching writes an HttpOnly preference cookie only after a restric
 ## 2026-09-20: Require transactional audit for identity mutations
 
 The restricted application role no longer updates organization rows directly. Narrow server services append a versioned audit envelope and before/after state in the same database transaction as organization, role, membership, team, and invitation mutations. This provides local evidence of changes, but a production append-only audit guarantee still requires separation of migration and runtime service credentials.
+
+## 2026-09-20: Separate product enable intent from real activation
+
+The catalog holds seven draft first party products without invented connection metadata. An organization Admin may record an enable request, but the product instance remains pending until its adapter provisions or connects the actual external organization. The API reports pending and no entitlement is granted by the record alone.

@@ -23,6 +23,10 @@
     "./organization-authority": {
       "types": "./dist/organization-authority.d.ts",
       "default": "./dist/organization-authority.js"
+    },
+    "./product-instances": {
+      "types": "./dist/product-instances.d.ts",
+      "default": "./dist/product-instances.js"
     }
   },
   "scripts": {

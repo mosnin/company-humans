@@ -1,0 +1,131 @@
+import { createCanonicalId, MembershipIdSchema, OrganizationIdSchema, ProductIdSchema, ProductInstanceIdSchema, ProvisioningModeSchema, UserIdSchema, type OrganizationId, type ProductId, type ProductInstanceId, type UserId } from "@company-human/contracts";
+import { Client } from "pg";
+import { z } from "zod";
+import { appendIdentityAudit } from "./identity-audit.js";
+
+const EnableSchema = z.object({
+  actorUserId: UserIdSchema,
+  organizationId: OrganizationIdSchema,
+  productId: ProductIdSchema,
+  instanceKey: z.string().regex(/^[a-z][a-z0-9-]*$/).default("primary"),
+  mode: ProvisioningModeSchema,
+}).strict();
+
+/** Records intent to enable. Only an adapter may later set status active. */
+export async function enableProductInstance(databaseUrl: string, input: z.input<typeof EnableSchema>): Promise<ProductInstanceId> {
+  if (!databaseUrl) throw new Error("DATABASE_URL is required");
+  const parsed = EnableSchema.parse(input);
+  const client = new Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    await client.query("BEGIN");
+    const actor = await client.query<{ id: string }>(
+      `SELECT m.id FROM public.memberships AS m JOIN public.organizations AS o ON o.id = m.organization_id
+       WHERE m.organization_id = $1 AND m.user_id = $2 AND m.status = 'active'
+         AND m.role_key IN ('owner', 'admin') AND o.status = 'active'`,
+      [parsed.organizationId, parsed.actorUserId],
+    );
+    if (actor.rowCount !== 1) throw new Error("Application administration denied");
+    const product = await client.query<{ catalog_status: string }>(
+      "SELECT catalog_status FROM public.products WHERE id = $1", [parsed.productId],
+    );
+    if (!product.rows[0] || product.rows[0].catalog_status === "retired") throw new Error("Product unavailable");
+    const existing = await client.query<{ id: string; mode: string; desired_enabled: boolean }>(
+      `SELECT id, mode, desired_enabled FROM public.product_instances
+       WHERE organization_id = $1 AND product_id = $2 AND instance_key = $3 FOR UPDATE`,
+      [parsed.organizationId, parsed.productId, parsed.instanceKey],
+    );
+    let instanceId: ProductInstanceId;
+    if (existing.rows[0]) {
+      if (existing.rows[0].mode !== parsed.mode) throw new Error("Instance mode cannot change during enable");
+      instanceId = ProductInstanceIdSchema.parse(existing.rows[0].id);
+      if (!existing.rows[0].desired_enabled) {
+        await client.query(
+          `UPDATE public.product_instances SET desired_enabled = true, provisioning_status = 'pending', updated_at = now()
+           WHERE id = $1`, [instanceId],
+        );
+        await appendIdentityAudit(client, {
+          organizationId: parsed.organizationId, actorUserId: parsed.actorUserId,
+          actorMembershipId: MembershipIdSchema.parse(actor.rows[0]!.id),
+          action: "product.instance.enabled", targetType: "product_instance", targetId: instanceId,
+          beforeState: { desiredEnabled: false }, afterState: { desiredEnabled: true, provisioningStatus: "pending" },
+        });
+      }
+    } else {
+      instanceId = createCanonicalId("productInstance");
+      await client.query(
+        `INSERT INTO public.product_instances
+         (id, organization_id, product_id, instance_key, mode, desired_enabled, provisioning_status, created_by_user_id)
+         VALUES ($1, $2, $3, $4, $5, true, 'pending', $6)`,
+        [instanceId, parsed.organizationId, parsed.productId, parsed.instanceKey, parsed.mode, parsed.actorUserId],
+      );
+      await appendIdentityAudit(client, {
+        organizationId: parsed.organizationId, actorUserId: parsed.actorUserId,
+        actorMembershipId: MembershipIdSchema.parse(actor.rows[0]!.id),
+        action: "product.instance.enabled", targetType: "product_instance", targetId: instanceId,
+        afterState: { productId: parsed.productId, instanceKey: parsed.instanceKey, mode: parsed.mode,
+          desiredEnabled: true, provisioningStatus: "pending" },
+      });
+    }
+    await client.query("COMMIT");
+    return instanceId;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
+export interface ProductInstanceSummary {
+  id: ProductInstanceId;
+  organizationId: OrganizationId;
+  productId: ProductId;
+  productName: string;
+  instanceKey: string;
+  mode: string;
+  desiredEnabled: boolean;
+  provisioningStatus: string;
+}
+
+/** The restricted database role enforces tenant visibility for this read. */
+export async function listProductInstances(databaseUrl: string, userId: UserId, organizationId: OrganizationId): Promise<ProductInstanceSummary[]> {
+  UserIdSchema.parse(userId);
+  OrganizationIdSchema.parse(organizationId);
+  const client = new Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    await client.query("BEGIN");
+    const role = await client.query<{ rolsuper: boolean; rolbypassrls: boolean; owns_table: boolean }>(
+      `SELECT r.rolsuper, r.rolbypassrls,
+        (SELECT c.relowner = r.oid FROM pg_class c WHERE c.oid = 'public.product_instances'::regclass) AS owns_table
+       FROM pg_roles r WHERE r.rolname = current_user`,
+    );
+    if (!role.rows[0] || role.rows[0].rolsuper || role.rows[0].rolbypassrls || role.rows[0].owns_table) {
+      throw new Error("Tenant query requires a nonprivileged RLS role");
+    }
+    await client.query("SELECT set_config('company_human.user_id', $1, true)", [userId]);
+    const result = await client.query<{
+      id: string; organization_id: string; product_id: string; display_name: string;
+      instance_key: string; mode: string; desired_enabled: boolean; provisioning_status: string;
+    }>(
+      `SELECT i.id, i.organization_id, i.product_id, p.display_name, i.instance_key, i.mode,
+         i.desired_enabled, i.provisioning_status
+       FROM public.product_instances AS i JOIN public.products AS p ON p.id = i.product_id
+       WHERE i.organization_id = $1 ORDER BY p.display_name, i.instance_key`,
+      [organizationId],
+    );
+    await client.query("COMMIT");
+    return result.rows.map((row) => ({
+      id: ProductInstanceIdSchema.parse(row.id), organizationId: OrganizationIdSchema.parse(row.organization_id),
+      productId: ProductIdSchema.parse(row.product_id), productName: row.display_name,
+      instanceKey: row.instance_key, mode: row.mode, desiredEnabled: row.desired_enabled,
+      provisioningStatus: row.provisioning_status,
+    }));
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    await client.end();
+  }
+}

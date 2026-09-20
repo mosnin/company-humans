@@ -2,4 +2,5 @@
 export const CONTRACT_NAMESPACE = "company-human" as const;
 export * from "./ids.js";
 export * from "./permissions.js";
+export * from "./app-catalog.js";
 export * from "./envelopes.js";
