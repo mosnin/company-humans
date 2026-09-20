@@ -15,6 +15,10 @@
     "./rls": {
       "types": "./dist/rls.d.ts",
       "default": "./dist/rls.js"
+    },
+    "./membership-lifecycle": {
+      "types": "./dist/membership-lifecycle.d.ts",
+      "default": "./dist/membership-lifecycle.js"
     }
   },
   "scripts": {

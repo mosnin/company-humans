@@ -89,7 +89,7 @@ export async function resolveAccessContext(databaseUrl: string, userId: UserId, 
     const teams = await client.query<{ team_id: string }>(
       `SELECT tm.team_id FROM public.team_memberships AS tm
        JOIN public.teams AS t ON t.id = tm.team_id AND t.status = 'active'
-       WHERE tm.organization_id = $1 AND tm.membership_id = $2 ORDER BY tm.team_id`,
+       WHERE tm.organization_id = $1 AND tm.membership_id = $2 AND tm.ended_at IS NULL ORDER BY tm.team_id`,
       [organizationId, row.membership_id],
     );
     return {

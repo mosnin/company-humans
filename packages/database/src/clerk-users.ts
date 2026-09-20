@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const ClerkUserChangeSchema = z.object({
   clerkUserId: z.string().regex(/^user_[A-Za-z0-9]+$/),
-  primaryEmail: z.email().nullable(),
+  primaryEmail: z.email().nullable().transform((value) => value?.toLowerCase() ?? null),
   displayName: z.string().trim().min(1).max(256),
   status: z.enum(["active", "deleted"]),
   eventTimestamp: z.number().int().nonnegative(),

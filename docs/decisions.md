@@ -15,3 +15,7 @@ The migration owner connection can bypass RLS and therefore must not serve tenan
 ## 2026-09-20: Keep initial roles explicit and scope managers to their teams
 
 The six initial organization roles have canonical IDs and an explicit capability matrix in the shared contracts package. Finance and Developer start with narrow domain permissions. Team managers can assign members to an assigned team, while creating teams and assigning manager status require Owner or Admin. Job labels such as salesperson and creator remain workspace templates, not core roles.
+
+## 2026-09-20: Use one use invitation tokens and preserve removed team history
+
+Invitation tokens are random and stored only as hashes. A logged in Clerk user may accept an invitation only when their canonical active email matches its recipient. A removed membership can be reactivated by a fresh invitation, retaining its canonical identity, while prior team assignments stay ended. Invite delivery currently requires an Admin to share the returned token; no email provider has been selected. Provider session revocation and external product offboarding remain explicit Phase 01 and later integration work.

@@ -27,7 +27,7 @@ async function requireTeamAssignmentAuthority(
      JOIN public.organizations AS o ON o.id = m.organization_id AND o.status = 'active'
      JOIN public.teams AS t ON t.id = $3 AND t.organization_id = o.id AND t.status = 'active'
      LEFT JOIN public.team_memberships AS tm ON tm.membership_id = m.id
-       AND tm.team_id = t.id AND tm.team_role = 'manager'
+       AND tm.team_id = t.id AND tm.team_role = 'manager' AND tm.ended_at IS NULL
      WHERE m.user_id = $1 AND m.organization_id = $2 AND m.status = 'active'`,
     [actorUserId, organizationId, teamId],
   );
@@ -81,7 +81,7 @@ export async function assignTeamMember(databaseUrl: string, input: {
     await client.query(
       `INSERT INTO public.team_memberships (organization_id, team_id, membership_id, team_role)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (team_id, membership_id) DO UPDATE SET team_role = EXCLUDED.team_role`,
+       ON CONFLICT (team_id, membership_id) DO UPDATE SET team_role = EXCLUDED.team_role, ended_at = NULL`,
       [organizationId, teamId, membershipId, input.teamRole],
     );
     await client.query("COMMIT");
