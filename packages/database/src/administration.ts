@@ -58,3 +58,20 @@ export async function listRolePolicies(databaseUrl: string, actorUserId: string,
       WHERE r.organization_id = $1 GROUP BY r.id ORDER BY r.key`, [organizationId])).rows;
   });
 }
+
+export interface AuditSummary {
+  id: string; action: string; actorName: string; actorUserId: string; targetType: string; targetId: string;
+  occurredAt: Date; beforeState: Record<string,unknown> | null; afterState: Record<string,unknown> | null;
+}
+export async function listAuditEvents(databaseUrl: string, actorUserId: string, organizationId: string, page = 1) {
+  const currentPage = Number.isSafeInteger(page) && page > 0 ? Math.min(page, 100000) : 1;
+  return readAdministration(databaseUrl, actorUserId, organizationId, ["audit.read.all"], async client => {
+    const count = await client.query<{ total: string }>("SELECT count(*) AS total FROM public.identity_audit_events WHERE organization_id = $1", [organizationId]);
+    const events = await client.query<AuditSummary>(`SELECT a.id,a.action,COALESCE(u.display_name,'Unknown actor') AS "actorName",
+      a.actor_user_id AS "actorUserId",a.target_type AS "targetType",a.target_id AS "targetId",a.occurred_at AS "occurredAt",
+      a.before_state AS "beforeState",a.after_state AS "afterState"
+      FROM public.identity_audit_events a LEFT JOIN public.users u ON u.id = a.actor_user_id
+      WHERE a.organization_id = $1 ORDER BY a.occurred_at DESC,a.id DESC LIMIT 50 OFFSET $2`, [organizationId,(currentPage-1)*50]);
+    return { events: events.rows,total:Number(count.rows[0]!.total),page:currentPage };
+  });
+}

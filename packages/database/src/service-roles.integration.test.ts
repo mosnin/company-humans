@@ -6,7 +6,7 @@ import { createOrganization } from "./organizations.js";
 import { inviteMember, acceptInvitation, changeMembershipStatus } from "./membership-lifecycle.js";
 import { renameOrganization } from "./organization-authority.js";
 import { createTeam, assignTeamMember } from "./teams.js";
-import { listPeople, listRolePolicies, listTeams } from "./administration.js";
+import { listAuditEvents, listPeople, listRolePolicies, listTeams } from "./administration.js";
 import { setRolePermissions } from "./role-permissions.js";
 import { enableProductInstance } from "./product-instances.js";
 
@@ -114,6 +114,10 @@ describe.skipIf(!databaseUrl)("restricted runtime write roles", () => {
       await expect(setRolePermissions(serviceUrl.toString(), { ...policy, organizationId: otherOrganizationId })).rejects.toThrow("change denied");
       const audit = await admin.query("SELECT before_state,after_state FROM identity_audit_events WHERE target_id = $1 AND action = 'role.permissions.changed'", [contributorRole]);
       expect(audit.rows).toHaveLength(1);
+      const history = await listAuditEvents(serviceUrl.toString(), owner, organizationId);
+      expect(history.events.find(event => event.action === "role.permissions.changed")?.actorName).toBe("Owner");
+      await expect(listAuditEvents(serviceUrl.toString(), invitee, organizationId)).rejects.toThrow("administration denied");
+      await expect(listAuditEvents(serviceUrl.toString(), owner, otherOrganizationId)).rejects.toThrow("administration denied");
       expect(audit.rows[0].before_state.capabilities).toContain("crm.read.own");
       expect(audit.rows[0].after_state.capabilities).not.toContain("crm.read.own");
       await setRolePermissions(serviceUrl.toString(), { ...policy, expectedCapabilities: policy.capabilities, capabilities: originalGrants });

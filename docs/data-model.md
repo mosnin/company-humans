@@ -23,3 +23,7 @@ Migration `0007_identity_audit.sql` creates identity audit records with the vers
 Migration `0008_app_catalog_instances.sql` extends reference products with draft/ready/retired catalog status and versioned metadata storage. It creates tenant scoped product instances with an instance key, provisioning mode, desired enable state, and actual provisioning state. An enable request records pending intent only. No external organization ID or active entitlement is invented before an adapter confirms it.
 
 Migration `0009_permissions.sql` adds the global permission catalog, versioned default grants, and organization scoped role-permission rows. It backfills the primary role ID on memberships and enforces that role ID, role key, and organization identify the same role. New organizations inherit the default grants transactionally. Restricted runtime connections can read role permissions only for an active organization membership; they cannot change grants. The access context now reads persisted grants, so removing a grant removes the capability on the next request. Admin mutation and audit for customized grants are not yet exposed.
+
+## Identity audit reader
+
+Migration 0017 permits scoped audit reads through the service role only with audit.read.all. The `/workspace/audit` page shows paginated identity events, actor names, timestamps, targets, and before/after state. It cannot modify history. Restricted-role tests cover allowed owner reads, contributor denial, cross-tenant denial, and continued denial of audit updates.

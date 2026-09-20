@@ -51,3 +51,7 @@ People now supports paginated search, invitation links, role changes, suspension
 ## Verified invitation onboarding
 
 Invitation acceptance now fetches the current Clerk profile and requires its verified primary email, even when a canonical user is already cached. Database redemption checks that verified email against the invitation and canonical user. Webhook normalization does not treat unverified email as invitation identity. The invite token survives sign-in only in tab-scoped storage for 30 minutes; it is removed from the URL and cleared after successful acceptance. The sign-in return target is fixed to `/invite`, not a caller-supplied URL. Thirty-three unit/database/route tests and twelve desktop/mobile component tests pass, along with typecheck, lint, and production build. Real Clerk sign-in is still unverified.
+
+## Identity audit reader
+
+Migration 0017 permits scoped audit reads through the service role only with audit.read.all. The `/workspace/audit` page shows paginated identity events, actor names, timestamps, targets, and before/after state. It cannot modify history. Restricted-role tests cover allowed owner reads, contributor denial, cross-tenant denial, and continued denial of audit updates.

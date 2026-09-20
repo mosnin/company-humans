@@ -7,3 +7,7 @@ See [migration assessment](migration-assessment.md) for the source audit and rec
 Phase 00 defines a version 1 product adapter interface plus version 1 event and audit envelopes in `@company-human/contracts`. Both carry canonical organization IDs and actor provenance. The server only signing subpath uses domain separated HMAC SHA-256 with stable JSON ordering and constant time comparison. Identity audit envelopes are persisted transactionally. Event ingestion, replay, key management, and stronger audit immutability remain later work.
 
 Identity administration uses server-rendered routes under `/workspace` with request-scoped membership resolution. People, Teams, and Permissions invoke narrow audited APIs; navigation visibility reflects capabilities but is not an access control. The browser test harness is separate from Next app routes.
+
+## Identity audit reader
+
+Migration 0017 permits scoped audit reads through the service role only with audit.read.all. The `/workspace/audit` page shows paginated identity events, actor names, timestamps, targets, and before/after state. It cannot modify history. Restricted-role tests cover allowed owner reads, contributor denial, cross-tenant denial, and continued denial of audit updates.
