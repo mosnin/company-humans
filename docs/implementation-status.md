@@ -4,9 +4,9 @@ Source specification: [Company Human Notion hub](https://app.notion.com/p/3e1a0d
 
 | Phase | Status | Evidence and remaining gate |
 | --- | --- | --- |
-| Scaffold migration | Verified locally | Source audit, npm clean install, typecheck, lint, unit health test, production build, and local HTTP smoke test passed. Remote commit and deployment pending repository identity. |
-| 00 Foundation | In progress | Repository and package boundaries build locally. Canonical ID schemas are locally verified. The first migration and deterministic product seed passed twice in a fresh local Postgres database. Version 1 signed event/audit envelopes pass local contract tests. Hosted CI acceptance remains. |
-| 01 Identity kernel | In progress | Canonical Clerk user mapping and webhook boundary are implemented and locally tested. Organization/membership tables and restricted role RLS pass local multi-tenant reads and cross tenant denial tests. Six role policies, team scoping, and cross tenant assignment denial pass local tests. Invite acceptance, suspension, reactivation, and removal pass local database tests. Organization selection UI and authenticated switch/context routes build; local test proves two organizations resolve to one user without cross tenant access. Identity audit records are transaction bound and tested for creation, rename, role and lifecycle changes. Live Clerk browser sign-in/webhook, invite delivery, production runtime and service role configuration, session revocation, and broader authorization remain. |
+| Scaffold migration | Verified locally | Source audit, npm clean install, typecheck, lint, unit health test, production build, and local HTTP smoke test passed; hosted CI and deployment remain pending. |
+| 00 Foundation | In progress | Repository and package boundaries build locally. Canonical ID schemas are locally verified. The first migration and deterministic product seed passed twice in a fresh local Postgres database. Version 1 signed event/audit envelopes pass local contract tests. Hosted CI acceptance and the roadmap adapter-interface discrepancy remain. |
+| 01 Identity kernel | In progress | Canonical Clerk user mapping and webhook boundary are implemented and locally tested. Organization/membership tables and restricted role RLS pass local multi-tenant reads and cross tenant denial tests. Six fixed role policies, team scoping, and cross tenant assignment denial pass local tests. Persisted permission and role-permission records required by the canonical data model remain to be implemented. Invite acceptance, suspension, reactivation, and removal pass local database tests. Organization selection UI and authenticated switch/context routes build; local test proves two organizations resolve to one user without cross tenant access. Identity audit records are transaction bound and tested for creation, rename, role and lifecycle changes. Live Clerk browser sign-in/webhook, invite delivery, production runtime and service role configuration, session revocation, and broader authorization remain. |
 | 02 Application provisioning | In progress | Catalog metadata contract, tenant scoped product instance model, admin enable intent, and cross tenant tests exist locally. Scalar adapter, actual activation, member provisioning, entitlements, health, and UI remain. |
 | 03 Metering and billing | Not started | Real usage and policy stop remain. |
 | 04 Human workspace | Not started | Role aware workspace remains. |
@@ -23,10 +23,9 @@ Source specification: [Company Human Notion hub](https://app.notion.com/p/3e1a0d
 | 15 External beta | Not started | Three organization archetypes remain. |
 | 16 Platform expansion | Not started | Deferred until first party contracts stabilize. |
 
-The named GitHub destination `mosnin/company-human` was not visible on 2026-09-20. `mosnin/company-humans` exists and was cloned for local preparation. Remote selection needs confirmation before a push.
+The user confirmed `mosnin/company-humans` as the destination. Local work is on `codex/company-human-foundation`; hosted checks remain pending.
 
 ## Current external configuration gates
 
-- The intended GitHub destination must be resolved before pushing or observing hosted CI.
 - A Company Human Clerk application must provide a publishable key, secret key, and webhook signing secret. Configure `user.created`, `user.updated`, and `user.deleted` delivery to `/api/webhooks/clerk`. No live Clerk authentication or delivery has been demonstrated.
 - A separate non-owner `DATABASE_RUNTIME_URL` login must be granted the `company_human_app` role. The local test creates an ephemeral runtime login; production credentials are not configured.

@@ -3,54 +3,24 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ==========================================================================
-   LEDGER INSTRUMENT — shared design foundation for Company Human.
-   Normative spec: docs/DESIGN_LANGUAGE.md. Every value here comes from it.
-   The palette and scale follow the developer dashboard the product is
-   styled after: a #212121 ground with a darker #131313 rail in the dark
-   theme, a white page with a #f7f7f7 rail in the light one, 15px body
-   type, and a blue focus ring as the one hue chrome is allowed.
-
-   Four principles, ranked; the lower number wins a conflict:
-     P1  Structure is monochrome, signal is colour. Hue only ever means
-         status, series, delta, threshold, diff or validation.
-     P2  The ground is below, the object is above. The canvas is a recessive
-         neutral; cards are white (light) / lighter (dark) and sit ON it.
-     P3  Hierarchy comes from weight, size and surface — never from colour,
-         never from more borders. There are exactly three line weights.
-     P4  Elevation is earned, and empty is designed.
-   ========================================================================== */
-
 :root {
-  /* ---- Surfaces: the ladder. Each rung has a verb (§2.1). --------------
-     Values follow the neutral monochrome of the reference dashboard: a pure
-     white page, a rail one step below it, and every line an alpha-free grey
-     so a hairline reads the same on every rung. */
-  --surface-canvas: #f1f1f1; /* hosts    — everything scrolls on it */
-  --surface-rail: #ebebeb; /* frames   — the persistent chassis */
-  --surface-raised: #ffffff; /* is an object */
-  --surface-inset: #f7f7f7; /* is a cavity cut into a raised surface */
-  --surface-selected: #ebebeb; /* the row you are on, read as fill not accent */
-  --surface-object: #f1f1f1; /* is a discrete thing inside a card */
-  --surface-overlay: #ffffff; /* is temporarily above */
-  /* An overlay's own header band. Measured #f2f2f2 on three modals
-     (adjust-store-credit, add-products-picker, create-supplier) — a fill of
-     its own, one step darker than `inset`, not `inset` reused. */
+
+  --surface-canvas: #f1f1f1;
+  --surface-rail: #ebebeb;
+  --surface-raised: #ffffff;
+  --surface-inset: #f7f7f7;
+  --surface-selected: #ebebeb;
+  --surface-object: #f1f1f1;
+  --surface-overlay: #ffffff;
+
   --surface-band: #f2f2f2;
   --surface-inverse: #0d0d0d;
   --track: #ececec;
-  /* The segmented control's track: a step below the canvas so the thumb reads as the raised piece. */
+
   --segment-track: #f0f0f0;
-  --segment-thumb: #ffffff; /* a fill, not a rung — legal on any surface */
+  --segment-thumb: #ffffff;
   --surface-scrim: rgba(0, 0, 0, 0.4);
 
-  /* ---- State fills: always alpha, so they composite on every rung. ----- */
-  /* THE BAR. A near-black strip the full width of the viewport, above both
-     the rail and the pane. It is the one inverted region in the product, so
-     it carries its own four tokens rather than borrowing the inverse ones:
-     the search field inside it is a third fill again, lighter than the bar
-     and darker than anything on the canvas. Measured on the reference:
-     #0a0a0a bar, #282828 field, 56px tall, a 640px field centred in it. */
   --bar-fill: #0a0a0a;
   --bar-field: #282828;
   --bar-field-hover: #333333;
@@ -58,48 +28,35 @@
   --bar-ink-dim: #a8a8a8;
   --bar-line: #2e2e2e;
 
-  /* The rail's selected row. A step ABOVE the rail rather than below it:
-     the current page reads as the one raised thing in the chassis, which is
-     how the reference marks it, and why it is not --surface-selected. */
   --rail-selected: #fafafa;
 
   --state-hover: rgba(0, 0, 0, 0.045);
   --state-active: rgba(0, 0, 0, 0.085);
   --state-selected: rgba(0, 0, 0, 0.06);
 
-  /* ---- Lines: exactly three weights. A fourth is a P3 violation. ------- */
-  --line-hairline: #ebebeb; /* dividers INSIDE a card */
-  --line-border: #e2e2e2; /* the outer edge of a raised surface */
-  --line-strong: #cdcdcd; /* hover borders, crosshairs, neutral bars */
+  --line-hairline: #ebebeb;
+  --line-border: #e2e2e2;
+  --line-strong: #cdcdcd;
 
-  /* ---- Text ramp: colour marks importance, never category. ------------- */
   --text-primary: #0d0d0d;
-  --text-secondary: #4b4b52; /* support text: lighter, not lighter-weight */
-  --text-tertiary: #66666e; /* 4.6:1 on --track, the darkest ground it sits on */
-  /* Rung four. The reference's muted-foreground, oklch(0.556 0 0), reads
-     4.7:1 on the white canvas and 4.5:1 on the rail, which is the floor
-     anti-slop.md rule 6 sets. It never sits on --surface-selected. */
-  --text-quaternary: #707077; /* 4.9:1 on white: small readings still clear AA */
+  --text-secondary: #4b4b52;
+  --text-tertiary: #66666e;
+
+  --text-quaternary: #707077;
   --text-inverse: #f7f7f7;
 
-  /* ---- Monochrome action tokens (§4.2). ------------------------------- */
-  --accent: #2563eb; /* the brand's one hue: primary actions, links, checked controls, focus */
+  --accent: #2563eb;
   --accent-hover: #1d55d6;
   --accent-active: #1a4bc0;
-  --accent-text: #1d4fd8; /* 6.3:1 on white */
+  --accent-text: #1d4fd8;
   --accent-wash: rgba(37, 99, 235, 0.1);
   --accent-border: rgba(37, 99, 235, 0.32);
-  /* The primary action is INK, not the brand hue. Measured on the
-     reference's "Add product": #303030 on a #f1f1f1 pane. The accent stays
-     exactly where it was — links, the focus ring, checked controls — so the
-     brand is still the one hue in the chrome; it just stopped being the
-     shape of every button. */
+
   --action-fill: #303030;
   --action-label: #ffffff;
   --action-fill-hover: #1a1a1a;
   --action-fill-active: #000000;
-  /* A secondary button. Measured on "Export" and "Import": a flat #e3e3e3
-     with no border, which is why `secondary` no longer draws one. */
+
   --control-fill: #e3e3e3;
   --control-fill-hover: #d8d8d8;
   --control-fill-active: #cfcfcf;
@@ -107,25 +64,11 @@
   --selection: rgba(37, 99, 235, 0.18);
   --link-underline: rgba(37, 99, 235, 0.35);
 
-  /* ---- Semantic signal roles: the ONLY hue names that exist (§4.3).
-     positive  head revision · merged · succeeded · accepted · diff-add
-     caution   uncommitted · open branch · draft · expiring · stale
-     critical  failed · revoked · conflict · breached · destructive
-     agent     machine origin, and nothing else
-     info      in-review, second chart series. Teal, deliberately not blue.
-     neutral   archived · closed · not started · no data                  */
   --positive-text: #0f6e3b;
   --positive-mark: #14874a;
   --positive-wash: rgba(20, 135, 74, 0.1);
   --positive-border: rgba(20, 135, 74, 0.28);
 
-  /* CONTRIBUTION HEATMAP. Five rungs from "nothing happened" to "a full day",
-     built on the positive mark so a busy square reads as work that landed. */
-  --heat-0: #e6e8ec;
-  --heat-1: rgba(20, 135, 74, 0.22);
-  --heat-2: rgba(20, 135, 74, 0.42);
-  --heat-3: rgba(20, 135, 74, 0.68);
-  --heat-4: #14874a;
   --caution-text: #875100;
   --caution-mark: #b87708;
   --caution-wash: rgba(184, 119, 8, 0.12);
@@ -147,29 +90,6 @@
   --neutral-wash: rgba(20, 22, 26, 0.06);
   --neutral-border: rgba(20, 22, 26, 0.14);
 
-  /* ---- Data series. 1 is monochrome, so a one-series chart has no hue. -- */
-  --series-1: #6e60d7;
-  --series-2: #d6396a;
-  --series-3: #d97a2b;
-  --series-4: #2f9a7a;
-
-  /* ---- Diff: the only tinted CONTENT surfaces. Always doubled with a
-     +/− glyph and a gutter bar, never hue alone (§4.5). ------------------ */
-  --diff-add-bg: #e7f4ec;
-  --diff-add-strong: #c9e9d6;
-  --diff-add-gutter: #bce3cd;
-  --diff-add-ink: #0f5d34;
-  --diff-del-bg: #fbeae8;
-  --diff-del-strong: #f6d3cf;
-  --diff-del-gutter: #f0c8c4;
-  --diff-del-ink: #8f1c13;
-  --diff-move-bg: #f0ebfc;
-  --diff-move-gutter: #d9cdf4;
-  --diff-move-ink: #4a2a9e;
-
-  /* ---- Elevation. Objects in the flow carry a border, not a shadow: the
-     reference separates sections with rules and reserves shadow for what
-     is transiently above (menus, dialogs) and the segmented thumb. ------- */
   --elev-0: none;
   --elev-1: none;
   --elev-1-hover: 0 1px 2px 0 oklch(0 0 0 / 6%);
@@ -178,33 +98,27 @@
     0 12px 32px -12px oklch(0 0 0 / 24%), 0 2px 8px -2px oklch(0 0 0 / 10%);
   --elev-sticky: 0 1px 0 0 var(--line-border);
   --elev-sticky-up: 0 -1px 0 0 var(--line-border);
-  /* The segmented control's active pill (§9.3), the one flow element the
-     reference lets cast a shadow. */
+
   --elev-thumb: 0 1px 2px 0 rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
 
-  /* ---- Layout metrics (§6.3). ----------------------------------------- */
   --page-max: 1440px;
-  /* Measured: the reference's form column is 633px wide, centred in the
-     pane rather than in the viewport. */
+
   --prose-max: 640px;
   --sidebar-w: 288px;
   --sidebar-w-collapsed: 48px;
   --rail-w: 320px;
   --facet-w: 200px;
-  --header-h: 56px; /* the bar: a 36px field with 10px above and below */
-  /* The navigation rail, measured at 304/1.2698 on five references. */
+  --header-h: 56px;
+
   --nav-w: 240px;
   --nav-row-h: 28px;
-  /* Where the pane meets the bar and the rail, the body turns a corner. */
+
   --body-radius: 10px;
-  /* Every control in the chassis is one height. Measured off the reference's
-     header buttons and its search field: 28 for a button, 32 for an input. */
+
   --control-h: 28px;
   --control-h-field: 32px;
-  --commitbar-h: 64px;
   --rail-gutter: 28px;
 
-  /* ---- Motion (§7). No springs, no overshoot. -------------------------- */
   --dur-1: 90ms;
   --dur-2: 140ms;
   --dur-3: 200ms;
@@ -213,8 +127,7 @@
 }
 
 :root.dark {
-  /* The reference's dark theme: one near-black ground for page, rail and
-     card alike, with alpha-white lines doing the separating. */
+
   --surface-canvas: #212121;
   --surface-rail: #131313;
   --surface-raised: #212121;
@@ -222,8 +135,7 @@
   --surface-selected: #303030;
   --surface-object: #2a2a2a;
   --surface-overlay: #2b2b2b;
-  /* Derived, not measured: the references are all light. It sits between
-     `overlay` and `raised` by the same step the light pair takes. */
+
   --surface-band: #252525;
   --surface-inverse: #f3f3f3;
   --track: #303030;
@@ -239,9 +151,6 @@
   --line-border: #353535;
   --line-strong: #595959;
 
-  /* The bar stays the darkest band in both themes: in dark it is a step
-     below the rail, not above it, so the chassis reads top-down the same
-     way it does in light. */
   --bar-fill: #0d0d0d;
   --bar-field: #2a2a2a;
   --bar-field-hover: #343434;
@@ -251,18 +160,18 @@
   --rail-selected: #2e2e2e;
 
   --text-primary: #f3f3f3;
-  --text-secondary: #b0b0b5; /* support text: darker than primary, same weight */
-  --text-tertiary: #98989d; /* 4.6:1 on --track */
-  --text-quaternary: #8a8a8f; /* 4.7:1 on the canvas */
+  --text-secondary: #b0b0b5;
+  --text-tertiary: #98989d;
+  --text-quaternary: #8a8a8f;
   --text-inverse: #0d0d0d;
 
   --accent: #5b9cff;
   --accent-hover: #6aa6ff;
   --accent-active: #4d8ff5;
-  --accent-text: #86b6ff; /* 8.2:1 on the canvas */
+  --accent-text: #86b6ff;
   --accent-wash: rgba(91, 156, 255, 0.16);
   --accent-border: rgba(91, 156, 255, 0.36);
-  /* Inverted: on a near-black canvas the primary action is the light one. */
+
   --action-fill: #e3e3e3;
   --action-label: #141414;
   --action-fill-hover: #f1f1f1;
@@ -279,11 +188,6 @@
   --positive-wash: rgba(47, 190, 107, 0.16);
   --positive-border: rgba(47, 190, 107, 0.3);
 
-  --heat-0: #22262d;
-  --heat-1: rgba(47, 190, 107, 0.24);
-  --heat-2: rgba(47, 190, 107, 0.44);
-  --heat-3: rgba(47, 190, 107, 0.7);
-  --heat-4: #2fbe6b;
   --caution-text: #f0b44a;
   --caution-mark: #e3a02b;
   --caution-wash: rgba(227, 160, 43, 0.16);
@@ -305,26 +209,6 @@
   --neutral-wash: rgba(255, 255, 255, 0.08);
   --neutral-border: rgba(255, 255, 255, 0.16);
 
-  --series-1: #815dda;
-  --series-2: #e5537f;
-  --series-3: #ef9a5c;
-  --series-4: #53b596;
-
-  --diff-add-bg: #143524;
-  --diff-add-strong: #1e5238;
-  --diff-add-gutter: #22603f;
-  --diff-add-ink: #7ee0ac;
-  --diff-del-bg: #3f1d19;
-  --diff-del-strong: #5c2a24;
-  --diff-del-gutter: #6b322b;
-  --diff-del-ink: #ffa9a1;
-  --diff-move-bg: #2a2444;
-  --diff-move-gutter: #3e3566;
-  --diff-move-ink: #cbb8fd;
-
-  /* A drop shadow is invisible on a near-black ground, so an object in the
-     flow is carried by its 1px border alone; the haze survives only under
-     overlays, as a separating layer. */
   --elev-0: none;
   --elev-1: none;
   --elev-1-hover: none;
@@ -336,14 +220,12 @@
     0 1px 2px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
 }
 
-/* The theme flip must not crossfade any element through a wrong-mode
-   intermediate colour: set this for one frame, flip, then remove it. */
 [data-theme-switching] * {
   transition: none !important;
 }
 
 @theme inline {
-  /* surfaces */
+
   --color-canvas: var(--surface-canvas);
   --color-rail: var(--surface-rail);
   --color-raised: var(--surface-raised);
@@ -358,12 +240,10 @@
   --color-segment-thumb: var(--segment-thumb);
   --color-scrim: var(--surface-scrim);
 
-  /* state fills */
   --color-state-hover: var(--state-hover);
   --color-state-active: var(--state-active);
   --color-state-selected: var(--state-selected);
 
-  /* the bar */
   --color-bar: var(--bar-fill);
   --color-bar-field: var(--bar-field);
   --color-bar-field-hover: var(--bar-field-hover);
@@ -372,19 +252,16 @@
   --color-bar-line: var(--bar-line);
   --color-rail-selected: var(--rail-selected);
 
-  /* lines */
   --color-hairline: var(--line-hairline);
   --color-border: var(--line-border);
   --color-strong: var(--line-strong);
 
-  /* text */
   --color-ink: var(--text-primary);
   --color-ink-2: var(--text-secondary);
   --color-ink-3: var(--text-tertiary);
   --color-ink-4: var(--text-quaternary);
   --color-ink-inverse: var(--text-inverse);
 
-  /* monochrome action */
   --color-action: var(--action-fill);
   --color-control: var(--control-fill);
   --color-control-hover: var(--control-fill-hover);
@@ -398,7 +275,6 @@
   --color-accent-wash: var(--accent-wash);
   --color-accent-border: var(--accent-border);
 
-  /* signals — the ONLY hue names that exist */
   --color-positive-text: var(--positive-text);
   --color-positive: var(--positive-mark);
   --color-positive-wash: var(--positive-wash);
@@ -424,26 +300,6 @@
   --color-neutral-wash: var(--neutral-wash);
   --color-neutral-border: var(--neutral-border);
 
-  /* series */
-  --color-series-1: var(--series-1);
-  --color-series-2: var(--series-2);
-  --color-series-3: var(--series-3);
-  --color-series-4: var(--series-4);
-
-  /* diff */
-  --color-diff-add: var(--diff-add-bg);
-  --color-diff-add-strong: var(--diff-add-strong);
-  --color-diff-add-gutter: var(--diff-add-gutter);
-  --color-diff-add-ink: var(--diff-add-ink);
-  --color-diff-del: var(--diff-del-bg);
-  --color-diff-del-strong: var(--diff-del-strong);
-  --color-diff-del-gutter: var(--diff-del-gutter);
-  --color-diff-del-ink: var(--diff-del-ink);
-  --color-diff-move: var(--diff-move-bg);
-  --color-diff-move-gutter: var(--diff-move-gutter);
-  --color-diff-move-ink: var(--diff-move-ink);
-
-  /* radius — pill acts, rounded rect reads, square compares */
   --radius-0: 0px;
   --radius-2: 2px;
   --radius-4: 4px;
@@ -455,7 +311,6 @@
   --radius-16: 16px;
   --radius-20: 20px;
 
-  /* elevation */
   --shadow-elev-1: var(--elev-1);
   --shadow-elev-1-hover: var(--elev-1-hover);
   --shadow-elev-2: var(--elev-2);
@@ -464,18 +319,6 @@
   --shadow-sticky-up: var(--elev-sticky-up);
   --shadow-thumb: var(--elev-thumb);
 
-  /* Spacing — the 4pt scale (§6.1). This REMAPS Tailwind's numeric spacing
-     utilities, so p-6 is 16px, gap-4 is 8px and so on. Every margin, padding
-     and gap in the product is one of these twelve steps; a value off the scale
-     is a review failure. Sizes (icon boxes, control heights) do NOT use this
-     namespace — they are written as explicit px, so a 16px icon stays 16px. */
-
-  /* Optical offsets for a round mark set beside a line of type. Derived, not
-     picked: half the line-height minus half the mark, which is the only value
-     that puts the dot on the text's optical centre. Two roles, two values, and
-     nothing else in the product is allowed an off-scale margin. */
-  --mark-body: 7px; /* 6px dot against t-body's 20px line */
-  --mark-caption: 5px; /* 7px dot against t-caption's 18px line */
   --spacing-1: 2px;
   --spacing-2: 4px;
   --spacing-3: 6px;
@@ -489,11 +332,9 @@
   --spacing-11: 48px;
   --spacing-12: 64px;
 
-  /* type */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  /* motion */
   --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-move: cubic-bezier(0.4, 0, 0.2, 1);
@@ -518,39 +359,21 @@ body {
   background: var(--selection);
 }
 
-/* Hairline scrollbars that match the material. */
 * {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--text-primary) 18%, transparent)
     transparent;
 }
 
-/* ==========================================================================
-   TYPOGRAPHY ROLES (§3.4)
-
-   Every piece of text in the product takes one of these classes. An ad-hoc
-   `text-[13px]` is a review failure — if a size is not in this table, it
-   does not exist. Numeric and mono roles carry tabular lining figures,
-   because a column of numbers that does not align on the digit is a defect.
-
-   THE SCALE IS THE REFERENCE'S. Measured off the admin screens in
-   docs/SHOPIFY_MEASUREMENTS.md: a 13px body, a 12px caption, a 14px card
-   heading, a 20px page title. The scale these replace ran two steps larger
-   at every rung — a 15px body and a 28px page title — and that gap, not the
-   palette, is what made an early pass read as "the same app in grey". A
-   dense product is dense in its type first.
-   ========================================================================== */
-
 @layer components {
-  /* The one large line in the product: the workspace greeting. Measured on
-     the reference's "Good morning!" — 24px over a 31px line. */
+
   .t-display {
     font-size: 24px;
     font-weight: 600;
     line-height: 32px;
     letter-spacing: -0.022em;
   }
-  /* The page title. Measured: cap height 13.4 at 1512, so 20px semibold. */
+
   .t-title-1 {
     font-size: 20px;
     font-weight: 600;
@@ -563,14 +386,14 @@ body {
     line-height: 22px;
     letter-spacing: -0.01em;
   }
-  /* A card's heading. Measured on "Catalogs": 14px semibold. */
+
   .t-title-3 {
     font-size: 14px;
     font-weight: 600;
     line-height: 20px;
     letter-spacing: -0.004em;
   }
-  /* Logo artwork only: approved lowercase grotesk, not a UI heading role. */
+
   .t-brand {
     font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
     font-size: 20px;
@@ -591,14 +414,14 @@ body {
     line-height: 18px;
     letter-spacing: 0;
   }
-  /* Long-form prose only: docs, a changelog entry, a policy. Never chrome. */
+
   .t-body-read {
     font-size: 15px;
     font-weight: 400;
     line-height: 24px;
     letter-spacing: -0.002em;
   }
-  /* The product's body. Measured on a table cell: 13px. */
+
   .t-body {
     font-size: 13px;
     font-weight: 400;
@@ -635,12 +458,7 @@ body {
     line-height: 14px;
     letter-spacing: 0.002em;
   }
-  /* The group label that sits on the canvas above a card. It was the one
-     uppercase role in the product and it is not uppercase any more: the
-     reference sets every heading in sentence case, from "User details" on a
-     settings card to "Product" on a table's column, and 254 call sites of
-     shouting was the loudest thing left after the palette. The class keeps
-     its name so those 254 sites did not have to churn to say it. */
+
   .t-label-caps {
     font-size: 12px;
     font-weight: 600;
@@ -648,11 +466,6 @@ body {
     letter-spacing: 0;
   }
 
-  /* Reference dashboard roles. Each one is a size the reference sets that
-     the scale above did not have: a 14px medium for the header title and
-     the sidebar row, a 13px medium for table cells, an 11px mixed-case
-     group label, and the 24px stat value. */
-  /* The rail's row, and any 13px line that needs to sit a step above body. */
   .t-body-medium {
     font-size: 13px;
     font-weight: 500;
@@ -665,14 +478,14 @@ body {
     line-height: 18px;
     letter-spacing: 0;
   }
-  /* A table's column heading. Measured on "Product": 12px. */
+
   .t-col-head {
     font-size: 12px;
     font-weight: 500;
     line-height: 16px;
     letter-spacing: 0;
   }
-  /* The label on a button in the chassis. Measured on "Export": 12px. */
+
   .t-control {
     font-size: 12px;
     font-weight: 500;
@@ -685,8 +498,7 @@ body {
     line-height: 18px;
     letter-spacing: 0;
   }
-  /* The rail's group heading. Mixed case, not caps: the reference writes
-     "Sales channels" and "Apps" in sentence case beside a chevron. */
+
   .t-group-label {
     font-size: 12px;
     font-weight: 500;
@@ -694,7 +506,6 @@ body {
     letter-spacing: 0;
   }
 
-  /* Numeric — all tabular lining figures. */
   .t-metric-xl,
   .t-metric-lg,
   .t-metric-md,
@@ -712,7 +523,7 @@ body {
     line-height: 30px;
     letter-spacing: -0.018em;
   }
-  /* A chart card's headline figure, measured on "$827.20". */
+
   .t-metric-stat {
     font-size: 18px;
     font-weight: 600;
@@ -731,8 +542,7 @@ body {
     line-height: 22px;
     letter-spacing: -0.004em;
   }
-  /* The metric row on the workspace home. Measured on "61": 13px, and the
-     reference really does set its headline numbers at body size. */
+
   .t-metric-sm {
     font-size: 13px;
     font-weight: 600;
@@ -740,8 +550,6 @@ body {
     letter-spacing: 0;
   }
 
-  /* Mono — in a versioned system the identifier IS the evidence, so it is
-     always scannable character by character. */
   .t-mono-hash,
   .t-mono-hash-lg,
   .t-mono-seq,
@@ -784,8 +592,6 @@ body {
     letter-spacing: 0.01em;
   }
 
-  /* Prose links: the brand accent, underlined at rest so the link reads
-     without colour, with the rule filling on hover. */
   .t-link {
     color: var(--accent-text);
     text-decoration: underline;
@@ -798,8 +604,6 @@ body {
     text-decoration-color: var(--accent-text);
   }
 
-  /* The two-stop focus ring. The first stop is the ground the control sits
-     on, so the offset gap actually reads on every rung. */
   .focus-ring:focus-visible {
     outline: none;
     box-shadow:
@@ -824,8 +628,7 @@ body {
       0 0 0 2px var(--surface-rail),
       0 0 0 4px var(--focus-ring);
   }
-  /* On the bar the ring's first stop is the bar's own fill, so a focused
-     control there reads as ringed rather than as a light rectangle. */
+
   .focus-ring-bar:focus-visible {
     outline: none;
     box-shadow:
@@ -834,52 +637,12 @@ body {
   }
 }
 
-/* A pulse, not a travelling shimmer: a shimmer implies horizontal progress
-   that does not exist, and on a 40-row table it is nauseating. */
-@keyframes ledger-skeleton {
+@keyframes human-skeleton {
   from {
     opacity: 1;
   }
   to {
     opacity: 0.62;
-  }
-}
-
-@keyframes ledger-indeterminate {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(430%);
-  }
-}
-
-/* Legacy source animation retained for component compatibility. */
-@keyframes ledger-commit-pulse {
-  from {
-    transform: scale(1);
-    opacity: 0.45;
-  }
-  to {
-    transform: scale(1.9);
-    opacity: 0;
-  }
-}
-
-/* The moment a setup step becomes done: the pill lands. Only on the
-   transition, never on load (see components/setup/setup-path.tsx). */
-@keyframes setup-pop {
-  from {
-    transform: scale(0.72);
-    opacity: 0;
-  }
-  60% {
-    transform: scale(1.06);
-    opacity: 1;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
   }
 }
 
@@ -892,7 +655,7 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* Opacity crossfades survive, so state changes stay perceptible. */
+
   .motion-keep-fade {
     transition-duration: 90ms !important;
   }

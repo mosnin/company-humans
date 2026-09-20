@@ -16,17 +16,17 @@ Source: `mosnin/company-os-web` `main` at `94827a320e06958995263b32a44d6fc8c227d
 
 | Source | Classification | Company Human treatment |
 | --- | --- | --- |
-| `app/globals.css` semantic tokens and type scale, lines 1–900 | Reuse after generalization | Copied the shared token and type foundation; omitted Company OS workspace/marketing selectors and brand asset references. |
-| `components/ui/button.tsx`, `card.tsx`, `page-header.tsx`, `skeleton.tsx` | Reuse unchanged | Kept mature interaction, empty/loading geometry, and responsive header behavior. Product specific comments are historical source provenance. |
-| `lib/utils.ts` | Reuse unchanged | Shared class merging and formatting helpers. |
-| `next.config.ts`, `postcss.config.mjs`, `tsconfig.json`, `vitest.config.ts` | Reuse after generalization | Kept compatible build configuration. Removed the Builder typecheck and Company OS scripts from the package contract. |
-| `docs/DESIGN_LANGUAGE.md`, `anti-slop.md` | Needs investigation | Retained as source reference and quality constraints. Company Human needs a product specific visual contract before feature UI expands. |
+| `app/globals.css` semantic tokens and type scale | Reuse after generalization | Kept shared surface, typography, spacing, and interaction tokens; removed source-specific commentary and unused animation behavior. |
+| `components/ui/button.tsx`, `card.tsx`, `page-header.tsx`, `skeleton.tsx` | Reuse after generalization | Kept mature interaction, empty/loading geometry, and responsive header behavior; removed Company OS-specific commentary. |
+| `lib/utils.ts` | Reuse after generalization | Kept class merging; removed unused source formatting helpers. |
+| `next.config.ts`, `postcss.config.mjs`, `tsconfig.json`, `vitest.config.ts` | Reuse after generalization | Kept compatible build configuration and removed the source Playwright cache hook and Company OS scripts. |
+| `docs/DESIGN_LANGUAGE.md`, `anti-slop.md` | Remove | Removed the source product screen manual and generic rulebook; retained relevant design foundations in `docs/design.md`. |
 | `app/layout.tsx`, `app/page.tsx`, `app/icon.svg`, metadata | Replace | New Company Human metadata and restrained landing scaffold; no Company OS brand assets. |
 | `convex/**`, `proxy.ts`, auth pages, invite routes | Replace | Source authentication and tenant model conflict with Clerk plus canonical Company Human identity and RLS. Phase 01 owns replacement. |
 | `app/(app)/**`, source product modules, Builder, CLI, skills | Remove | Company OS domain behavior and navigation do not belong in Company Human. |
 | `lib/billing/**`, `convex/billing.ts` | Replace | Company Human's billing authority, usage, and sponsorship are different. Phase 03 owns replacement. |
 | Marketplace, OAuth, MCP, Cadre, Operate integrations | Needs investigation | Reuse patterns only after independent contract and authority review in the relevant phase. |
-| Source health route and Vercel/CI configuration | Reuse after generalization | Independent web health route; future dependency checks and CI will be specific to Company Human. |
+| Source health route and Vercel/CI configuration | Reuse after generalization | Independent web health route and Company Human CI. Removed the redundant standalone API app. |
 
 ## Architecture issue recorded before implementation
 

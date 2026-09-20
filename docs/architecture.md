@@ -1,6 +1,6 @@
 # Architecture
 
-Company Human is a separate product. The code contains a Next.js web app, a minimal standalone health API, and shared contract, database, and testing packages. The web visual primitives come from Company OS Web. The implemented identity slice maps Clerk users to canonical users, stores organizations, memberships, roles, teams, invitations, and audit records in Postgres, and resolves tenant access through a restricted RLS login. The control plane now stores catalog entries and organization product enable intent. External product provisioning, usage, billing, human work, CRM, attribution, payout, and the remaining planes are not implemented. Specialized products remain independent sources of truth.
+Company Human is a separate product. The code contains a Next.js web app with API routes and shared contract and database packages. The web visual primitives come from Company OS Web. The implemented identity slice maps Clerk users to canonical users, stores organizations, memberships, roles, teams, invitations, and audit records in Postgres, and resolves tenant access through a restricted RLS login. The control plane now stores catalog entries and organization product enable intent. External product provisioning, usage, billing, human work, CRM, attribution, payout, and the remaining planes are not implemented. Specialized products remain independent sources of truth.
 
 See [migration assessment](migration-assessment.md) for the source audit and recorded auth/database incompatibility.
 

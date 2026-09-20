@@ -4,9 +4,9 @@
 
 Company OS Web uses Convex Auth and a Convex company data model. Company Human's canonical specification requires Clerk authentication and database tenant policy. Reusing the source auth, billing, or product routes would create conflicting sources of truth. The scaffold copies the Next.js stack and audited UI primitives, then implements Company Human's domain contracts independently in roadmap order. See [migration assessment](migration-assessment.md).
 
-## Open repository identity
+## 2026-09-20: Confirm destination repository
 
-The user named `mosnin/company-human`, but GitHub returned 404 for that repository. `mosnin/company-humans` was created on 2026-09-20 and contains a README. Local work is prepared in a clone of that repository; the intended remote must be established before pushing.
+The user confirmed `/company-humans` as the intended destination. The local checkout is a clone of `mosnin/company-humans`; `mosnin/company-os-web` remains source only.
 
 ## 2026-09-20: Use a separate runtime role for tenant reads
 
@@ -31,3 +31,9 @@ The restricted application role no longer updates organization rows directly. Na
 ## 2026-09-20: Separate product enable intent from real activation
 
 The catalog holds seven draft first party products without invented connection metadata. An organization Admin may record an enable request, but the product instance remains pending until its adapter provisions or connects the actual external organization. The API reports pending and no entitlement is granted by the record alone.
+
+## 2026-09-20: Record identity contract gaps before Phase 01 acceptance
+
+The canonical data model calls for permission and role-permission records, while the current implementation resolves six fixed role policies from a versioned TypeScript matrix. This is a partial implementation of the required policy model, not a completed replacement architecture. Add persisted permission and role-permission data, or record an approved contract change, before Phase 01 is verified. The roadmap also places an adapter interface in Phase 00 while the build tracker lists it in Phase 02; the implementation currently has no adapter contract. Resolve that ordering in the tracker and implement the contract before marking either acceptance gate complete.
+
+The current server mutation helpers use the elevated migration connection. Separate narrow service credentials and enforce append-only audit storage before claiming production tenant or audit isolation.
