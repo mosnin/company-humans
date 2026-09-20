@@ -37,3 +37,7 @@ The catalog holds seven draft first party products without invented connection m
 The canonical data model calls for permission and role-permission records, while the current implementation resolves six fixed role policies from a versioned TypeScript matrix. This is a partial implementation of the required policy model, not a completed replacement architecture. Add persisted permission and role-permission data, or record an approved contract change, before Phase 01 is verified. The roadmap also places an adapter interface in Phase 00 while the build tracker lists it in Phase 02; the implementation currently has no adapter contract. Resolve that ordering in the tracker and implement the contract before marking either acceptance gate complete.
 
 The current server mutation helpers use the elevated migration connection. Separate narrow service credentials and enforce append-only audit storage before claiming production tenant or audit isolation.
+
+## 2026-09-20: Define the adapter boundary before product provisioning
+
+The Phase 00 roadmap requires the adapter interface while tracker CH-14 assigns its implementation to Phase 02. The common version 1 contract is now defined in the shared package before a product integration, satisfying the earlier dependency without activating any product. Actual Scalar provisioning and operation semantics remain Phase 02 work.

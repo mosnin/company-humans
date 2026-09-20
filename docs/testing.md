@@ -23,3 +23,5 @@ The organization switch test resolves two organizations for one canonical user u
 Migration `0007_identity_audit.sql` was applied locally. Tests find transactional audit entries for organization creation and rename, six default role creations, membership creation and role change, invitation creation and acceptance, suspension, reactivation, and removal. A restricted runtime role can read identity audit rows as Owner but Finance sees zero rows. Runtime organization UPDATE now fails even for its owner; the server rename path writes an audit record atomically.
 
 Migration `0008_app_catalog_instances.sql` and product metadata contract pass local tests. An organization Owner can record Scalar enable intent once; the record remains pending, and another organization's user sees no instance under RLS and cannot enable it. No Scalar organization or member has been provisioned.
+
+The version 1 product adapter contract has a compile-checked operation surface and local tests that reject incompatible versions and missing methods. No remote product behavior, idempotency, audit delivery, or usage reporting is verified by this interface test.
