@@ -19,3 +19,7 @@ The six initial organization roles have canonical IDs and an explicit capability
 ## 2026-09-20: Use one use invitation tokens and preserve removed team history
 
 Invitation tokens are random and stored only as hashes. A logged in Clerk user may accept an invitation only when their canonical active email matches its recipient. A removed membership can be reactivated by a fresh invitation, retaining its canonical identity, while prior team assignments stay ended. Invite delivery currently requires an Admin to share the returned token; no email provider has been selected. Provider session revocation and external product offboarding remain explicit Phase 01 and later integration work.
+
+## 2026-09-20: Treat the active organization cookie as a preference
+
+Organization switching writes an HttpOnly preference cookie only after a restricted RLS membership check. Every context read rechecks the selected organization against the signed in canonical user. A changed or stale cookie cannot grant another tenant's access. The browser UI cannot be accepted until live Clerk and a production runtime database role are configured.

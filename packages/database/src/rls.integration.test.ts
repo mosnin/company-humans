@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Client } from "pg";
 import { syncClerkUser } from "./clerk-users.js";
 import { createOrganization } from "./organizations.js";
-import { listVisibleOrganizations } from "./rls.js";
+import { listVisibleOrganizations, resolveAccessContext } from "./rls.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -24,12 +24,16 @@ describe.skipIf(!databaseUrl)("Postgres tenant RLS", () => {
     const alice = await syncClerkUser(databaseUrl!, { clerkUserId: aliceId, primaryEmail: null, displayName: "Alice", status: "active", eventTimestamp: 1 });
     const bob = await syncClerkUser(databaseUrl!, { clerkUserId: bobId, primaryEmail: null, displayName: "Bob", status: "active", eventTimestamp: 1 });
     const aliceOrg = await createOrganization(databaseUrl!, { ownerUserId: alice, slug: `alice-rls-${suffix}`, name: "Alice Org" });
+    const aliceSecondOrg = await createOrganization(databaseUrl!, { ownerUserId: alice, slug: `alice-second-${suffix}`, name: "Alice Second" });
     const bobOrg = await createOrganization(databaseUrl!, { ownerUserId: bob, slug: `bob-rls-${suffix}`, name: "Bob Org" });
     const runtime = new Client({ connectionString: runtimeUrl.toString() });
     await runtime.connect();
     try {
-      expect((await listVisibleOrganizations(runtimeUrl.toString(), alice)).map((org) => org.id)).toEqual([aliceOrg.organizationId]);
+      expect((await listVisibleOrganizations(runtimeUrl.toString(), alice)).map((org) => org.id)).toEqual([aliceOrg.organizationId, aliceSecondOrg.organizationId]);
       expect((await listVisibleOrganizations(runtimeUrl.toString(), bob)).map((org) => org.id)).toEqual([bobOrg.organizationId]);
+      expect((await resolveAccessContext(runtimeUrl.toString(), alice, aliceOrg.organizationId))?.userId).toBe(alice);
+      expect((await resolveAccessContext(runtimeUrl.toString(), alice, aliceSecondOrg.organizationId))?.userId).toBe(alice);
+      expect(await resolveAccessContext(runtimeUrl.toString(), alice, bobOrg.organizationId)).toBeNull();
       await expect(listVisibleOrganizations(databaseUrl!, alice)).rejects.toThrow("nonprivileged RLS role");
       expect((await runtime.query("SELECT id FROM organizations")).rows).toEqual([]);
       await runtime.query("BEGIN");
@@ -43,9 +47,10 @@ describe.skipIf(!databaseUrl)("Postgres tenant RLS", () => {
       expect((await runtime.query("SELECT id FROM organizations")).rows).toEqual([]);
     } finally {
       await runtime.end();
-      await admin.query("DELETE FROM memberships WHERE organization_id = ANY($1)", [[aliceOrg.organizationId, bobOrg.organizationId]]);
-      await admin.query("DELETE FROM roles WHERE organization_id = ANY($1)", [[aliceOrg.organizationId, bobOrg.organizationId]]);
-      await admin.query("DELETE FROM organizations WHERE id = ANY($1)", [[aliceOrg.organizationId, bobOrg.organizationId]]);
+      const organizationIds = [aliceOrg.organizationId, aliceSecondOrg.organizationId, bobOrg.organizationId];
+      await admin.query("DELETE FROM memberships WHERE organization_id = ANY($1)", [organizationIds]);
+      await admin.query("DELETE FROM roles WHERE organization_id = ANY($1)", [organizationIds]);
+      await admin.query("DELETE FROM organizations WHERE id = ANY($1)", [organizationIds]);
       await admin.query("DELETE FROM users WHERE id = ANY($1)", [[alice, bob]]);
       await admin.query(`DROP ROLE ${roleName}`);
       await admin.end();
