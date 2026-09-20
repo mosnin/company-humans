@@ -1,5 +1,9 @@
 # Implementation status
 
+## Review correction — 2026-09-20
+
+The current working tree is **not verified**. The membership lifecycle integration test fails after the unfinished service-role changes. Typecheck passes. CH-8 and CH-9 were reopened in Notion because mutation authorization does not enforce persisted capability grants; the pending service-role database policies also lack capability-specific write restrictions. Earlier local verification below describes prior bounded checks, not acceptance of the current tree or complete phases. Scaffold design fidelity remains unverified. See [implementation review](implementation-review.md) for evidence and recovery order.
+
 Source specification: [Company Human Notion hub](https://app.notion.com/p/3e1a0db630cf8143bc2bd77af98bc7c8) and [build tracker](https://app.notion.com/p/c1495ea132d6423989674f763497bae7), read on 2026-09-20. A task is verified only when its tracker acceptance is demonstrated.
 
 | Phase | Status | Evidence and remaining gate |
