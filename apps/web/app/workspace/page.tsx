@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function WorkspacePage() {
   const identity = await resolveAuthenticatedUser().catch(() => ({ status: "unavailable" as const }));
-  if (identity.status === "unauthenticated") return <WorkspaceMessage title="Sign in required" message="Sign in to open your organization." />;
+  if (identity.status === "unauthenticated") return <WorkspaceMessage title="Sign in required" message="Sign in to open your organization." signIn />;
   if (identity.status !== "ok") return <WorkspaceMessage title="Workspace unavailable" message="Identity is not configured or is temporarily unavailable." />;
   const databaseUrl = process.env.DATABASE_RUNTIME_URL;
   if (!databaseUrl) return <WorkspaceMessage title="Workspace unavailable" message="Tenant database access is not configured." />;
@@ -45,6 +45,6 @@ export default async function WorkspacePage() {
   );
 }
 
-function WorkspaceMessage({ title, message }: { title: string; message: string }) {
-  return <main className="min-h-screen bg-canvas px-4 py-8 text-ink sm:px-8"><div className="mx-auto max-w-5xl"><PageHeader title={title} description={message} /></div></main>;
+function WorkspaceMessage({ title, message, signIn = false }: { title: string; message: string; signIn?: boolean }) {
+  return <main className="min-h-screen bg-canvas px-4 py-8 text-ink sm:px-8"><div className="mx-auto max-w-5xl"><PageHeader title={title} description={message} />{signIn ? <Link className="t-link t-body" href="/sign-in">Sign in</Link> : null}</div></main>;
 }

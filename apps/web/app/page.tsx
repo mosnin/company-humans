@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
           title="A clear place for people to work"
           description="See the work ahead, the relationships moving, the tools available, and the money earned."
         />
+        <Link className="t-link t-body-medium mb-8 inline-block" href="/workspace/select">Open your workspace</Link>
         <Card className="max-w-2xl">
           <CardContent>
             <h2 className="t-title-3 text-ink">Built for the people behind the outcomes</h2>

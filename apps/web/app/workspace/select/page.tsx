@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -74,6 +75,7 @@ export default function SelectOrganizationPage() {
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 sm:py-12">
         <PageHeader title="Choose an organization" description="Your work and access stay within the organization you select." />
         {error ? <p role="alert" className="t-body mb-5 text-critical-text">{error}</p> : null}
+        {error?.startsWith("Sign in") ? <Link className="t-link t-body mb-5 inline-block" href="/sign-in">Sign in</Link> : null}
         {organizations === null && !error ? <Card className="max-w-2xl" padded><Skeleton className="h-5 w-48" /></Card> : null}
         {organizations?.length === 0 ? (
           <Card className="max-w-2xl"><CardContent><p className="t-body text-ink-2">You do not have an active organization yet. Create one for your team or ask an admin for an invitation.</p></CardContent></Card>
