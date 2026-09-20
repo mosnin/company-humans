@@ -35,6 +35,14 @@
     "./role-permissions": {
       "types": "./dist/role-permissions.d.ts",
       "default": "./dist/role-permissions.js"
+    },
+    "./administration": {
+      "types": "./dist/administration.d.ts",
+      "default": "./dist/administration.js"
+    },
+    "./teams": {
+      "types": "./dist/teams.d.ts",
+      "default": "./dist/teams.js"
     }
   },
   "scripts": {

@@ -41,3 +41,7 @@ On 2026-09-20, all 27 tests pass against a newly created local PostgreSQL databa
 ## Audited permission editing
 
 Migration 0015 and the role permission API allow an authorized owner or administrator to change another permitted role using stored roles.manage capability. Owner policy and the acting role are protected; an administrator cannot grant a capability they do not hold or edit the Admin policy. Changes require the previously observed permission set, reject stale edits, and append before/after audit state atomically. Restricted-role tests cover change, revocation, stale edits, contributor denial, cross-tenant denial, and audit provenance. Live browser acceptance remains pending.
+
+## Identity administration UI
+
+`npm run test:browser -w @company-human/web` runs ten desktop/mobile Chromium tests for invitation link creation, member-removal confirmation and denial, team assignment, permission conflict handling, and contributor navigation. The harness imports the actual product components and CSS, but mocks Next navigation and API responses; it lives outside app routes and is not a production authentication bypass. Tests save People, Teams, and Permissions screenshots under ignored `apps/web/test-results`. The production app still requires real Clerk and restricted database credentials. Database tests separately verify administrative listing, contributor denial, and cross-tenant denial using the restricted service login.

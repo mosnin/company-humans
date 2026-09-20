@@ -6,6 +6,7 @@ import { createOrganization } from "./organizations.js";
 import { inviteMember, acceptInvitation, changeMembershipStatus } from "./membership-lifecycle.js";
 import { renameOrganization } from "./organization-authority.js";
 import { createTeam, assignTeamMember } from "./teams.js";
+import { listPeople, listRolePolicies, listTeams } from "./administration.js";
 import { setRolePermissions } from "./role-permissions.js";
 import { enableProductInstance } from "./product-instances.js";
 
@@ -93,6 +94,14 @@ describe.skipIf(!databaseUrl)("restricted runtime write roles", () => {
       await expect(renameOrganization(serviceUrl.toString(), {
         actorUserId: owner, organizationId: otherOrganizationId, name: "Forbidden",
       })).rejects.toThrow();
+
+      expect((await listPeople(serviceUrl.toString(), owner, organizationId)).total).toBe(2);
+      expect((await listPeople(serviceUrl.toString(), owner, organizationId, "Invitee")).people.map(person => person.id)).toEqual([membershipId]);
+      expect((await listTeams(serviceUrl.toString(), owner, organizationId))[0]?.members).toEqual([{ name: "Invitee", role: "member" }]);
+      expect(await listRolePolicies(serviceUrl.toString(), owner, organizationId)).toHaveLength(6);
+      await expect(listPeople(serviceUrl.toString(), invitee, organizationId)).rejects.toThrow("administration denied");
+      await expect(listRolePolicies(serviceUrl.toString(), invitee, organizationId)).rejects.toThrow("administration denied");
+      await expect(listTeams(serviceUrl.toString(), owner, otherOrganizationId)).rejects.toThrow("administration denied");
 
       const contributorRole = (await admin.query<{ id: string }>("SELECT id FROM roles WHERE organization_id = $1 AND key = 'contributor'", [organizationId])).rows[0]!.id;
       const originalGrants = (await admin.query<{ permission_key: string }>("SELECT permission_key FROM role_permissions WHERE role_id = $1", [contributorRole])).rows.map(row => row.permission_key);

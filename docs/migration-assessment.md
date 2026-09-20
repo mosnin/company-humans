@@ -31,3 +31,7 @@ Source: `mosnin/company-os-web` `main` at `94827a320e06958995263b32a44d6fc8c227d
 ## Architecture issue recorded before implementation
 
 The source uses Convex Auth and Convex as its database. The Company Human specification locks Clerk for authentication and requires database level tenant isolation, with Postgres RLS or an equivalent. Copying source auth or schema would contradict that contract. The destination therefore retains only the web and design foundation; Phase 01 must establish its own identity and database boundary. This is an explicit migration decision, not an unreviewed architecture substitution.
+
+## Source shell restoration
+
+The identity administration UI now generalizes the source `components/shell/app-shell.tsx` geometry into `WorkspaceShell`: full-width 56px header, 240px desktop rail, rounded body sheet, independent scrolling canvas, keyboard skip link, and mobile menu. Source table scroll/border geometry and native input control states are generalized into administration controls. Company OS route parsing, Convex hooks, product navigation, search, and company cookies are excluded. Only implemented identity pages appear. Desktop and 390px mobile browser component tests render these components and verify interactions; their API/authentication is explicitly mocked, so they do not establish live identity acceptance.

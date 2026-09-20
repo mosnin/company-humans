@@ -43,3 +43,7 @@ Server mutations consult stored capability grants. Separate identity and service
 ## Audited permission editing
 
 Migration 0015 and the role permission API allow an authorized owner or administrator to change another permitted role using stored roles.manage capability. Owner policy and the acting role are protected; an administrator cannot grant a capability they do not hold or edit the Admin policy. Changes require the previously observed permission set, reject stale edits, and append before/after audit state atomically. Restricted-role tests cover change, revocation, stale edits, contributor denial, cross-tenant denial, and audit provenance. Live browser acceptance remains pending.
+
+## Identity administration screens
+
+People now supports paginated search, invitation links, role changes, suspension, resumption, and confirmed removal. Teams supports creation, roster display, and team responsibility assignment. Permissions supports protected owner/acting policies, capability edits, and conflict errors. All pages authorize on the server and use restricted database services. The source shell is generalized for these identity pages, with loading, error, empty, and permission states. Ten browser component tests pass at desktop and mobile sizes; real Clerk authentication and the full live Phase 01 scenario remain unverified. These screens do not imply completion of the later human-workspace modules.
