@@ -7,3 +7,7 @@ Company OS Web uses Convex Auth and a Convex company data model. Company Human's
 ## Open repository identity
 
 The user named `mosnin/company-human`, but GitHub returned 404 for that repository. `mosnin/company-humans` was created on 2026-09-20 and contains a README. Local work is prepared in a clone of that repository; the intended remote must be established before pushing.
+
+## 2026-09-20: Use a separate runtime role for tenant reads
+
+The migration owner connection can bypass RLS and therefore must not serve tenant read routes. A restricted `company_human_app` role has only SELECT and limited organization UPDATE privileges. A distinct login granted this role is configured through `DATABASE_RUNTIME_URL`; the database helper checks it is neither superuser, BYPASSRLS, nor table owner. The server sets a transaction local canonical user after Clerk authentication. This role remains trusted server infrastructure because a holder of the SQL credential could change its own custom context setting. No database credential may reach clients.

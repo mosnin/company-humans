@@ -11,6 +11,10 @@
     "./clerk-users": {
       "types": "./dist/clerk-users.d.ts",
       "default": "./dist/clerk-users.js"
+    },
+    "./rls": {
+      "types": "./dist/rls.d.ts",
+      "default": "./dist/rls.js"
     }
   },
   "scripts": {

@@ -6,7 +6,7 @@ Source specification: [Company Human Notion hub](https://app.notion.com/p/3e1a0d
 | --- | --- | --- |
 | Scaffold migration | Verified locally | Source audit, npm clean install, typecheck, lint, unit health test, production build, and local HTTP smoke test passed. Remote commit and deployment pending repository identity. |
 | 00 Foundation | In progress | Repository and package boundaries build locally. Canonical ID schemas are locally verified. The first migration and deterministic product seed passed twice in a fresh local Postgres database. Version 1 signed event/audit envelopes pass local contract tests. Hosted CI acceptance remains. |
-| 01 Identity kernel | In progress | Canonical Clerk user mapping and webhook boundary are implemented and locally tested. Live Clerk sign-in/webhook, organization/membership tables pass local multi-organization tests. Live Clerk sign-in, RLS, authorization, and cross tenant denial tests remain. |
+| 01 Identity kernel | In progress | Canonical Clerk user mapping and webhook boundary are implemented and locally tested. Organization/membership tables and restricted role RLS pass local multi-tenant reads and cross tenant denial tests. Live Clerk sign-in/webhook, production runtime role configuration, teams, permissions, invites, and broader authorization remain. |
 | 02 Application provisioning | Not started | Scalar adapter and real lifecycle remain. |
 | 03 Metering and billing | Not started | Real usage and policy stop remain. |
 | 04 Human workspace | Not started | Role aware workspace remains. |
@@ -29,3 +29,4 @@ The named GitHub destination `mosnin/company-human` was not visible on 2026-09-2
 
 - The intended GitHub destination must be resolved before pushing or observing hosted CI.
 - A Company Human Clerk application must provide a publishable key, secret key, and webhook signing secret. Configure `user.created`, `user.updated`, and `user.deleted` delivery to `/api/webhooks/clerk`. No live Clerk authentication or delivery has been demonstrated.
+- A separate non-owner `DATABASE_RUNTIME_URL` login must be granted the `company_human_app` role. The local test creates an ephemeral runtime login; production credentials are not configured.
