@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -12,6 +12,9 @@ export default function SelectOrganizationPage() {
   const [organizations, setOrganizations] = useState<OrganizationOption[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,6 +46,26 @@ export default function SelectOrganizationPage() {
     }
   }
 
+  async function createWorkspace(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    setError(null);
+    setCreating(true);
+    try {
+      const response = await fetch("/api/organizations", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), slug: slug.trim() }),
+      });
+      const data = await response.json() as { organizationId?: string; error?: string };
+      if (!response.ok || !data.organizationId) throw new Error(data.error ?? "Organization could not be created.");
+      setOrganizations((current) => [...(current ?? []), { id: data.organizationId!, name: name.trim(), slug: slug.trim(), roleKey: "owner" }]);
+      await switchTo(data.organizationId);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Organization could not be created.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-canvas text-ink">
       <header className="border-b border-border bg-rail">
@@ -53,7 +76,29 @@ export default function SelectOrganizationPage() {
         {error ? <p role="alert" className="t-body mb-5 text-critical-text">{error}</p> : null}
         {organizations === null && !error ? <Card className="max-w-2xl" padded><Skeleton className="h-5 w-48" /></Card> : null}
         {organizations?.length === 0 ? (
-          <Card className="max-w-2xl"><CardContent><p className="t-body text-ink-2">You do not have an active organization yet. Ask an organization admin for an invitation.</p></CardContent></Card>
+          <Card className="max-w-2xl"><CardContent><p className="t-body text-ink-2">You do not have an active organization yet. Create one for your team or ask an admin for an invitation.</p></CardContent></Card>
+        ) : null}
+        {organizations !== null ? (
+          <Card className="mt-8 max-w-2xl">
+            <CardContent>
+              <h2 className="t-title-3">Create an organization</h2>
+              <p className="t-body mt-3 text-ink-2">This creates a separate workspace with its own members and billing responsibility.</p>
+              <form className="mt-6 grid gap-5" onSubmit={(event) => void createWorkspace(event)}>
+                <label className="grid gap-2 t-body-medium" htmlFor="organization-name">
+                  Organization name
+                  <input id="organization-name" className="h-10 rounded-8 border border-border bg-raised px-4 t-body text-ink focus-ring"
+                    value={name} maxLength={256} required onChange={(event) => setName(event.target.value)} />
+                </label>
+                <label className="grid gap-2 t-body-medium" htmlFor="organization-slug">
+                  URL name
+                  <input id="organization-slug" className="h-10 rounded-8 border border-border bg-raised px-4 t-body text-ink focus-ring"
+                    value={slug} pattern="[a-z][a-z0-9-]{2,62}" minLength={3} maxLength={63} required
+                    autoCapitalize="none" autoCorrect="off" onChange={(event) => setSlug(event.target.value.toLowerCase())} />
+                </label>
+                <Button type="submit" className="justify-self-start" loading={creating} disabled={creating || switchingId !== null}>Create organization</Button>
+              </form>
+            </CardContent>
+          </Card>
         ) : null}
         {organizations && organizations.length > 0 ? (
           <div className="grid max-w-2xl gap-4">

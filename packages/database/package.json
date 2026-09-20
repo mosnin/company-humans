@@ -16,6 +16,10 @@
       "types": "./dist/rls.d.ts",
       "default": "./dist/rls.js"
     },
+    "./organizations": {
+      "types": "./dist/organizations.d.ts",
+      "default": "./dist/organizations.js"
+    },
     "./membership-lifecycle": {
       "types": "./dist/membership-lifecycle.d.ts",
       "default": "./dist/membership-lifecycle.js"
