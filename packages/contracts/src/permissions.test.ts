@@ -17,6 +17,7 @@ describe("initial role policy", () => {
     expect(roleHasCapability("finance", "payouts.read.all")).toBe(true);
     expect(roleHasCapability("finance", "crm.read.own")).toBe(false);
     expect(roleHasCapability("finance", "context.read.approved")).toBe(false);
+    expect(roleHasCapability("finance", "audit.read.all")).toBe(false);
     expect(roleHasCapability("developer", "integrations.manage")).toBe(true);
     expect(roleHasCapability("developer", "payouts.read.all")).toBe(false);
     expect(roleHasCapability("developer", "crm.read.own")).toBe(false);

@@ -28,6 +28,7 @@ describe.skipIf(!databaseUrl)("organization and membership isolation", () => {
       expect(memberships.rows.filter((row) => row.user_id === alice)).toHaveLength(2);
       expect(memberships.rows.filter((row) => row.user_id === bob)).toHaveLength(1);
     } finally {
+      await client.query("DELETE FROM identity_audit_events WHERE organization_id = ANY($1)", [[first.organizationId, second.organizationId, other.organizationId]]);
       await client.query("DELETE FROM memberships WHERE organization_id = ANY($1)", [[first.organizationId, second.organizationId, other.organizationId]]);
       await client.query("DELETE FROM roles WHERE organization_id = ANY($1)", [[first.organizationId, second.organizationId, other.organizationId]]);
       await client.query("DELETE FROM organizations WHERE id = ANY($1)", [[first.organizationId, second.organizationId, other.organizationId]]);

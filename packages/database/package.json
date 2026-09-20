@@ -19,6 +19,10 @@
     "./membership-lifecycle": {
       "types": "./dist/membership-lifecycle.d.ts",
       "default": "./dist/membership-lifecycle.js"
+    },
+    "./organization-authority": {
+      "types": "./dist/organization-authority.d.ts",
+      "default": "./dist/organization-authority.js"
     }
   },
   "scripts": {

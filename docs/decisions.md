@@ -23,3 +23,7 @@ Invitation tokens are random and stored only as hashes. A logged in Clerk user m
 ## 2026-09-20: Treat the active organization cookie as a preference
 
 Organization switching writes an HttpOnly preference cookie only after a restricted RLS membership check. Every context read rechecks the selected organization against the signed in canonical user. A changed or stale cookie cannot grant another tenant's access. The browser UI cannot be accepted until live Clerk and a production runtime database role are configured.
+
+## 2026-09-20: Require transactional audit for identity mutations
+
+The restricted application role no longer updates organization rows directly. Narrow server services append a versioned audit envelope and before/after state in the same database transaction as organization, role, membership, team, and invitation mutations. This provides local evidence of changes, but a production append-only audit guarantee still requires separation of migration and runtime service credentials.

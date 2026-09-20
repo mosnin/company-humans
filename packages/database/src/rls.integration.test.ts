@@ -40,14 +40,15 @@ describe.skipIf(!databaseUrl)("Postgres tenant RLS", () => {
       await runtime.query("SELECT set_config('company_human.user_id', $1, true)", [alice]);
       expect((await runtime.query("SELECT id FROM organizations WHERE id = $1", [bobOrg.organizationId])).rows).toEqual([]);
       expect((await runtime.query("SELECT id FROM memberships WHERE organization_id = $1", [bobOrg.organizationId])).rows).toEqual([]);
-      expect((await runtime.query("UPDATE organizations SET name = $1 WHERE id = $2 RETURNING id", ["Wrong change", bobOrg.organizationId])).rows).toEqual([]);
-      expect((await runtime.query("UPDATE organizations SET name = $1 WHERE id = $2 RETURNING id", ["Alice Updated", aliceOrg.organizationId])).rows).toEqual([{ id: aliceOrg.organizationId }]);
-      await expect(runtime.query("INSERT INTO organizations (id, slug, name, owner_user_id) VALUES ('ch_org_00000000000000000000000000000000', 'forbidden-test', 'No', $1)", [alice])).rejects.toThrow();
+      await expect(runtime.query("UPDATE organizations SET name = $1 WHERE id = $2 RETURNING id", ["Wrong change", bobOrg.organizationId])).rejects.toThrow();
       await runtime.query("ROLLBACK");
+      await expect(runtime.query("UPDATE organizations SET name = $1 WHERE id = $2 RETURNING id", ["Alice Updated", aliceOrg.organizationId])).rejects.toThrow();
+      await expect(runtime.query("INSERT INTO organizations (id, slug, name, owner_user_id) VALUES ('ch_org_00000000000000000000000000000000', 'forbidden-test', 'No', $1)", [alice])).rejects.toThrow();
       expect((await runtime.query("SELECT id FROM organizations")).rows).toEqual([]);
     } finally {
       await runtime.end();
       const organizationIds = [aliceOrg.organizationId, aliceSecondOrg.organizationId, bobOrg.organizationId];
+      await admin.query("DELETE FROM identity_audit_events WHERE organization_id = ANY($1)", [organizationIds]);
       await admin.query("DELETE FROM memberships WHERE organization_id = ANY($1)", [organizationIds]);
       await admin.query("DELETE FROM roles WHERE organization_id = ANY($1)", [organizationIds]);
       await admin.query("DELETE FROM organizations WHERE id = ANY($1)", [organizationIds]);

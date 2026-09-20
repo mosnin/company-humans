@@ -4,6 +4,7 @@ import { Client } from "pg";
 import { describe, expect, it } from "vitest";
 import { syncClerkUser } from "./clerk-users.js";
 import { createOrganization } from "./organizations.js";
+import { changeMembershipRole, renameOrganization } from "./organization-authority.js";
 import { resolveAccessContext } from "./rls.js";
 import { assignTeamMember, createTeam } from "./teams.js";
 
@@ -52,6 +53,41 @@ describe.skipIf(!databaseUrl)("organization role and team resolution", () => {
         expect(context?.capabilities).toContain(roleKey === "finance" ? "payouts.read.all" : "usage.read.own");
         expect(context?.capabilities.includes("payouts.read.all")).toBe(roleHasCapability(roleKey, "payouts.read.all"));
       }
+      const contributorBeforeChange = roleUsers.get("contributor")!;
+      await renameOrganization(databaseUrl!, { actorUserId: owner, organizationId: org.organizationId, name: "Renamed Roles Org" });
+      await changeMembershipRole(databaseUrl!, {
+        actorUserId: owner, organizationId: org.organizationId,
+        membershipId: contributorBeforeChange.membershipId, roleKey: "finance",
+      });
+      expect((await resolveAccessContext(runtimeUrl.toString(), contributorBeforeChange.userId, org.organizationId))?.roleKey).toBe("finance");
+      await expect(changeMembershipRole(databaseUrl!, {
+        actorUserId: otherOwner, organizationId: org.organizationId,
+        membershipId: contributorBeforeChange.membershipId, roleKey: "developer",
+      })).rejects.toThrow("Organization administration denied");
+      const auditActions = (await admin.query<{ action: string }>(
+        "SELECT action FROM identity_audit_events WHERE organization_id = $1", [org.organizationId],
+      )).rows.map((row) => row.action);
+      expect(auditActions).toContain("organization.created");
+      expect(auditActions).toContain("organization.renamed");
+      expect(auditActions).toContain("membership.created");
+      expect(auditActions).toContain("membership.role.changed");
+      expect(auditActions.filter((action) => action === "role.created")).toHaveLength(6);
+      const runtime = new Client({ connectionString: runtimeUrl.toString() });
+      await runtime.connect();
+      try {
+        await runtime.query("BEGIN");
+        await runtime.query("SELECT set_config('company_human.user_id', $1, true)", [owner]);
+        expect((await runtime.query("SELECT id FROM identity_audit_events WHERE organization_id = $1", [org.organizationId])).rowCount)
+          .toBeGreaterThan(0);
+        await runtime.query("ROLLBACK");
+        await runtime.query("BEGIN");
+        await runtime.query("SELECT set_config('company_human.user_id', $1, true)", [roleUsers.get("finance")!.userId]);
+        expect((await runtime.query("SELECT id FROM identity_audit_events WHERE organization_id = $1", [org.organizationId])).rowCount)
+          .toBe(0);
+        await runtime.query("ROLLBACK");
+      } finally {
+        await runtime.end();
+      }
       expect(await resolveAccessContext(runtimeUrl.toString(), otherOwner, org.organizationId)).toBeNull();
       const manager = roleUsers.get("manager")!;
       teamId = await createTeam(databaseUrl!, { actorUserId: owner, organizationId: org.organizationId, name: "Sales" });
@@ -83,6 +119,7 @@ describe.skipIf(!databaseUrl)("organization role and team resolution", () => {
         membershipId: otherOrg.ownerMembershipId, teamRole: "member",
       })).rejects.toThrow("Active team member in organization required");
     } finally {
+      await admin.query("DELETE FROM identity_audit_events WHERE organization_id = ANY($1)", [[org.organizationId, otherOrg.organizationId]]);
       if (teamId || otherTeamId) {
         await admin.query("DELETE FROM team_memberships WHERE team_id = ANY($1)", [[teamId, otherTeamId].filter(Boolean)]);
         await admin.query("DELETE FROM teams WHERE id = ANY($1)", [[teamId, otherTeamId].filter(Boolean)]);

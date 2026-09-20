@@ -1,6 +1,7 @@
 import { createCanonicalId, MembershipIdSchema, OrganizationIdSchema, ROLE_KEYS, UserIdSchema, type MembershipId, type OrganizationId, type UserId } from "@company-human/contracts";
 import { Client } from "pg";
 import { z } from "zod";
+import { appendIdentityAudit } from "./identity-audit.js";
 
 const CreateOrganizationSchema = z.object({
   ownerUserId: UserIdSchema,
@@ -28,14 +29,32 @@ export async function createOrganization(databaseUrl: string, input: z.input<typ
       "INSERT INTO organizations (id, slug, name, owner_user_id) VALUES ($1, $2, $3, $4)",
       [organizationId, slug, name, ownerUserId],
     );
-    for (const roleKey of ROLE_KEYS) {
-      await client.query("INSERT INTO roles (id, organization_id, key) VALUES ($1, $2, $3)", [createCanonicalId("role"), organizationId, roleKey]);
+    const roles = ROLE_KEYS.map((key) => ({ key, id: createCanonicalId("role") }));
+    for (const role of roles) {
+      await client.query("INSERT INTO roles (id, organization_id, key) VALUES ($1, $2, $3)", [role.id, organizationId, role.key]);
     }
     await client.query(
       `INSERT INTO memberships (id, organization_id, user_id, status, role_key, sponsor_type, joined_at)
        VALUES ($1, $2, $3, 'active', 'owner', 'organization', now())`,
       [ownerMembershipId, organizationId, ownerUserId],
     );
+    await appendIdentityAudit(client, {
+      organizationId, actorUserId: ownerUserId, actorMembershipId: ownerMembershipId,
+      action: "organization.created", targetType: "organization", targetId: organizationId,
+      afterState: { slug, name, ownerUserId },
+    });
+    for (const role of roles) {
+      await appendIdentityAudit(client, {
+        organizationId, actorUserId: ownerUserId, actorMembershipId: ownerMembershipId,
+        action: "role.created", targetType: "role", targetId: role.id,
+        afterState: { key: role.key },
+      });
+    }
+    await appendIdentityAudit(client, {
+      organizationId, actorUserId: ownerUserId, actorMembershipId: ownerMembershipId,
+      action: "membership.created", targetType: "membership", targetId: ownerMembershipId,
+      afterState: { userId: ownerUserId, roleKey: "owner", status: "active", sponsorType: "organization" },
+    });
     await client.query("COMMIT");
     return { organizationId, ownerMembershipId };
   } catch (error) {

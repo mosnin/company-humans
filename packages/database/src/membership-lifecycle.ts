@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { createCanonicalId, MembershipIdSchema, OrganizationIdSchema, UserIdSchema, type InvitationId, type MembershipId, type OrganizationId, type RoleKey, type UserId } from "@company-human/contracts";
 import { Client } from "pg";
 import { z } from "zod";
+import { appendIdentityAudit } from "./identity-audit.js";
 
 const InviteSchema = z.object({
   actorUserId: UserIdSchema,
@@ -11,16 +12,16 @@ const InviteSchema = z.object({
   expiresAt: z.date().refine((date) => date.getTime() > Date.now(), "Invitation must expire in the future"),
 }).strict();
 
-async function requireMembershipAdmin(client: Client, actorUserId: UserId, organizationId: OrganizationId): Promise<RoleKey> {
-  const result = await client.query<{ role_key: RoleKey }>(
-    `SELECT m.role_key FROM public.memberships AS m
+async function requireMembershipAdmin(client: Client, actorUserId: UserId, organizationId: OrganizationId): Promise<{ roleKey: RoleKey; membershipId: MembershipId }> {
+  const result = await client.query<{ id: string; role_key: RoleKey }>(
+    `SELECT m.id, m.role_key FROM public.memberships AS m
      JOIN public.organizations AS o ON o.id = m.organization_id
      WHERE m.user_id = $1 AND m.organization_id = $2 AND m.status = 'active'
        AND m.role_key IN ('owner', 'admin') AND o.status = 'active'`,
     [actorUserId, organizationId],
   );
   if (result.rowCount !== 1) throw new Error("Membership administration denied");
-  return result.rows[0]!.role_key;
+  return { roleKey: result.rows[0]!.role_key, membershipId: MembershipIdSchema.parse(result.rows[0]!.id) };
 }
 
 export async function inviteMember(databaseUrl: string, input: z.input<typeof InviteSchema>): Promise<{ invitationId: InvitationId; token: string }> {
@@ -33,13 +34,21 @@ export async function inviteMember(databaseUrl: string, input: z.input<typeof In
   await client.connect();
   try {
     await client.query("BEGIN");
-    const actorRole = await requireMembershipAdmin(client, parsed.actorUserId, parsed.organizationId);
-    if (parsed.roleKey === "admin" && actorRole !== "owner") throw new Error("Only owner can invite an admin");
-    await client.query(
+    const actor = await requireMembershipAdmin(client, parsed.actorUserId, parsed.organizationId);
+    if (parsed.roleKey === "admin" && actor.roleKey !== "owner") throw new Error("Only owner can invite an admin");
+    const expired = await client.query<{ id: string }>(
       `UPDATE public.membership_invitations SET status = 'expired'
-       WHERE organization_id = $1 AND recipient_email = $2 AND status = 'pending' AND expires_at <= now()`,
+       WHERE organization_id = $1 AND recipient_email = $2 AND status = 'pending' AND expires_at <= now()
+       RETURNING id`,
       [parsed.organizationId, parsed.recipientEmail],
     );
+    for (const previous of expired.rows) {
+      await appendIdentityAudit(client, {
+        organizationId: parsed.organizationId, actorUserId: parsed.actorUserId, actorMembershipId: actor.membershipId,
+        action: "invitation.expired", targetType: "invitation", targetId: previous.id,
+        beforeState: { status: "pending" }, afterState: { status: "expired" },
+      });
+    }
     const existing = await client.query(
       `SELECT 1 FROM public.memberships AS m JOIN public.users AS u ON u.id = m.user_id
        WHERE m.organization_id = $1 AND lower(u.primary_email) = $2 AND m.status IN ('active', 'suspended')`,
@@ -52,6 +61,11 @@ export async function inviteMember(databaseUrl: string, input: z.input<typeof In
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [invitationId, parsed.organizationId, parsed.recipientEmail, parsed.roleKey, tokenHash, parsed.actorUserId, parsed.expiresAt],
     );
+    await appendIdentityAudit(client, {
+      organizationId: parsed.organizationId, actorUserId: parsed.actorUserId, actorMembershipId: actor.membershipId,
+      action: "invitation.created", targetType: "invitation", targetId: invitationId,
+      afterState: { recipientEmail: parsed.recipientEmail, roleKey: parsed.roleKey, expiresAt: parsed.expiresAt.toISOString() },
+    });
     await client.query("COMMIT");
     return { invitationId, token };
   } catch (error) {
@@ -100,6 +114,18 @@ export async function acceptInvitation(databaseUrl: string, token: string, userI
        SET status = 'accepted', accepted_by_user_id = $1, accepted_at = now() WHERE id = $2`,
       [userId, row.id],
     );
+    await appendIdentityAudit(client, {
+      organizationId: OrganizationIdSchema.parse(row.organization_id), actorUserId: userId,
+      actorMembershipId: MembershipIdSchema.parse(membership.rows[0]!.id),
+      action: "invitation.accepted", targetType: "invitation", targetId: row.id,
+      beforeState: { status: "pending" }, afterState: { status: "accepted", userId },
+    });
+    await appendIdentityAudit(client, {
+      organizationId: OrganizationIdSchema.parse(row.organization_id), actorUserId: userId,
+      actorMembershipId: MembershipIdSchema.parse(membership.rows[0]!.id),
+      action: "membership.activated", targetType: "membership", targetId: membership.rows[0]!.id,
+      afterState: { userId, roleKey: row.role_key, status: "active", sponsorType: "organization" },
+    });
     await client.query("COMMIT");
     return MembershipIdSchema.parse(membership.rows[0]!.id);
   } catch (error) {
@@ -121,13 +147,13 @@ export async function changeMembershipStatus(databaseUrl: string, input: {
   await client.connect();
   try {
     await client.query("BEGIN");
-    const actorRole = await requireMembershipAdmin(client, actorUserId, organizationId);
+    const actor = await requireMembershipAdmin(client, actorUserId, organizationId);
     const target = await client.query<{ role_key: RoleKey; status: string }>(
       "SELECT role_key, status FROM public.memberships WHERE id = $1 AND organization_id = $2 FOR UPDATE",
       [membershipId, organizationId],
     );
     const member = target.rows[0];
-    if (!member || member.role_key === "owner" || (member.role_key === "admin" && actorRole !== "owner")) {
+    if (!member || member.role_key === "owner" || (member.role_key === "admin" && actor.roleKey !== "owner")) {
       throw new Error("Membership change denied");
     }
     const expected = input.action === "reactivate" ? "suspended" : input.action === "suspend" ? "active" : ["active", "suspended"];
@@ -146,15 +172,30 @@ export async function changeMembershipStatus(databaseUrl: string, input: {
         "UPDATE public.team_memberships SET ended_at = now() WHERE membership_id = $1 AND organization_id = $2 AND ended_at IS NULL",
         [membershipId, organizationId],
       );
-      await client.query(
+      const revoked = await client.query<{ id: string }>(
         `UPDATE public.membership_invitations AS i SET status = 'revoked', revoked_at = now()
          FROM public.memberships AS m JOIN public.users AS u ON u.id = m.user_id
          WHERE m.id = $1 AND m.organization_id = $2
            AND i.organization_id = m.organization_id
-           AND i.recipient_email = lower(u.primary_email) AND i.status = 'pending'`,
+           AND i.recipient_email = lower(u.primary_email) AND i.status = 'pending'
+         RETURNING i.id`,
         [membershipId, organizationId],
       );
+      for (const invitation of revoked.rows) {
+        await appendIdentityAudit(client, {
+          organizationId, actorUserId, actorMembershipId: actor.membershipId,
+          action: "invitation.revoked", targetType: "invitation", targetId: invitation.id,
+          beforeState: { status: "pending" }, afterState: { status: "revoked" },
+        });
+      }
     }
+    await appendIdentityAudit(client, {
+      organizationId, actorUserId, actorMembershipId: actor.membershipId,
+      action: input.action === "reactivate" ? "membership.reactivated" : `membership.${next}`,
+      targetType: "membership", targetId: membershipId,
+      beforeState: { status: member.status, roleKey: member.role_key },
+      afterState: { status: next, roleKey: member.role_key },
+    });
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");

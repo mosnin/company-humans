@@ -63,7 +63,17 @@ describe.skipIf(!databaseUrl)("membership invitation and access lifecycle", () =
       });
       expect(await acceptInvitation(databaseUrl!, second.token, recipient)).toBe(membershipId);
       expect((await resolveAccessContext(runtimeUrl.toString(), recipient, org.organizationId))?.teamIds).toEqual([]);
+      const auditActions = (await admin.query<{ action: string }>(
+        "SELECT action FROM identity_audit_events WHERE organization_id = $1", [org.organizationId],
+      )).rows.map((row) => row.action);
+      expect(auditActions).toContain("invitation.created");
+      expect(auditActions).toContain("invitation.accepted");
+      expect(auditActions).toContain("membership.activated");
+      expect(auditActions).toContain("membership.suspended");
+      expect(auditActions).toContain("membership.reactivated");
+      expect(auditActions).toContain("membership.removed");
     } finally {
+      await admin.query("DELETE FROM identity_audit_events WHERE organization_id = $1", [org.organizationId]);
       await admin.query("DELETE FROM team_memberships WHERE organization_id = $1", [org.organizationId]);
       await admin.query("DELETE FROM teams WHERE organization_id = $1", [org.organizationId]);
       await admin.query("DELETE FROM membership_invitations WHERE organization_id = $1", [org.organizationId]);

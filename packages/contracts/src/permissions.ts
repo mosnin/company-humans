@@ -30,7 +30,7 @@ const admin = [
 ] as const satisfies readonly Capability[];
 
 const finance = [
-  "earnings.read.own", "payouts.read.all", "billing.read.all", "usage.read.all", "audit.read.all",
+  "earnings.read.own", "payouts.read.all", "billing.read.all", "usage.read.all",
 ] as const satisfies readonly Capability[];
 
 const developer = ["integrations.manage", "usage.read.own", "product.use"] as const satisfies readonly Capability[];
