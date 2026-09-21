@@ -31,3 +31,7 @@ Migration 0017 permits scoped audit reads through the service role only with aud
 ## Provider-neutral identity (0018)
 
 The product owner replaced Clerk with Convex Auth on 2026-09-20. Migration 0018 renames the provider subject field and adds a provider issuer. Existing canonical IDs, audit references and legacy mappings remain intact; legacy issuer `https://clerk.legacy.invalid` deliberately cannot match a new Convex deployment. Unique `(auth_issuer, auth_subject)` prevents collisions across deployments. Email is not a linking key. A deliberate, audited account-linking flow would be needed to transfer a legacy account; none is implemented automatically.
+
+## Provisioning journal (0019)
+
+`provisioning_operations` carries canonical `ch_op_` IDs, organization and instance composite references, a unique stable idempotency key and one initial provisionOrganization operation per instance. Status is pending, running, retry_wait, succeeded or failed. A two-minute lease fences a running attempt; at most five attempts may be claimed. `provisioning_attempts` preserves actor, lease, timestamps, outcome, normalized failure code and provider reference for each attempt. Completed attempts cannot be rewritten and runtime roles cannot delete either table. Provider receipts do not yet activate instances. Only provisioned mode is queued; existing pending provisioned instances are backfilled by the migration.

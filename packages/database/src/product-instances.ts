@@ -77,6 +77,13 @@ export async function enableProductInstance(databaseUrl: string, input: z.input<
           desiredEnabled: true, provisioningStatus: "pending" },
       });
     }
+    if (parsed.mode === "provisioned") {
+      await client.query(`INSERT INTO public.provisioning_operations
+        (id,organization_id,product_instance_id,operation,idempotency_key)
+        VALUES ($1,$2,$3,'provisionOrganization',$4)
+        ON CONFLICT (organization_id,product_instance_id,operation) DO NOTHING`,
+      [createCanonicalId("provisioningOperation"), parsed.organizationId, instanceId, `${instanceId}:provision:v1`]);
+    }
     await client.query("COMMIT");
     return instanceId;
   } catch (error) {

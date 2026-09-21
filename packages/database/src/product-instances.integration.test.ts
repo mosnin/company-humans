@@ -51,6 +51,8 @@ describe.skipIf(!databaseUrl)("organization product instances", () => {
          WHERE organization_id = $1 AND action = 'product.instance.enabled'`, [aliceOrg.organizationId],
       );
       expect(Number(count.rows[0]!.count)).toBe(1);
+      const operations = await admin.query("SELECT idempotency_key,status FROM provisioning_operations WHERE product_instance_id = $1", [first]);
+      expect(operations.rows).toEqual([{ idempotency_key: `${first}:provision:v1`, status: "pending" }]);
       await expect(enableProductInstance(serviceUrl.toString(), {
         actorUserId: alice, organizationId: aliceOrg.organizationId, productId: scalarId, mode: "connected",
       })).rejects.toThrow("Instance mode cannot change during enable");
@@ -60,6 +62,7 @@ describe.skipIf(!databaseUrl)("organization product instances", () => {
       expect(independent).not.toBe(first);
     } finally {
       const orgIds = [aliceOrg.organizationId, bobOrg.organizationId];
+      await admin.query("DELETE FROM provisioning_operations WHERE organization_id = ANY($1)", [orgIds]);
       await admin.query("DELETE FROM product_instances WHERE organization_id = ANY($1)", [orgIds]);
       await admin.query("DELETE FROM identity_audit_events WHERE organization_id = ANY($1)", [orgIds]);
       await admin.query("DELETE FROM memberships WHERE organization_id = ANY($1)", [orgIds]);

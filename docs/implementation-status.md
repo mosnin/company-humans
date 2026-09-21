@@ -10,8 +10,8 @@ Updated 2026-09-21. Destination: `mosnin/company-humans`, branch `codex/company-
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 37 contract/database/route/Convex tests pass. Sixteen desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass.
-- A fresh local development database accepts all 18 migrations and seven reference-product seeds. Restricted connection credentials are stored only in ignored `apps/web/.env.local`; no OAuth provider secrets or tenant demo records were created.
+- 38 contract/database/route/Convex tests pass. Sixteen desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass.
+- The local development and verification databases have 19 migrations applied; the development baseline includes seven reference-product seeds. Restricted connection credentials are stored only in ignored `apps/web/.env.local`; no OAuth provider secrets or tenant demo records were created.
 
 ## Phase gates
 
@@ -49,3 +49,9 @@ CH-8, CH-9, CH-10 and CH-12 have progress evidence in Notion and remain In progr
 The full Notion hub and 17 documents were re-read and all 92 tracker tasks were compiled into the [goal route](execution/README.md), preserving phases 00–16 and the full product objective. Symbolic live Context/Flow remains blocked by a 401 response without OAuth discovery; no Symbolic run is claimed. [Callix tracking source](callix-tracking-assessment.md) was inspected read-only for Phase 07 reuse. Its browser observations are not verified financial conversions. Hosted CI run 35627020436 passed at product commit 4b9d614.
 
 CH-15 independent repair: concurrent application enable intent is now serialized per organization/product/instance key. Eight simultaneous restricted-service requests return one pending instance and one audit event; mode conflict and cross-tenant denial remain enforced. Full provisioning state-machine acceptance is still outstanding. OAuth setup remains waiting for GitHub browser sign-in.
+
+## CH-15 durable operation journal — 2026-09-21
+
+Implemented and locally verified: atomic pending-operation creation with application enable intent; tenant-scoped claim leases; stable provider idempotency keys; five-attempt limit; retry scheduling; immutable completed attempt history; partial provider-reference persistence; stale-worker rejection; permission revalidation. All 38 tests/typecheck/lint/build pass. Production Convex remains deployed, but both GitHub browser sessions require sign-in before OAuth application setup can proceed.
+
+Still required: provider dispatcher/poll semantics, restricted background-worker authorization, instance activation transaction, member lifecycle/entitlement sequencing, admin operation diagnostics/retry UI, and real Scalar lifecycle proof. CH-15 and Phase 02 remain In progress. No connected access is claimed.

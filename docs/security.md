@@ -34,3 +34,7 @@ Suspension/removal blocks Company Human access. Removal ends team grants and rev
 ## Remaining production gates
 
 Live Convex OAuth configuration/round-trip, deployed restricted roles, authenticated browser acceptance, API rate limits, expanded authorization coverage, adapter credentials, event replay, signing-key management, privacy review, penetration testing and disaster recovery remain. No usage billing, commissions or payout execution exists yet. Contract signing tests are not proof of a production event ingestion service.
+
+## Provisioning journal boundary
+
+Operations and attempt history use RLS requiring applications.manage in the explicit tenant context; ordinary contributor/read credentials receive no grants. Composite foreign keys prevent cross-tenant instance/operation references. Service column grants prevent rewriting operation identity or attempt ownership. Completed attempts are immutable; deletion is unavailable to runtime roles. Claim and completion independently recheck active identity, organization, membership and capability. Leases fence stale workers; they do not cancel external side effects, so provider idempotency/reconciliation remains mandatory before dispatch. No public worker endpoint or provider credential store is introduced.

@@ -43,6 +43,10 @@
     "./teams": {
       "types": "./dist/teams.d.ts",
       "default": "./dist/teams.js"
+    },
+    "./provisioning-operations": {
+      "types": "./dist/provisioning-operations.d.ts",
+      "default": "./dist/provisioning-operations.js"
     }
   },
   "scripts": {

@@ -193,6 +193,7 @@ describe.skipIf(!databaseUrl)("restricted runtime write roles", () => {
       }
     } finally {
       const orgs = [organizationId, otherOrganizationId].filter(Boolean);
+      await admin.query("DELETE FROM provisioning_operations WHERE product_instance_id = $1", [instanceId ?? null]);
       await admin.query("DELETE FROM product_instances WHERE id = $1", [instanceId ?? null]);
       await admin.query("DELETE FROM identity_audit_events WHERE organization_id = ANY($1)", [orgs]);
       await admin.query("DELETE FROM team_memberships WHERE team_id = $1", [teamId ?? null]);

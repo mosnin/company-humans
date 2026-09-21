@@ -24,7 +24,7 @@
     "first_mutation": {
       "satisfied": true,
       "miss_count": 0,
-      "satisfied_at": "2026-09-21T16:46:38.037222Z"
+      "satisfied_at": "2026-09-21T17:01:51.562179Z"
     },
     "first_runtime": {
       "miss_count": 0,
@@ -138,8 +138,14 @@
       "first_reality": true,
       "final_required": true,
       "existing_implementation": null,
-      "state": "missing",
-      "evidence": []
+      "state": "partial",
+      "evidence": [
+        {
+          "kind": "product_source",
+          "path": "packages/database/src/provisioning-operations.ts",
+          "sha256": "5b443cdf7e2456825861a7a437b052d53809187eb54ba9f1cc931f62c676f181"
+        }
+      ]
     },
     {
       "capability_id": "phase:03",
@@ -326,6 +332,21 @@
         "path": "apps/web/convex/auth.ts",
         "sha256": "baec20bc3de675343a324bc6cce3ac62d8272551f4d2162f538d953fb2a1f3ea"
       }
+    },
+    {
+      "$schema": "company-os.mission-execution-event.v1",
+      "event_id": "provisioning-journal-20260921",
+      "kind": "artifact_materialized",
+      "occurred_at": "2026-09-21T17:01:51.562179Z",
+      "event_sha256": "b88408b10e4e8a1d2606fad19494e863afe5b1ec0c01a273a9753961dcbdb49b",
+      "work_class": "implementation",
+      "units": 1.0,
+      "capability_id": "phase:02",
+      "evidence": {
+        "kind": "product_source",
+        "path": "packages/database/src/provisioning-operations.ts",
+        "sha256": "5b443cdf7e2456825861a7a437b052d53809187eb54ba9f1cc931f62c676f181"
+      }
     }
   ],
   "work_units": {
@@ -334,7 +355,7 @@
     "documentation": 0.0,
     "evaluation": 0.0,
     "governance": 0.0,
-    "implementation": 0.0,
+    "implementation": 1.0,
     "integration": 2.0,
     "packaging": 0.0,
     "repair": 0.0,
@@ -364,8 +385,8 @@
     "mode": "navigate",
     "waypoint": "R3_FIRST_REALITY",
     "position": {
-      "destination_distance": 0.96063,
-      "waypoint_distance": 0.888889,
+      "destination_distance": 0.933071,
+      "waypoint_distance": 0.777778,
       "reality": {
         "internal_primitives": false,
         "runnable_capability": false,
@@ -376,9 +397,9 @@
       "checkpointed": false
     },
     "velocity": {
-      "distance_delta": 0.0,
-      "distance_per_minute": 0.0,
-      "minutes_since_progress": 2.664,
+      "distance_delta": 0.027559,
+      "distance_per_minute": 0.00181,
+      "minutes_since_progress": 0.0,
       "actuation_attempts_since_progress": 0,
       "stalled": false,
       "stagnation_threshold_minutes": 60.0
@@ -386,8 +407,8 @@
     "next_action": {
       "action_kind": "materialize",
       "work_class": "implementation",
-      "capability_id": "phase:02",
-      "instruction": "Materialize the smallest real phase:02 artifact that changes objective reality."
+      "capability_id": "phase:03",
+      "instruction": "Materialize the smallest real phase:03 artifact that changes objective reality."
     },
     "sensor_posture": {
       "sensor_fraction": 0.0,
@@ -416,7 +437,7 @@
       "forbid_speculation": true
     },
     "orders": [
-      "Materialize the smallest real phase:02 artifact that changes objective reality.",
+      "Materialize the smallest real phase:03 artifact that changes objective reality.",
       "After the action, observe the resulting environment state and replan from evidence rather than from the prior plan."
     ],
     "trajectory": [
@@ -443,15 +464,23 @@
         "waypoint": "R3_FIRST_REALITY",
         "next_action_kind": "materialize",
         "capability_id": "phase:02"
+      },
+      {
+        "at": "2026-09-21T17:01:51.562179Z",
+        "destination_distance": 0.933071,
+        "waypoint_distance": 0.777778,
+        "waypoint": "R3_FIRST_REALITY",
+        "next_action_kind": "materialize",
+        "capability_id": "phase:03"
       }
     ],
-    "decision_sha256": "d4d7eaf831c847d63a3e81b944c28eaffaf5200609087af4f556060cc9ffe940"
+    "decision_sha256": "c83de3914a9c7744eceac3a1826f4fcf6c7f019d2c77e65ffa714ac78e4a15f6"
   },
   "governor_decision": {
     "$schema": "company-os.outcome-executive-decision.v1",
     "objective_id": "company-human",
     "objective": "Build and independently verify the complete Company Human platform in mosnin/company-humans against the canonical Notion tree and phases 00\u201316. Preserve company-os-web. Use Convex OAuth, organization-sponsored ecosystem access with Scalar first, scoped roles and admin activity visibility, bounded usage and centralized commercial control, modular human work/CRM/context/creator workspaces, recoverable Chippi referral attribution, immutable commissions and real regulated payouts while merchant billing remains independent. Verify sales, referral and UGC configurations without forks. Use Symbolic context and Flow when connected; inspect Callix UTM tracking for reuse. Expansion remains conditional on stable first-party contracts and actual demand.",
-    "budget_fraction_consumed": 0.002567901134259259,
+    "budget_fraction_consumed": 0.011291448148148149,
     "reality_level": "R0",
     "reality_level_index": 0,
     "mode": "normal",
@@ -460,7 +489,7 @@
     "first_artifact_budget_fraction": 0.25,
     "allocation_incident": false,
     "dominant_bottleneck": {
-      "capability_id": "phase:02",
+      "capability_id": "phase:03",
       "state": "missing",
       "critical": true,
       "priority": 100,
@@ -486,9 +515,9 @@
     ],
     "paused_work_classes": [],
     "manager_orders": [
-      "Materialize the smallest real phase:02 artifact that changes objective reality.",
+      "Materialize the smallest real phase:03 artifact that changes objective reality.",
       "After the action, observe the resulting environment state and replan from evidence rather than from the prior plan.",
-      "Make phase:02 the global execution bottleneck until observable progress changes its state.",
+      "Make phase:03 the global execution bottleneck until observable progress changes its state.",
       "Materialize and run the smallest connected end-to-end artifact before expanding architecture, research, or governance.",
       "Checkpoint tested product bytes promptly; governance receipts are not a substitute for durable product state."
     ],
@@ -509,7 +538,7 @@
       },
       {
         "capability_id": "phase:02",
-        "state": "missing",
+        "state": "partial",
         "critical": true,
         "priority": 100,
         "existing_implementation": null
@@ -613,16 +642,16 @@
         "existing_implementation": null
       }
     ],
-    "decision_sha256": "58be2f038cd1aaba2e3995e6cae6149e87d398b103319b826db2ba068d9a4cc7",
-    "navigation_decision_sha256": "d4d7eaf831c847d63a3e81b944c28eaffaf5200609087af4f556060cc9ffe940",
+    "decision_sha256": "2266e0c9b0d8334d6de585800a626af2883c6c21d5a6679c0cb97e1a2a62db41",
+    "navigation_decision_sha256": "c83de3914a9c7744eceac3a1826f4fcf6c7f019d2c77e65ffa714ac78e4a15f6",
     "navigation_mode": "navigate",
     "waypoint": "R3_FIRST_REALITY",
-    "destination_distance": 0.96063,
-    "waypoint_distance": 0.888889,
+    "destination_distance": 0.933071,
+    "waypoint_distance": 0.777778,
     "objective_velocity": {
-      "distance_delta": 0.0,
-      "distance_per_minute": 0.0,
-      "minutes_since_progress": 2.664,
+      "distance_delta": 0.027559,
+      "distance_per_minute": 0.00181,
+      "minutes_since_progress": 0.0,
       "actuation_attempts_since_progress": 0,
       "stalled": false,
       "stagnation_threshold_minutes": 60.0
@@ -630,8 +659,8 @@
     "next_action": {
       "action_kind": "materialize",
       "work_class": "implementation",
-      "capability_id": "phase:02",
-      "instruction": "Materialize the smallest real phase:02 artifact that changes objective reality."
+      "capability_id": "phase:03",
+      "instruction": "Materialize the smallest real phase:03 artifact that changes objective reality."
     },
     "sensor_posture": {
       "sensor_fraction": 0.0,
@@ -661,7 +690,7 @@
     }
   },
   "checkpoint": null,
-  "state_sha256": "f0dffefcf53ca37de748e54f409cc1ea792c58d1a6772c0502d89950769d7f42",
+  "state_sha256": "d1722fe2f7ce86d38e86e7fc23bcf0618c54e2d734ec58739980bede633a1847",
   "goal_route_sha256": "fbe18be85de19dee2838b7e5484d00de48083c72abd2c5bf57928acbf0178344",
   "root_goal_sha256": "03d30ad602d562e0245176463ef01d2c90f14d5300bfdfdecc84f825e56644a5",
   "scheduler_binding": "Active Codex thread goal; this local lease is not an installed background automation",
