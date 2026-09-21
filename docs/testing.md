@@ -267,3 +267,9 @@ All 175 automated tests (30 contracts, 24 database, 121 web), typecheck, lint an
 All provider calls are explicit fixture adapters. No live Scalar state, hosted worker login/schedule, real member activation or final effective entitlement gate is claimed. Prior a5b79d4 passed hosted CI 35654732670. No UI changed; browser evidence remains the earlier 62 fixture checks.
 
 Both final capability worker and snapshot preparation scenarios passed hosted verification PostgreSQL (55.31 seconds combined). Migration 0039 then applied to local development and hosted production; replay reported current. All four databases have 39 migrations. No production fixture data, provider calls, worker login or schedule was created.
+
+## Capability delivery administration — 2026-09-21
+
+All 175 automated tests, typecheck, lint and production build pass. Database assertions cover latest-snapshot selection, pending revision without old success/history, current-source mismatch even without a new snapshot, tenant denial, organization-view separation and exclusion of provider identities/leases/raw receipts. The expanded restricted database scenario passed hosted verification PostgreSQL (48.44 seconds). No migration changed.
+
+All 68 desktop/mobile fixture browser checks pass, including six new checks for capability readback/history, stale-source visibility, refresh preserving unsaved edits and clearing previous success after a save. The first run exposed duplicate save-status announcements; the duplicate was removed and the full browser suite rerun. Desktop/mobile screenshots were inspected. Authentication/API data and provider calls remain fixtures; no live OAuth or Scalar acceptance is claimed. Prior dcc85d6 passed CI 35655606157.

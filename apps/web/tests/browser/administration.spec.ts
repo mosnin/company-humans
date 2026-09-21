@@ -348,3 +348,32 @@ test('member delivery does not hide failed organization delivery',async({page})=
   await expect(page.getByText('Organization delivery: Needs attention',{exact:true})).toBeVisible();await expect(page.getByText('Organization limit: 0 lead')).toBeVisible();
   await expect(page.getByText('Delivery issue: retry exhausted')).toBeVisible();
 });
+
+test('capability delivery shows historical readback and bounded attempts',async({page},testInfo)=>{
+  await page.goto('/?screen=capability-delivery');
+  await expect(page.getByRole('heading',{name:'Capability delivery'})).toBeVisible();
+  await expect(page.getByText('Capability delivery: Provider readback received',{exact:true})).toBeVisible();
+  await expect(page.getByText('This records a past check of staged capabilities.',{exact:false})).toBeVisible();
+  await page.getByText('Delivery attempts',{exact:true}).click();
+  await expect(page.getByText('Attempt 1: retryable failure',{exact:true})).toBeVisible();
+  await expect(page.getByText('Attempt 2: succeeded',{exact:true})).toBeVisible();
+  await page.screenshot({path:testInfo.outputPath('capability-delivery.png'),fullPage:true});
+});
+test('capability delivery identifies changed source and refresh preserves edits',async({page})=>{
+  await page.goto('/?screen=stale-capabilities');
+  await expect(page.getByText('Request or member eligibility changed.',{exact:false})).toBeVisible();
+  await page.getByLabel('Setting for lead-enrichment').selectOption('allow');
+  await page.getByRole('button',{name:'Refresh capability status'}).click();
+  await expect(page.getByLabel('Setting for lead-enrichment')).toHaveValue('allow');
+});
+test('saving capability preferences clears stale success until refreshed data arrives',async({page})=>{
+  await page.route('**/api/organizations/*/applications/*/entitlements',async route=>{
+    const body=route.request().postDataJSON();
+    await route.fulfill({status:200,json:{providerAccessConfirmed:false,revision:{schemaVersion:1,entitlementId:`ch_ent_${'a'.repeat(32)}`,organizationId:`ch_org_${'a'.repeat(32)}`,productInstanceId:`ch_inst_${'a'.repeat(32)}`,membershipId:body.membershipId,capability:body.capability,effect:body.effect,revision:1}}});
+  });
+  await page.goto('/?screen=capability-delivery');
+  await page.getByLabel('Setting for lead-enrichment').selectOption('allow');
+  await page.getByRole('button',{name:'Save setting'}).click();
+  await expect(page.getByText('Settings changed. Awaiting updated delivery status.',{exact:true})).toBeVisible();
+  await expect(page.getByText('Capability delivery: Provider readback received',{exact:true})).toHaveCount(0);
+});

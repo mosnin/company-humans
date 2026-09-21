@@ -12,7 +12,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 175 contract/database/route/Convex tests pass. Sixty-two desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
+- 175 contract/database/route/Convex tests pass. Sixty-eight desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
 - Local development/verification and hosted verification/production databases have 39 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
@@ -317,3 +317,9 @@ All 174 automated tests, typecheck, lint and build pass; the restricted-service 
 Migration 0039 atomically enqueues snapshots and adds durable job/attempt history plus a separate restricted capability worker role. The dispatcher applies the complete set and independently reads back suspended capability state, using stable retries, bounded deadlines and atomic service audit. It recomputes current canonical source configuration at claim/completion and supersedes stale work, preserving historical receipts. It cannot resume a member or change preferences.
 
 All 175 automated tests, typecheck, lint and build pass. Both affected scenarios passed hosted verification (55.31 seconds combined). All four databases have migration 0039; production replay made no changes. Real Scalar transport, hosted execution, automatic snapshot refresh/reconciliation, administration diagnostics and final effective-policy activation remain incomplete. Fixture readback is not provider acceptance.
+
+## CH-18 capability delivery diagnostics — 2026-09-21
+
+Member access settings now show latest snapshot revision, freshness against current source/eligibility, job status and bounded attempt history. Strict server projections exclude provider identities, leases, raw receipts and worker credentials. Saving preferences clears prior success locally while waiting for refreshed status. Existing usage-limit delivery presentation is shared without changing enforcement behavior.
+
+All 175 automated tests, typecheck, lint, build and 68 fixture browser checks pass; desktop/mobile screenshots were reviewed. The expanded restricted-role scenario passed hosted PostgreSQL (48.44 seconds). No migration was required. Real OAuth, Scalar transport/enforcement, hosted workers, automatic refresh/reconciliation and final activation remain incomplete.

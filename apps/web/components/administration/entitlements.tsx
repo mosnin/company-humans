@@ -5,16 +5,30 @@ import { EntitlementRevisionV1Schema, requestedEntitlementEffect } from "@compan
 import type { readApplicationEntitlements } from "@company-human/database/administration";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { DeliveryStatus } from "./delivery-status";
 import { Field, Select } from "./controls";
 type Data = Awaited<ReturnType<typeof readApplicationEntitlements>>;
 type Setting = Data['settings'][number];
 export function EntitlementEditor({data,organizationId,instanceId}:{data:Data;organizationId:string;instanceId:string}) {
+  const router=useRouter();
+  const signature=JSON.stringify(data.settings);
+  const [invalidated,setInvalidated]=useState<string|null>(null);
+  const awaiting=invalidated===signature;
   return <div className="space-y-4"><p className="t-body text-ink-2">{data.membershipId ? `Overrides for ${data.memberName}. An organization deny always takes precedence.` : 'Defaults apply to members of this workspace. Member overrides can further restrict access.'} Saved settings do not confirm access in the connected application.</p>
+    {data.membershipId&&<Card><CardContent><h2 className="t-title-3">Capability delivery</h2>
+      <p className="mt-2 t-body text-ink-2">Capabilities are staged while this member remains suspended. Staging does not enable product access.</p>
+      {awaiting?<p className="mt-2 t-body">Settings changed. Awaiting updated delivery status.</p>:!data.staging?<p className="mt-2 t-body">No capability snapshot prepared yet.</p>:<>
+        <p className="mt-2 t-caption text-ink-3">Snapshot revision {data.staging.policyRevision}</p>
+        {!data.staging.matchesCurrentRequest&&<p className="mt-2 t-body text-critical-text">Request or member eligibility changed. This snapshot no longer matches the current request.</p>}
+        <DeliveryStatus delivery={data.staging.delivery} configured label="Capability delivery" successDescription="This records a past check of staged capabilities. It does not confirm current access or usage-limit enforcement." />
+      </>}
+      <Button type="button" variant="secondary" className="mt-4" onClick={()=>router.refresh()}>Refresh capability status</Button>
+    </CardContent></Card>}
     {!data.settings.length && <Card><CardContent><h2 className="t-title-3">No capabilities available</h2><p className="t-body text-ink-2">This application has not published configurable capabilities yet.</p></CardContent></Card>}
-    {data.settings.map(setting=><SettingForm key={`${data.membershipId}:${setting.capability}:${setting.revision}`} setting={setting} organizationId={organizationId} instanceId={instanceId} membershipId={data.membershipId} />)}
+    {data.settings.map(setting=><SettingForm key={`${data.membershipId}:${setting.capability}:${setting.revision}`} setting={setting} onSaved={()=>setInvalidated(signature)} organizationId={organizationId} instanceId={instanceId} membershipId={data.membershipId} />)}
   </div>;
 }
-function SettingForm({setting,organizationId,instanceId,membershipId}:{setting:Setting;organizationId:string;instanceId:string;membershipId:string|null}) {
+function SettingForm({setting,organizationId,instanceId,membershipId,onSaved}:{onSaved:()=>void;setting:Setting;organizationId:string;instanceId:string;membershipId:string|null}) {
   const router=useRouter();
   const [effect,setEffect]=useState(setting.effect),[savedEffect,setSavedEffect]=useState(setting.effect),[revision,setRevision]=useState(setting.revision);
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[saved,setSaved]=useState(false),[conflict,setConflict]=useState(false);
@@ -30,7 +44,7 @@ function SettingForm({setting,organizationId,instanceId,membershipId}:{setting:S
       if(!parsed.success)throw new Error('Save could not be confirmed. Reload settings.');
       const receipt=parsed.data;
       if(receipt.organizationId!==organizationId||receipt.productInstanceId!==instanceId||receipt.membershipId!==membershipId||receipt.capability!==setting.capability||receipt.revision!==revision+1||receipt.effect!==effect||result.providerAccessConfirmed!==false)throw new Error('Save could not be confirmed. Reload settings.');
-      setRevision(receipt.revision);setSavedEffect(receipt.effect);setSaved(true);router.refresh();
+      setRevision(receipt.revision);setSavedEffect(receipt.effect);setSaved(true);onSaved();router.refresh();
     } catch(e){setError(e instanceof Error?e.message:'Could not save settings. Please retry.');}finally{setBusy(false);}
   }
   return <Card><CardContent><h2 className="t-title-3 break-all">{setting.capability}</h2>

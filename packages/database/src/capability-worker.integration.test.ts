@@ -1,3 +1,4 @@
+import { readApplicationEntitlements } from './administration.js';
 import { randomBytes } from 'node:crypto';
 import { Client } from 'pg';
 import { describe,it,expect } from 'vitest';
@@ -50,8 +51,17 @@ describe.skipIf(!databaseUrl)('restricted capability staging worker',()=>{
    try{await expect(finishCapability(worker.toString(),org.organizationId,lease,receipt,receipt)).rejects.toThrow('fixture audit failure');expect((await status(1)).status).toBe('running');}
    finally{await admin.query(`DROP TRIGGER ${guard} ON identity_audit_events`);await admin.query(`DROP FUNCTION public.${guard}()`);}
    await finishCapability(worker.toString(),org.organizationId,lease,receipt,receipt);expect((await status(1)).status).toBe('succeeded');
+   const view=await readApplicationEntitlements(url.toString(),users[0]!,org.organizationId,instance,org.ownerMembershipId);
+   expect(view.staging).toEqual(expect.objectContaining({policyRevision:1,matchesCurrentRequest:true,delivery:expect.objectContaining({status:'succeeded',attemptCount:1,attempts:[expect.objectContaining({number:1,outcome:'succeeded'})]})}));
+   for(const privateValue of ['fixture-org','fixture-member',lease.leaseToken,'apply_receipt','readback_receipt','worker_role'])expect(JSON.stringify(view)).not.toContain(privateValue);
+   expect((await readApplicationEntitlements(url.toString(),users[0]!,org.organizationId,instance)).staging).toBeNull();
+   await expect(readApplicationEntitlements(url.toString(),users[1]!,other.organizationId,instance,other.ownerMembershipId)).rejects.toThrow();
+
    await expect(finishCapability(worker.toString(),org.organizationId,lease,receipt,receipt)).rejects.toThrow('Stale');
-   await prepare();let read=false;
+   await prepare();
+   const queued=await readApplicationEntitlements(url.toString(),users[0]!,org.organizationId,instance,org.ownerMembershipId);
+   expect(queued.staging).toEqual(expect.objectContaining({policyRevision:2,delivery:expect.objectContaining({status:'pending',attemptCount:0,attempts:[]})}));
+   let read=false;
    await dispatch(fixture(async({idempotencyKey:_key,...state})=>({status:'succeeded',value:{...state,capabilities:['read','write']}}),async state=>{read=true;return {status:'succeeded',value:state};}));
    expect(read).toBe(false);expect((await status(2)).failure_code).toBe('provider_capability_mismatch');
    await prepare();await dispatch(fixture(good().stageCapabilities,async state=>({status:'succeeded',value:{...state,target:{...state.target,externalMemberId:'foreign'}}})));
@@ -64,6 +74,7 @@ describe.skipIf(!databaseUrl)('restricted capability staging worker',()=>{
    const retry=(await claim())!;expect(retry.idempotencyKey).toBe(`capability:${mapping}:4`);expect(retry.attemptNumber).toBe(2);
    // Changed preferences without a new snapshot must still invalidate an in-flight result.
    await setProductEntitlement(url.toString(),{...config,effect:'deny',expectedRevision:preference++});
+   expect((await readApplicationEntitlements(url.toString(),users[0]!,org.organizationId,instance,org.ownerMembershipId)).staging?.matchesCurrentRequest).toBe(false);
    await finishCapability(worker.toString(),org.organizationId,retry,{status:'succeeded',value:retry.state},{status:'succeeded',value:retry.state});
    expect((await status(4)).status).toBe('superseded');
    const empty=await prepareMemberCapabilitySnapshot(url.toString(),input);expect(empty.capabilities).toEqual([]);await dispatch();expect((await status(5)).status).toBe('succeeded');

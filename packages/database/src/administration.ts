@@ -1,5 +1,6 @@
 import { OrganizationIdSchema, ProductInstanceIdSchema, UserIdSchema, MembershipIdSchema, ProductCatalogMetadataV1Schema, EntitlementEffectSchema, requestedEntitlementEffect, LimitQuantitySchema, LimitWindowSchema, type Capability } from "@company-human/contracts";
 import { Client } from "pg";
+import { readCurrentCapabilityInputs } from "./capability-source.js";
 import { setServiceContext } from "./service-context.js";
 
 export class AdministrationDenied extends Error {
@@ -145,6 +146,10 @@ export async function listApplicationMemberDiagnostics(databaseUrl: string, acto
   });
 }
 
+export interface CapabilityStagingDiagnostic {
+  policyRevision:number;matchesCurrentRequest:boolean;recordedAt:string;delivery:UsageLimitDelivery|null;
+}
+
 /** Desired policy settings only. Never use this projection to authorize product activity. */
 export async function readApplicationEntitlements(databaseUrl: string, actorUserId: string, organizationId: string, instanceId: string, membershipId: string | null = null) {
   ProductInstanceIdSchema.parse(instanceId);
@@ -183,7 +188,33 @@ export async function readApplicationEntitlements(databaseUrl: string, actorUser
         organizationEffect, memberEffect, requestedEffect: requestedEntitlementEffect(organizationEffect, memberEffect),
         allowAvailable: catalog.success && product.catalog_status!=='retired' && supported.includes(capability) };
     });
-    return { productName: product.productName, membershipId, memberName, settings, providerAccessConfirmed: false as const };
+    let staging:CapabilityStagingDiagnostic|null=null;
+    if(membershipId!==null){
+      const latest=await client.query<{id:string;policy_revision:number;created_at:Date}>(`SELECT pm.id,s.policy_revision,s.created_at
+        FROM public.product_memberships pm JOIN LATERAL (SELECT policy_revision,created_at FROM public.member_capability_snapshots
+          WHERE organization_id=pm.organization_id AND product_membership_id=pm.id ORDER BY policy_revision DESC LIMIT 1) s ON true
+        WHERE pm.organization_id=$1 AND pm.product_instance_id=$2 AND pm.membership_id=$3`,[organizationId,instanceId,membershipId]);
+      const snapshot=latest.rows[0];
+      if(snapshot){
+        const current=await readCurrentCapabilityInputs(client,organizationId,snapshot.id);
+        const match=current?(await client.query<{matches:boolean}>(`SELECT source=$4::jsonb AND payload=$5::jsonb AS matches
+          FROM public.member_capability_snapshots WHERE organization_id=$1 AND product_membership_id=$2 AND policy_revision=$3`,
+          [organizationId,snapshot.id,snapshot.policy_revision,current.source,{...current.state,policyRevision:snapshot.policy_revision}])).rows[0]?.matches===true:false;
+        const jobs=await client.query<{status:UsageLimitDelivery['status'];attempt_count:number;failure_code:string|null;updated_at:Date;next_attempt_at:Date}>(
+          `SELECT status,attempt_count,failure_code,updated_at,next_attempt_at FROM public.capability_jobs
+           WHERE organization_id=$1 AND product_membership_id=$2 AND revision=$3`,[organizationId,snapshot.id,snapshot.policy_revision]);
+        const attempts=await client.query<{attempt_number:number;started_at:Date;finished_at:Date|null;outcome:string|null;failure_code:string|null}>(
+          `SELECT attempt_number,started_at,finished_at,outcome,failure_code FROM public.capability_attempts
+           WHERE organization_id=$1 AND product_membership_id=$2 AND revision=$3 ORDER BY attempt_number LIMIT 5`,[organizationId,snapshot.id,snapshot.policy_revision]);
+        const job=jobs.rows[0];
+        staging={policyRevision:snapshot.policy_revision,matchesCurrentRequest:match,recordedAt:snapshot.created_at.toISOString(),delivery:job?{
+          status:job.status,attemptCount:job.attempt_count,failureCode:job.failure_code,updatedAt:job.updated_at.toISOString(),
+          nextAttemptAt:job.status==='retry_wait'?job.next_attempt_at.toISOString():null,
+          attempts:attempts.rows.map(a=>({number:a.attempt_number,startedAt:a.started_at.toISOString(),finishedAt:a.finished_at?.toISOString()??null,outcome:a.outcome,failureCode:a.failure_code})),
+        }:null};
+      }
+    }
+    return { productName: product.productName, membershipId, memberName, settings, staging, providerAccessConfirmed: false as const };
   });
 }
 
