@@ -1,3 +1,5 @@
+import { assessAdapterHealth, type HealthAssessment } from "@company-human/contracts";
+import { APPLICATION_HEALTH_MAX_AGE_MS } from "./application-health.js";
 import { OrganizationIdSchema, ProductInstanceIdSchema, UserIdSchema, MembershipIdSchema, ProductCatalogMetadataV1Schema, EntitlementEffectSchema, requestedEntitlementEffect, LimitQuantitySchema, LimitWindowSchema, type Capability } from "@company-human/contracts";
 import { Client } from "pg";
 import { readCurrentCapabilityInputs } from "./capability-source.js";
@@ -330,5 +332,23 @@ export async function listApplicationCatalog(databaseUrl: string, actorUserId: s
         modes,capabilities:metadata?.supportedCapabilities ?? [],usageMeters:metadata?.usageMeters ?? [],requiredPermissions:metadata?.requiredPermissions ?? [],
         connectionRequirements:metadata?.connectionRequirements ?? [],billingBehavior:metadata?.billingBehavior ?? null};
     });
+  });
+}
+
+
+export interface ApplicationHealthDiagnostic { recordedAt:string; startedAt:string; assessment:HealthAssessment|null; failureCode:string|null }
+/** Latest-started check for the current binding only; a failed check cannot fall back to old healthy. */
+export async function readApplicationHealth(databaseUrl:string,actorUserId:string,organizationId:string,instanceId:string):Promise<ApplicationHealthDiagnostic|null>{
+  ProductInstanceIdSchema.parse(instanceId);
+  return readAdministration(databaseUrl,actorUserId,organizationId,["applications.manage"],async client=>{
+    const instance=await client.query("SELECT id FROM public.product_instances WHERE organization_id=$1 AND id=$2",[organizationId,instanceId]);
+    if(!instance.rowCount)throw new AdministrationDenied();
+    const result=await client.query<{health:unknown;failure_code:string|null;recorded_at:Date;started_at:Date;now:Date}>(`SELECT h.health,h.failure_code,h.recorded_at,h.started_at,clock_timestamp() AS now
+      FROM public.application_health_observations h JOIN public.product_instances i ON i.organization_id=h.organization_id AND i.id=h.product_instance_id
+      WHERE h.organization_id=$1 AND h.product_instance_id=$2 AND h.external_organization_id=i.external_organization_id
+      ORDER BY h.started_at DESC,h.id DESC LIMIT 1`,[organizationId,instanceId]);
+    const row=result.rows[0];if(!row)return null;
+    return {recordedAt:row.recorded_at.toISOString(),startedAt:row.started_at.toISOString(),failureCode:row.failure_code,
+      assessment:row.failure_code===null?assessAdapterHealth(row.health,row.now,APPLICATION_HEALTH_MAX_AGE_MS):null};
   });
 }

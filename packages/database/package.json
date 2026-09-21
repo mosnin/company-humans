@@ -91,6 +91,10 @@
     "./capability-preparer": {
       "types": "./dist/capability-preparer.d.ts",
       "default": "./dist/capability-preparer.js"
+    },
+    "./application-health": {
+      "types": "./dist/application-health.d.ts",
+      "default": "./dist/application-health.js"
     }
   },
   "scripts": {

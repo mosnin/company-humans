@@ -27,3 +27,7 @@ Versioned organization/member capability configuration is stored in PostgreSQL a
 ## Suspended member binding
 
 Member creation now has two verified kernel boundaries: the restricted V2 execution journal and an audited database function that projects a successful current receipt into a suspended canonical mapping. The function uses a dedicated minimal owner role; the worker can invoke it but cannot directly edit mapping state. Receipt and audit provenance stay atomic. Product activation remains a separate unfinished boundary requiring current policy, finite limits and provider readback.
+
+## Health collection
+
+The restricted health collector records each provider check independently from provisioning state. Latest-started observations are projected for admins with a five-minute monitoring freshness window; failed checks remain visible. This is monitoring only. Scheduling, real adapters and the admin status interface remain incomplete.

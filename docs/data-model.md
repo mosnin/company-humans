@@ -101,3 +101,7 @@ Migration 0038 adds member_capability_snapshots keyed by product membership and 
 Migration 0039 adds capability_jobs and capability_attempts keyed by product membership and snapshot revision, with composite tenant references. Every new snapshot enqueues atomically; backfill schedules only the latest snapshot. Jobs retain leases, retry times and bounded status; completed attempts retain immutable worker provenance and apply/readback receipts. The capability worker can update journal state but cannot change snapshot configuration or product-member access.
 
 Migration 0040 adds service provenance to member_capability_snapshots. Each row has exactly one human or capability-preparer service actor; existing human history remains unchanged. Source policy revisions still identify original policy records/authors. The restricted preparer can append snapshots and enqueue their jobs but cannot update snapshots, delivery results or product-member access.
+
+## Application health observations
+
+Migrations 0041–0042 add application_health_observations keyed by UUID, with organization/instance composite foreign key, collection start/recording times, sanitized health or normalized failure and checked external organization binding. Runtime workers may append but cannot update/delete history. The current admin read selects the latest-started observation for the current binding; obsolete/null bindings are excluded.
