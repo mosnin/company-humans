@@ -35,3 +35,7 @@ The production server has been smoke-tested with authentication unconfigured: pu
 Hosted GitHub Actions run [35522115426](https://github.com/mosnin/company-humans/actions/runs/35522115426) passed on 3fbc494 after the repository became public. Live Convex deployment, provider OAuth sign-in, organization switching and full browser acceptance remain required before Phase 01 is verified. The free Convex team is at its 40-deployment quota. Later phase financial, failure-recovery, adapter and load tests remain unimplemented.
 
 The current authentication code is generated/typechecked locally and tested with `convex-test`; it has not been pushed to a Convex deployment. Normal deployment codegen and a real provider round-trip remain acceptance gates.
+
+## Pending application intent concurrency
+
+`product-instances.integration.test.ts` exercises eight simultaneous enable requests through a restricted PostgreSQL service login. Before the repair the unique organization/product/key constraint rejected concurrent callers. After the repair all callers return one ID, exactly one enable audit event exists, the instance remains pending, a different organization cannot access it, and a conflicting provisioning mode is rejected. This is real database evidence, not a live provider provisioning test.

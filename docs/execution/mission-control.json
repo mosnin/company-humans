@@ -376,9 +376,9 @@
       "checkpointed": false
     },
     "velocity": {
-      "distance_delta": 0.027559,
-      "distance_per_minute": 322.264666,
-      "minutes_since_progress": 0.0,
+      "distance_delta": 0.0,
+      "distance_per_minute": 0.0,
+      "minutes_since_progress": 2.664,
       "actuation_attempts_since_progress": 0,
       "stalled": false,
       "stagnation_threshold_minutes": 60.0
@@ -445,13 +445,13 @@
         "capability_id": "phase:02"
       }
     ],
-    "decision_sha256": "b54c2f1ee8f51d64231c2757adefecd91f6e86fad06fb0dc21f0e606accda8fb"
+    "decision_sha256": "d4d7eaf831c847d63a3e81b944c28eaffaf5200609087af4f556060cc9ffe940"
   },
   "governor_decision": {
     "$schema": "company-os.outcome-executive-decision.v1",
     "objective_id": "company-human",
     "objective": "Build and independently verify the complete Company Human platform in mosnin/company-humans against the canonical Notion tree and phases 00\u201316. Preserve company-os-web. Use Convex OAuth, organization-sponsored ecosystem access with Scalar first, scoped roles and admin activity visibility, bounded usage and centralized commercial control, modular human work/CRM/context/creator workspaces, recoverable Chippi referral attribution, immutable commissions and real regulated payouts while merchant billing remains independent. Verify sales, referral and UGC configurations without forks. Use Symbolic context and Flow when connected; inspect Callix UTM tracking for reuse. Expansion remains conditional on stable first-party contracts and actual demand.",
-    "budget_fraction_consumed": 0.0007182426273148148,
+    "budget_fraction_consumed": 0.002567901134259259,
     "reality_level": "R0",
     "reality_level_index": 0,
     "mode": "normal",
@@ -613,16 +613,16 @@
         "existing_implementation": null
       }
     ],
-    "decision_sha256": "a657715ca59b9e6455b79d3f2588a0a0bf68596a3cf8600cf87fe6233ce15081",
-    "navigation_decision_sha256": "b54c2f1ee8f51d64231c2757adefecd91f6e86fad06fb0dc21f0e606accda8fb",
+    "decision_sha256": "58be2f038cd1aaba2e3995e6cae6149e87d398b103319b826db2ba068d9a4cc7",
+    "navigation_decision_sha256": "d4d7eaf831c847d63a3e81b944c28eaffaf5200609087af4f556060cc9ffe940",
     "navigation_mode": "navigate",
     "waypoint": "R3_FIRST_REALITY",
     "destination_distance": 0.96063,
     "waypoint_distance": 0.888889,
     "objective_velocity": {
-      "distance_delta": 0.027559,
-      "distance_per_minute": 322.264666,
-      "minutes_since_progress": 0.0,
+      "distance_delta": 0.0,
+      "distance_per_minute": 0.0,
+      "minutes_since_progress": 2.664,
       "actuation_attempts_since_progress": 0,
       "stalled": false,
       "stagnation_threshold_minutes": 60.0
@@ -661,7 +661,7 @@
     }
   },
   "checkpoint": null,
-  "state_sha256": "f70910b843d5fd87b4ebdf2811de20efb4f62670242e01ac98604dbbe961f9f2",
+  "state_sha256": "f0dffefcf53ca37de748e54f409cc1ea792c58d1a6772c0502d89950769d7f42",
   "goal_route_sha256": "fbe18be85de19dee2838b7e5484d00de48083c72abd2c5bf57928acbf0178344",
   "root_goal_sha256": "03d30ad602d562e0245176463ef01d2c90f14d5300bfdfdecc84f825e56644a5",
   "scheduler_binding": "Active Codex thread goal; this local lease is not an installed background automation",

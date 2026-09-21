@@ -35,6 +35,11 @@ export async function enableProductInstance(databaseUrl: string, input: z.input<
       "SELECT catalog_status FROM public.products WHERE id = $1", [parsed.productId],
     );
     if (!product.rows[0] || product.rows[0].catalog_status === "retired") throw new Error("Product unavailable");
+    // A row lock cannot serialize the first insert because no row exists yet.
+    // Lock this tenant/product/key through commit, including its audit event.
+    await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
+      JSON.stringify([parsed.organizationId, parsed.productId, parsed.instanceKey]),
+    ]);
     const existing = await client.query<{ id: string; mode: string; desired_enabled: boolean }>(
       `SELECT id, mode, desired_enabled FROM public.product_instances
        WHERE organization_id = $1 AND product_id = $2 AND instance_key = $3 FOR UPDATE`,
