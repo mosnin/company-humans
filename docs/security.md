@@ -64,3 +64,7 @@ Membership suspension/removal disables product mapping intent, records a durable
 ## Application disable and insertion fencing
 
 The server disable transaction requires applications.manage and tenant scope; cross-organization identifiers are unavailable. Product-member insertion locks and checks its instance before inserting, preventing enabled child intent after a concurrent product disable. Migration 0026 allows denial of active instances while preserving provider status and forbids general-service provider-state mutation or re-enablement. Existing activation receipt checks still reject disabled instances. No public disable endpoint or remote revocation proof is introduced by this increment.
+
+## Disable endpoint authorization
+
+The application-disable POST is the fourteenth browser mutation handler covered by the origin-denial suite. It checks origin before authentication, validates URL organization/instance IDs, and uses server-derived identity with the restricted database service. Permission/unavailable-object errors expose no tenant detail; other failures return a generic retryable 503. A successful response is not a provider revocation receipt.

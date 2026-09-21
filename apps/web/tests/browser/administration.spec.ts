@@ -128,3 +128,31 @@ test("invitation revocation confirms intent and preserves retry after denial", a
   await expect(page.getByRole("cell",{name:"revoked",exact:true})).toBeVisible();
   await page.screenshot({path:testInfo.outputPath("invitation-revoked.png"),fullPage:true});
 });
+
+test("application disable confirms scope, recovers failure and distinguishes remote access", async ({page},testInfo) => {
+  let calls=0;
+  let finish: (()=>void)|undefined;
+  await page.route("**/api/organizations/*/applications/*/disable",async route=>{
+    calls++;expect(route.request().method()).toBe("POST");
+    if(calls===1) {await route.fulfill({status:503,json:{error:"Could not disable application. Please retry."}});return;}
+    await new Promise<void>(resolve=>{finish=resolve;});
+    await route.fulfill({status:202,json:{desiredEnabled:false,remoteRevocationConfirmed:false}});
+  });
+  await page.goto("/?screen=applications");
+  await page.getByRole("button",{name:"Disable application",exact:true}).click();
+  await expect(page.getByText("Existing access in the connected product may continue",{exact:false})).toBeVisible();
+  await page.getByRole("button",{name:"Cancel",exact:true}).click();expect(calls).toBe(0);
+  await page.getByRole("button",{name:"Disable application",exact:true}).click();
+  await page.getByRole("button",{name:"Confirm disable",exact:true}).click();
+  await expect(page.getByRole("alert")).toContainText("Please retry");
+  await expect(page.getByRole("status")).toHaveText("Setup needs attention");
+  await page.getByRole("button",{name:"Confirm disable",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Disabling…",exact:true})).toBeDisabled();
+  await expect.poll(()=>Boolean(finish)).toBe(true);finish!();
+  await expect(page.getByRole("status")).toHaveText("Disabled in workspace");
+  await expect(page.getByText("New workspace access is disabled. Remote access changes have not been confirmed.",{exact:true})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Disable application",exact:true})).toHaveCount(0);
+  expect(calls).toBe(2);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath("application-disabled.png"),fullPage:true});
+});

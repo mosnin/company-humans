@@ -16,8 +16,10 @@ import { POST as handler9 } from "@/app/api/organizations/[organizationId]/teams
 import { POST as handler10 } from "@/app/api/organizations/route";
 import { POST as handler11 } from "@/app/api/organizations/switch/route";
 import { DELETE as handler12 } from "@/app/api/organizations/[organizationId]/invitations/[invitationId]/route";
-const context = { params: Promise.resolve({ invitationId: `ch_inv_${"a".repeat(32)}`, organizationId: `ch_org_${"a".repeat(32)}`, membershipId: `ch_mem_${"a".repeat(32)}`, roleId: `ch_role_${"a".repeat(32)}`, teamId: `ch_team_${"a".repeat(32)}` }) };
+import { POST as handler13 } from "@/app/api/organizations/[organizationId]/applications/[instanceId]/disable/route";
+const context = { params: Promise.resolve({ instanceId: `ch_inst_${"a".repeat(32)}`, invitationId: `ch_inv_${"a".repeat(32)}`, organizationId: `ch_org_${"a".repeat(32)}`, membershipId: `ch_mem_${"a".repeat(32)}`, roleId: `ch_role_${"a".repeat(32)}`, teamId: `ch_team_${"a".repeat(32)}` }) };
 const handlers = [
+  ["application disable", "POST", (request: NextRequest) => handler13(request, context)],
   ["invitation revoke", "DELETE", (request: NextRequest) => handler12(request, context)],
   ["app/api/identity/sync/route", "POST", (request: NextRequest) => handler0(request)],
   ["app/api/invitations/accept/route", "POST", (request: NextRequest) => handler1(request)],

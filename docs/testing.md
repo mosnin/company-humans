@@ -77,3 +77,9 @@ A broader suite run reproduced a membership-row/advisory-lock deadlock. The corr
 ## Product disable boundary
 
 59 automated tests, typecheck, lint and production build pass. The new restricted-credential database scenario passes locally and on hosted verification PostgreSQL: foreign actor/tenant denial, rollback when suspension-command insertion fails, six concurrent idempotent disables, unchanged provider state, blocked unreconciled re-enable, runtime provider-field protection, insertion-versus-disable race, and deterministic blocked INSERT followed by denial. No UI changed and no provider was contacted. Migrations 0025–0026 were applied to local development and hosted production only after the verification scenario passed.
+
+## Applications disable UI/API
+
+68 automated tests, typecheck, lint, production build and 24 desktop/mobile component checks pass. New route tests cover server actor binding, body spoofing, unauthenticated/forbidden/unavailable identity, invalid IDs, permission failures and sanitized infrastructure errors. The mutation suite includes missing/foreign-origin rejection for the new route. Browser fixtures cover confirmation/cancel, failure retry, disabled in-flight controls, updated desired-state display and explicit unconfirmed remote access. Mobile screenshot inspected; no horizontal overflow.
+
+Real local Next production-server requests reject missing/foreign origins with 403. A valid origin reaches the identity boundary and returns 503 Identity unavailable in the unconfigured local auth environment; this is not authenticated acceptance. The first runtime assertion expected 401, then the response body and identity resolver confirmed the configuration-dependent 503. Prior database increment f834c37 passed hosted CI run 35637451563.

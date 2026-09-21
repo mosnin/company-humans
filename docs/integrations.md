@@ -39,3 +39,7 @@ Provisioning requests now persist an initial member command. Workspace suspensio
 ## Product disable intent
 
 The server boundary now disables a product and its enabled member mappings with durable suspension commands and audit in one transaction. Actual provider status remains unchanged until a receipt confirms revocation. New mappings are blocked by the disabled instance, including concurrent insertion. Automatic re-enable is denied pending a reconciled restore path. Applications UI/API wiring, member command dispatch and actual Scalar suspension remain incomplete.
+
+## Applications disable control
+
+The Applications admin page now calls a same-origin POST at `/api/organizations/:organizationId/applications/:instanceId/disable`. The authenticated canonical actor comes from the server; request-body actor fields are ignored. The API acknowledges desiredEnabled=false and remoteRevocationConfirmed=false only after the database transaction commits. The UI confirms scope, explains that existing remote access may continue, supports retry after failure, and identifies the unavailable restore workflow. Remote suspension dispatch and provider receipts remain outstanding.
