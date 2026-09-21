@@ -1,6 +1,6 @@
 # Implementation status
 
-Updated 2026-09-20. Destination: `mosnin/company-humans`, branch `codex/company-human-foundation`, [draft PR 1](https://github.com/mosnin/company-humans/pull/1). Company OS remains unchanged.
+Updated 2026-09-21. Destination: `mosnin/company-humans`, branch `codex/company-human-foundation`, [draft PR 1](https://github.com/mosnin/company-humans/pull/1). Company OS remains unchanged.
 
 ## Verified locally
 
@@ -38,8 +38,8 @@ Updated 2026-09-20. Destination: `mosnin/company-humans`, branch `codex/company-
 
 ## External gates
 
-1. **Convex capacity and OAuth configuration:** the connected Vercel-managed Convex team refused the free Company Human project because its 40-deployment quota is reached. No deployment was created. An unused slot/project has been requested. The code and offline generated bindings are locally checked; remote function deployment, signing keys, provider application credentials and actual OAuth round-trip remain required. See [authentication setup](authentication.md).
+1. **Convex deployed; OAuth and development capacity remain:** dedicated free-plan project `company-humans` / production `sensible-dinosaur-165` was created and deployed on 2026-09-21. Signing keys, live anonymous identity denial, OIDC discovery and public JWKS were verified. A separate development deployment still fails with the 40-deployment quota. `SITE_URL`, Google/GitHub provider configuration and actual OAuth round-trip remain required. See [authentication setup](authentication.md).
 2. **GitHub Actions resolved:** the owner authorized making `mosnin/company-humans` public. Run 35522115426 at 3fbc494 passed all steps, including the Convex replacement. The earlier private-repository restriction no longer blocks CI.
-3. **Production:** no Company Human deployment or production database-role acceptance has been demonstrated. No existing product deployment or credential has been reused.
+3. **Production web:** the Convex backend is deployed, but no Company Human web deployment or production PostgreSQL-role acceptance has been demonstrated. No existing product deployment or credential has been reused.
 
 CH-8, CH-9, CH-10 and CH-12 have progress evidence in Notion and remain In progress. The original findings remain in [implementation review](implementation-review.md); the authorization and invitation defects described there have subsequent repair commits. No later phase has been marked verified.
