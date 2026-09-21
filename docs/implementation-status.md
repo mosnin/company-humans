@@ -43,3 +43,7 @@ Updated 2026-09-21. Destination: `mosnin/company-humans`, branch `codex/company-
 3. **Production web:** the Convex backend is deployed, but no Company Human web deployment or production PostgreSQL-role acceptance has been demonstrated. No existing product deployment or credential has been reused.
 
 CH-8, CH-9, CH-10 and CH-12 have progress evidence in Notion and remain In progress. The original findings remain in [implementation review](implementation-review.md); the authorization and invitation defects described there have subsequent repair commits. No later phase has been marked verified.
+
+## Execution route and tracking source review — 2026-09-21
+
+The full Notion hub and 17 documents were re-read and all 92 tracker tasks were compiled into the [goal route](execution/README.md), preserving phases 00–16 and the full product objective. Symbolic live Context/Flow remains blocked by a 401 response without OAuth discovery; no Symbolic run is claimed. [Callix tracking source](callix-tracking-assessment.md) was inspected read-only for Phase 07 reuse. Its browser observations are not verified financial conversions. Hosted CI run 35627020436 passed at product commit 4b9d614.

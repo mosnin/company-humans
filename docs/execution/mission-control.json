@@ -1,0 +1,674 @@
+{
+  "$schema": "company-os.mission-execution-state.v2",
+  "schema_version": 2,
+  "mission_id": "company-human",
+  "objective_id": "company-human",
+  "objective": "Build and independently verify the complete Company Human platform in mosnin/company-humans against the canonical Notion tree and phases 00\u201316. Preserve company-os-web. Use Convex OAuth, organization-sponsored ecosystem access with Scalar first, scoped roles and admin activity visibility, bounded usage and centralized commercial control, modular human work/CRM/context/creator workspaces, recoverable Chippi referral attribution, immutable commissions and real regulated payouts while merchant billing remains independent. Verify sales, referral and UGC configurations without forks. Use Symbolic context and Flow when connected; inspect Callix UTM tracking for reuse. Expansion remains conditional on stable first-party contracts and actual demand.",
+  "mission_class": "long_running_company",
+  "duration_minutes": 1440,
+  "started_at": "2026-09-21T16:45:35.981059Z",
+  "expires_at": "2026-09-22T16:45:35.981059Z",
+  "status": "active",
+  "generation": 1,
+  "token_budget": null,
+  "tokens_consumed": 0.0,
+  "deadlines": {
+    "first_mutation": "2026-09-21T17:00:35.981059Z",
+    "first_runtime": "2026-09-21T17:05:35.981059Z",
+    "first_render": "2026-09-21T17:25:35.981059Z",
+    "connected_r3": "2026-09-21T22:45:35.981059Z",
+    "independent_review": "2026-09-22T01:23:59.981059Z",
+    "reality_closure": "2026-09-22T13:52:47.981059Z"
+  },
+  "deadline_status": {
+    "first_mutation": {
+      "satisfied": true,
+      "miss_count": 0,
+      "satisfied_at": "2026-09-21T16:46:38.037222Z"
+    },
+    "first_runtime": {
+      "miss_count": 0,
+      "satisfied": false
+    },
+    "first_render": {
+      "miss_count": 0,
+      "satisfied": false
+    },
+    "connected_r3": {
+      "miss_count": 0,
+      "satisfied": false
+    },
+    "independent_review": {
+      "miss_count": 0,
+      "satisfied": false
+    },
+    "reality_closure": {
+      "miss_count": 0,
+      "satisfied": false
+    }
+  },
+  "first_reality": {
+    "$schema": "company-os.first-reality-contract.v1",
+    "objective_id": "company-human",
+    "objective": "Build and independently verify the complete Company Human platform in mosnin/company-humans against the canonical Notion tree and phases 00\u201316. Preserve company-os-web. Use Convex OAuth, organization-sponsored ecosystem access with Scalar first, scoped roles and admin activity visibility, bounded usage and centralized commercial control, modular human work/CRM/context/creator workspaces, recoverable Chippi referral attribution, immutable commissions and real regulated payouts while merchant billing remains independent. Verify sales, referral and UGC configurations without forks. Use Symbolic context and Flow when connected; inspect Callix UTM tracking for reuse. Expansion remains conditional on stable first-party contracts and actual demand.",
+    "journey_id": "first-reality",
+    "journey_steps": [
+      "Administrator creates workspace and invites contributor using real OAuth",
+      "Administrator enables Scalar and assigns role, team and finite budget",
+      "Contributor uses sponsored Scalar without purchasing a personal plan",
+      "Administrator sees attributable activity and measured usage",
+      "Suspension and budget exhaustion deny further access and spend"
+    ],
+    "required_capability_ids": [
+      "phase:01",
+      "phase:02",
+      "phase:03"
+    ],
+    "required_artifact_class_ids": [
+      "phase:01",
+      "phase:02",
+      "phase:03"
+    ],
+    "required_observations": [
+      "exact revision",
+      "live OAuth and tenant denial receipts",
+      "Scalar provider lifecycle receipts",
+      "measured usage and stop enforcement",
+      "independent runtime review"
+    ],
+    "deferred_capability_ids": [
+      "phase:00",
+      "phase:04",
+      "phase:05",
+      "phase:06",
+      "phase:07",
+      "phase:08",
+      "phase:09",
+      "phase:10",
+      "phase:11",
+      "phase:12",
+      "phase:13",
+      "phase:14",
+      "phase:15",
+      "phase:16"
+    ],
+    "deadline_fraction": 0.25,
+    "contract_sha256": "11618f0afe97661627006a4467a0519e4dc42081241fd2b767be176ef843bb85"
+  },
+  "capabilities": [
+    {
+      "capability_id": "phase:00",
+      "label": "00 Foundation",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "partial",
+      "evidence": [
+        {
+          "kind": "product_source",
+          "path": "packages/contracts/src/index.ts",
+          "sha256": "b9c47f189bf3c2e3337f2b97ba762c815e411c9b280acd24b0241b04ab8c7283"
+        }
+      ]
+    },
+    {
+      "capability_id": "phase:01",
+      "label": "01 Identity Kernel",
+      "critical": true,
+      "priority": 100,
+      "first_reality": true,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "partial",
+      "evidence": [
+        {
+          "kind": "product_source",
+          "path": "apps/web/convex/auth.ts",
+          "sha256": "baec20bc3de675343a324bc6cce3ac62d8272551f4d2162f538d953fb2a1f3ea"
+        }
+      ]
+    },
+    {
+      "capability_id": "phase:02",
+      "label": "02 App Provisioning",
+      "critical": true,
+      "priority": 100,
+      "first_reality": true,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:03",
+      "label": "03 Metering Billing",
+      "critical": true,
+      "priority": 100,
+      "first_reality": true,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:04",
+      "label": "04 Workspace Shell",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:05",
+      "label": "05 CRM Human Work",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:06",
+      "label": "06 Company OS Context",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:07",
+      "label": "07 Attribution",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:08",
+      "label": "08 Commission Payout",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:09",
+      "label": "09 Ecosystem Adapters",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:10",
+      "label": "10 Creator UGC",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:11",
+      "label": "11 White Label Enterprise",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:12",
+      "label": "12 Reliability Scale",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:13",
+      "label": "13 Chippi Dogfood",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:14",
+      "label": "14 Pricing Calibration",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:15",
+      "label": "15 External Beta",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    },
+    {
+      "capability_id": "phase:16",
+      "label": "16 Platform Expansion",
+      "critical": false,
+      "priority": 50,
+      "first_reality": false,
+      "final_required": true,
+      "existing_implementation": null,
+      "state": "missing",
+      "evidence": []
+    }
+  ],
+  "events": [
+    {
+      "$schema": "company-os.mission-execution-event.v1",
+      "event_id": "baseline-phase:00",
+      "kind": "artifact_materialized",
+      "occurred_at": "2026-09-21T16:46:38.032091Z",
+      "event_sha256": "e07b3dab2cf3516a4e9b7a7ea2223314257c147eac73299058d7802a064f3b11",
+      "work_class": "integration",
+      "units": 1.0,
+      "capability_id": "phase:00",
+      "evidence": {
+        "kind": "product_source",
+        "path": "packages/contracts/src/index.ts",
+        "sha256": "b9c47f189bf3c2e3337f2b97ba762c815e411c9b280acd24b0241b04ab8c7283"
+      }
+    },
+    {
+      "$schema": "company-os.mission-execution-event.v1",
+      "event_id": "baseline-phase:01",
+      "kind": "artifact_materialized",
+      "occurred_at": "2026-09-21T16:46:38.037222Z",
+      "event_sha256": "c049dccf603f1e2253ddb299cc6e5155873589131cc510fd1045aca79924c178",
+      "work_class": "integration",
+      "units": 1.0,
+      "capability_id": "phase:01",
+      "evidence": {
+        "kind": "product_source",
+        "path": "apps/web/convex/auth.ts",
+        "sha256": "baec20bc3de675343a324bc6cce3ac62d8272551f4d2162f538d953fb2a1f3ea"
+      }
+    }
+  ],
+  "work_units": {
+    "architecture": 0.0,
+    "checkpoint": 0.0,
+    "documentation": 0.0,
+    "evaluation": 0.0,
+    "governance": 0.0,
+    "implementation": 0.0,
+    "integration": 2.0,
+    "packaging": 0.0,
+    "repair": 0.0,
+    "research": 0.0,
+    "runtime": 0.0
+  },
+  "tasks": {},
+  "managers": {},
+  "workers": {},
+  "interventions": [],
+  "replacement_orders": [],
+  "consumed_wake_keys": [],
+  "scheduler": {
+    "mission_id": "company-human",
+    "generation": 1,
+    "owner_id": "company-os-director",
+    "started_at": "2026-09-21T16:45:35.981059Z",
+    "expires_at": "2026-09-22T16:45:35.981059Z",
+    "max_wakes": 256,
+    "wake_count": 0,
+    "status": "active"
+  },
+  "navigation": {
+    "$schema": "company-os.navigation-decision.v1",
+    "objective_id": "company-human",
+    "objective": "Build and independently verify the complete Company Human platform in mosnin/company-humans against the canonical Notion tree and phases 00\u201316. Preserve company-os-web. Use Convex OAuth, organization-sponsored ecosystem access with Scalar first, scoped roles and admin activity visibility, bounded usage and centralized commercial control, modular human work/CRM/context/creator workspaces, recoverable Chippi referral attribution, immutable commissions and real regulated payouts while merchant billing remains independent. Verify sales, referral and UGC configurations without forks. Use Symbolic context and Flow when connected; inspect Callix UTM tracking for reuse. Expansion remains conditional on stable first-party contracts and actual demand.",
+    "mode": "navigate",
+    "waypoint": "R3_FIRST_REALITY",
+    "position": {
+      "destination_distance": 0.96063,
+      "waypoint_distance": 0.888889,
+      "reality": {
+        "internal_primitives": false,
+        "runnable_capability": false,
+        "connected_vertical_slice": false,
+        "user_usable": false,
+        "independent_acceptance": false
+      },
+      "checkpointed": false
+    },
+    "velocity": {
+      "distance_delta": 0.027559,
+      "distance_per_minute": 322.264666,
+      "minutes_since_progress": 0.0,
+      "actuation_attempts_since_progress": 0,
+      "stalled": false,
+      "stagnation_threshold_minutes": 60.0
+    },
+    "next_action": {
+      "action_kind": "materialize",
+      "work_class": "implementation",
+      "capability_id": "phase:02",
+      "instruction": "Materialize the smallest real phase:02 artifact that changes objective reality."
+    },
+    "sensor_posture": {
+      "sensor_fraction": 0.0,
+      "sensor_fraction_ceiling": 0.25,
+      "overrun": false,
+      "principle": "Sense only enough to improve or safely constrain the next action."
+    },
+    "actuation_policy": {
+      "policy": "minimum_sufficient_actuation",
+      "ladder": [
+        "Reuse the existing code path, helper, integration, or supplied implementation when it satisfies the route.",
+        "Prefer standard-library or native platform capability over custom infrastructure when it preserves required behavior.",
+        "Prefer an already-installed dependency over adding another dependency when it satisfies the route.",
+        "Only then write the smallest new code that produces the required observable state transition.",
+        "Leave one runnable check for non-trivial logic so simplification cannot silently remove correctness."
+      ],
+      "never_cut": [
+        "explicit user requirements",
+        "trust-boundary validation",
+        "security controls",
+        "data-loss prevention",
+        "required error handling",
+        "accessibility basics",
+        "runtime observation needed to prove the state transition"
+      ],
+      "forbid_speculation": true
+    },
+    "orders": [
+      "Materialize the smallest real phase:02 artifact that changes objective reality.",
+      "After the action, observe the resulting environment state and replan from evidence rather than from the prior plan."
+    ],
+    "trajectory": [
+      {
+        "at": "2026-09-21T16:45:35.981059Z",
+        "destination_distance": 1.0,
+        "waypoint_distance": 1.0,
+        "waypoint": "R3_FIRST_REALITY",
+        "next_action_kind": "materialize",
+        "capability_id": "phase:01"
+      },
+      {
+        "at": "2026-09-21T16:46:38.032091Z",
+        "destination_distance": 0.988189,
+        "waypoint_distance": 1.0,
+        "waypoint": "R3_FIRST_REALITY",
+        "next_action_kind": "materialize",
+        "capability_id": "phase:01"
+      },
+      {
+        "at": "2026-09-21T16:46:38.037222Z",
+        "destination_distance": 0.96063,
+        "waypoint_distance": 0.888889,
+        "waypoint": "R3_FIRST_REALITY",
+        "next_action_kind": "materialize",
+        "capability_id": "phase:02"
+      }
+    ],
+    "decision_sha256": "b54c2f1ee8f51d64231c2757adefecd91f6e86fad06fb0dc21f0e606accda8fb"
+  },
+  "governor_decision": {
+    "$schema": "company-os.outcome-executive-decision.v1",
+    "objective_id": "company-human",
+    "objective": "Build and independently verify the complete Company Human platform in mosnin/company-humans against the canonical Notion tree and phases 00\u201316. Preserve company-os-web. Use Convex OAuth, organization-sponsored ecosystem access with Scalar first, scoped roles and admin activity visibility, bounded usage and centralized commercial control, modular human work/CRM/context/creator workspaces, recoverable Chippi referral attribution, immutable commissions and real regulated payouts while merchant billing remains independent. Verify sales, referral and UGC configurations without forks. Use Symbolic context and Flow when connected; inspect Callix UTM tracking for reuse. Expansion remains conditional on stable first-party contracts and actual demand.",
+    "budget_fraction_consumed": 0.0007182426273148148,
+    "reality_level": "R0",
+    "reality_level_index": 0,
+    "mode": "normal",
+    "first_reality_incident": false,
+    "planning_overrun": false,
+    "first_artifact_budget_fraction": 0.25,
+    "allocation_incident": false,
+    "dominant_bottleneck": {
+      "capability_id": "phase:02",
+      "state": "missing",
+      "critical": true,
+      "priority": 100,
+      "existing_implementation": null
+    },
+    "existing_capability_preference": false,
+    "product_execution_ratio": 1.0,
+    "governance_tax": 0.0,
+    "research_tax": 0.0,
+    "documentation_tax": 0.0,
+    "allowed_work_classes": [
+      "research",
+      "architecture",
+      "governance",
+      "implementation",
+      "integration",
+      "runtime",
+      "repair",
+      "evaluation",
+      "documentation",
+      "packaging",
+      "checkpoint"
+    ],
+    "paused_work_classes": [],
+    "manager_orders": [
+      "Materialize the smallest real phase:02 artifact that changes objective reality.",
+      "After the action, observe the resulting environment state and replan from evidence rather than from the prior plan.",
+      "Make phase:02 the global execution bottleneck until observable progress changes its state.",
+      "Materialize and run the smallest connected end-to-end artifact before expanding architecture, research, or governance.",
+      "Checkpoint tested product bytes promptly; governance receipts are not a substitute for durable product state."
+    ],
+    "required_capabilities": [
+      {
+        "capability_id": "phase:00",
+        "state": "partial",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:01",
+        "state": "partial",
+        "critical": true,
+        "priority": 100,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:02",
+        "state": "missing",
+        "critical": true,
+        "priority": 100,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:03",
+        "state": "missing",
+        "critical": true,
+        "priority": 100,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:04",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:05",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:06",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:07",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:08",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:09",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:10",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:11",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:12",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:13",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:14",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:15",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      },
+      {
+        "capability_id": "phase:16",
+        "state": "missing",
+        "critical": false,
+        "priority": 50,
+        "existing_implementation": null
+      }
+    ],
+    "decision_sha256": "a657715ca59b9e6455b79d3f2588a0a0bf68596a3cf8600cf87fe6233ce15081",
+    "navigation_decision_sha256": "b54c2f1ee8f51d64231c2757adefecd91f6e86fad06fb0dc21f0e606accda8fb",
+    "navigation_mode": "navigate",
+    "waypoint": "R3_FIRST_REALITY",
+    "destination_distance": 0.96063,
+    "waypoint_distance": 0.888889,
+    "objective_velocity": {
+      "distance_delta": 0.027559,
+      "distance_per_minute": 322.264666,
+      "minutes_since_progress": 0.0,
+      "actuation_attempts_since_progress": 0,
+      "stalled": false,
+      "stagnation_threshold_minutes": 60.0
+    },
+    "next_action": {
+      "action_kind": "materialize",
+      "work_class": "implementation",
+      "capability_id": "phase:02",
+      "instruction": "Materialize the smallest real phase:02 artifact that changes objective reality."
+    },
+    "sensor_posture": {
+      "sensor_fraction": 0.0,
+      "sensor_fraction_ceiling": 0.25,
+      "overrun": false,
+      "principle": "Sense only enough to improve or safely constrain the next action."
+    },
+    "actuation_policy": {
+      "policy": "minimum_sufficient_actuation",
+      "ladder": [
+        "Reuse the existing code path, helper, integration, or supplied implementation when it satisfies the route.",
+        "Prefer standard-library or native platform capability over custom infrastructure when it preserves required behavior.",
+        "Prefer an already-installed dependency over adding another dependency when it satisfies the route.",
+        "Only then write the smallest new code that produces the required observable state transition.",
+        "Leave one runnable check for non-trivial logic so simplification cannot silently remove correctness."
+      ],
+      "never_cut": [
+        "explicit user requirements",
+        "trust-boundary validation",
+        "security controls",
+        "data-loss prevention",
+        "required error handling",
+        "accessibility basics",
+        "runtime observation needed to prove the state transition"
+      ],
+      "forbid_speculation": true
+    }
+  },
+  "checkpoint": null,
+  "state_sha256": "f70910b843d5fd87b4ebdf2811de20efb4f62670242e01ac98604dbbe961f9f2",
+  "goal_route_sha256": "fbe18be85de19dee2838b7e5484d00de48083c72abd2c5bf57928acbf0178344",
+  "root_goal_sha256": "03d30ad602d562e0245176463ef01d2c90f14d5300bfdfdecc84f825e56644a5",
+  "scheduler_binding": "Active Codex thread goal; this local lease is not an installed background automation",
+  "execution_window_note": "24-hour default controller checkpoint window; not a deadline or scope reduction for the complete product.",
+  "decision_models": [
+    "Map is not territory",
+    "Necessity and sufficiency",
+    "Inversion"
+  ]
+}
