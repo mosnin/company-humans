@@ -16,6 +16,13 @@ export async function runMigrations(databaseUrl: string): Promise<string[]> {
   try {
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(hashtext('company-human-migrations'))");
+    // PostgreSQL 16+ no longer gives CREATEROLE users SET access to roles they create.
+    // The migration owner needs SET (not inherited runtime privileges) to transfer
+    // narrowly privileged SECURITY DEFINER functions to their dedicated owners.
+    const version = await client.query<{ server_version_num: string }>("SHOW server_version_num");
+    if (Number(version.rows[0]!.server_version_num) >= 160000) {
+      await client.query("SET LOCAL createrole_self_grant = 'set'");
+    }
     await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
       name text PRIMARY KEY,
       checksum text NOT NULL,

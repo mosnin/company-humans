@@ -19,7 +19,7 @@ Updated 2026-09-21. Destination: `mosnin/company-humans`, branch `codex/company-
 | --- | --- | --- |
 | Source scaffold | Implemented; local checks pass | Live authenticated layout and deployment verification. |
 | 00 Foundation | Verified at 3fbc494 | Public GitHub run 35522115426 passed install, typecheck, lint, migrations, seed, tests, build and browser checks. |
-| 01 Identity kernel | In progress | Real Convex OAuth sign-in/sign-out, browser create/invite/accept/assign/switch/suspend scenario, deployed database-role verification. |
+| 01 Identity kernel | In progress | Real Convex OAuth sign-in/sign-out, browser create/invite/accept/assign/switch/suspend scenario, deployed web credential wiring. |
 | 02 Provisioning | In progress; groundwork only | Real Scalar adapter, product membership, entitlements, state machine, health, and full lifecycle proof. Catalog/pending intent grants no access. |
 | 03 Metering and billing | Not started | Measured Scalar usage, budgets, hard stops, cost and billing projections. |
 | 04 Human workspace | Not started | Contributor Work, Apps, Context, Earnings, Leaderboard, Team, manager workflows. Identity administration is not this phase's completed shell. |
@@ -40,7 +40,7 @@ Updated 2026-09-21. Destination: `mosnin/company-humans`, branch `codex/company-
 
 1. **Convex deployed; OAuth and development capacity remain:** dedicated free-plan project `company-humans` / production `sensible-dinosaur-165` was created and deployed on 2026-09-21. Signing keys, live anonymous identity denial, OIDC discovery and public JWKS were verified. A separate development deployment still fails with the 40-deployment quota. `SITE_URL`, Google/GitHub provider configuration and actual OAuth round-trip remain required. See [authentication setup](authentication.md).
 2. **GitHub Actions resolved:** the owner authorized making `mosnin/company-humans` public. Run 35522115426 at 3fbc494 passed all steps, including the Convex replacement. The earlier private-repository restriction no longer blocks CI.
-3. **Production web:** the Convex backend is deployed, but no Company Human web deployment or production PostgreSQL-role acceptance has been demonstrated. No existing product deployment or credential has been reused.
+3. **Production web:** the Convex backend is deployed, but no Company Human web deployment has been demonstrated. Dedicated hosted PostgreSQL and restricted runtime logins are now verified independently of the web deployment. No existing product deployment or credential has been reused.
 
 CH-8, CH-9, CH-10 and CH-12 have progress evidence in Notion and remain In progress. The original findings remain in [implementation review](implementation-review.md); the authorization and invitation defects described there have subsequent repair commits. No later phase has been marked verified.
 
@@ -71,3 +71,11 @@ Verified: 41 automated tests (39 full-suite plus two new route tests), typecheck
 ## Phase 01 request-origin repair — 2026-09-21
 
 The mutation sweep found ten endpoints without an Origin check. All twelve browser mutation endpoints now use one shared guard, with exact scheme/host/port checks before authentication. Real HTTP testing found and repaired a Next proxy internal-host normalization mismatch. All 54 automated tests, typecheck, lint and production build pass; all twelve HTTP endpoints reject missing/foreign origin and reach authentication for a valid origin. No real OAuth session was available. Prior Applications diagnostics commit 4e71af9 passed hosted CI run 35630879094. Phase 01 remains In progress pending real Convex OAuth and authenticated tenant workflows.
+
+## Hosted PostgreSQL kernel — 2026-09-21
+
+Created dedicated free-plan Neon project `company-humans` (`twilight-butterfly-74677439`, PostgreSQL 17, AWS us-east-1, 0.25 CU). All 21 unchanged migrations and seven product seeds passed first on isolated branch `verification-phase01`; all 11 database integration tests passed there using restricted logins. Production accepted the same migrations/seed, and migration replay applied zero changes. Production contains zero users and organizations.
+
+Three separate pooled production logins connected successfully: read, service and identity. Each has only its corresponding application role and no superuser, database creation, role creation or RLS bypass capability. Tenant tables have RLS enabled; runtime logins are not their owners. Credentials remain in ignored mode-0600 files. No production worker credential is provisioned. The web deployment has not been wired to these credentials.
+
+Hosted PostgreSQL exposed a version-16+ role ownership migration issue, repaired through transaction-local SET-role self-grant without changing migration checksums. The full local 54 tests, typecheck, lint and production build pass after this repair. Actual OAuth and authenticated browser workflows remain outstanding; Phase 01 is In progress.
