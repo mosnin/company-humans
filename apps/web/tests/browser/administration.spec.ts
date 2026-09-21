@@ -263,3 +263,59 @@ test('member access request preserves retry and acknowledges intent only',async(
 test('member selection explains empty eligibility',async({page})=>{
   await page.goto('/?screen=empty-request-members');await expect(page.getByRole('cell',{name:'No eligible members match this search.'})).toBeVisible();
 });
+
+test('usage limits save exact quantities and lock unit interpretation',async({page},testInfo)=>{
+  let calls=0;
+  await page.route('**/api/organizations/*/applications/*/usage-limits',async route=>{
+    calls++;const body=route.request().postDataJSON();
+    expect(body.maximumQuantity).toBe(calls===1?'999999999999.999999':'0');expect(body.expectedRevision).toBe(calls-1);
+    expect(body.membershipId).toBeNull();expect(body.unit).toBe('lead');
+    await route.fulfill({status:200,json:{providerEnforcementConfirmed:false,revision:{schemaVersion:1,usageLimitId:`ch_lim_${'a'.repeat(32)}`,organizationId:`ch_org_${'a'.repeat(32)}`,productInstanceId:`ch_inst_${'a'.repeat(32)}`,...body,expectedRevision:undefined,revision:calls}}});
+  });
+  await page.goto('/?screen=usage-limits');
+  const quantity=page.getByLabel('Maximum for enriched-leads · Monthly');const unit=page.getByLabel('Unit for enriched-leads · Monthly');
+  await expect(page.getByText('Saved limit: Not configured · Revision 0')).toBeVisible();
+  await quantity.fill('unlimited');await unit.fill('lead');await expect(page.getByRole('button',{name:'Save limit',exact:true}).first()).toBeDisabled();
+  await quantity.fill('999999999999.999999');await page.getByRole('button',{name:'Save limit',exact:true}).first().click();
+  await expect(page.getByRole('status')).toHaveText('Limit saved. Enforcement is not confirmed.');
+  await expect(page.getByText('Saved limit: 999999999999.999999 lead · Revision 1')).toBeVisible();await expect(unit).toBeDisabled();
+  await quantity.fill('0');await page.getByRole('button',{name:'Save limit',exact:true}).first().click();
+  await expect(page.getByText('Saved limit: 0 lead · Revision 2')).toBeVisible();expect(calls).toBe(2);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath('usage-limit-settings.png'),fullPage:true});
+});
+test('usage limit conflicts require reload and generic failures retain edits',async({page})=>{
+  let calls=0;await page.route('**/api/organizations/*/applications/*/usage-limits',route=>{calls++;return route.fulfill({status:calls===1?503:409,json:{error:calls===1?'Please retry.':'Settings changed. Reload before saving.'}});});
+  await page.goto('/?screen=usage-limits');await page.getByLabel('Maximum for enriched-leads · Monthly').fill('2.5');await page.getByLabel('Unit for enriched-leads · Monthly').fill('lead');
+  const button=page.getByRole('button',{name:'Save limit',exact:true}).first();await button.click();
+  await expect(page.getByRole('alert')).toHaveText('Please retry.');await expect(page.getByLabel('Maximum for enriched-leads · Monthly')).toHaveValue('2.5');await expect(button).toBeEnabled();
+  await button.click();await expect(page.getByRole('alert')).toHaveText('Settings changed. Reload before saving.');await expect(button).toBeDisabled();await expect(page.getByRole('button',{name:'Reload settings'})).toBeVisible();
+});
+test('unavailable usage meters only allow an existing limit to be stopped',async({page})=>{
+  await page.route('**/api/organizations/*/applications/*/usage-limits',async route=>{
+    const body=route.request().postDataJSON();expect(body).toEqual({membershipId:null,meterKey:'retired-meter',unit:'lead',window:'utc_day',maximumQuantity:'0',expectedRevision:2});
+    await route.fulfill({status:200,json:{providerEnforcementConfirmed:false,revision:{schemaVersion:1,usageLimitId:`ch_lim_${'a'.repeat(32)}`,organizationId:`ch_org_${'a'.repeat(32)}`,productInstanceId:`ch_inst_${'a'.repeat(32)}`,...body,expectedRevision:undefined,revision:3}}});
+  });
+  await page.goto('/?screen=usage-limits');const quantity=page.getByLabel('Maximum for retired-meter · Daily');
+  await quantity.fill('20');await expect(page.getByRole('button',{name:'Save limit',exact:true}).nth(1)).toBeDisabled();
+  await quantity.fill('0');await page.getByRole('button',{name:'Save limit',exact:true}).nth(1).click();await expect(page.getByText('Saved limit: 0 lead · Revision 3')).toBeVisible();
+});
+test('usage limit save blocks duplicate requests and rejects unconfirmed receipts',async({page})=>{
+  let finish:(()=>void)|undefined;await page.route('**/api/organizations/*/applications/*/usage-limits',async route=>{
+    await new Promise<void>(resolve=>{finish=resolve;});await route.fulfill({status:200,json:{revision:{maximumQuantity:'10'},providerEnforcementConfirmed:true}});
+  });
+  await page.goto('/?screen=usage-limits');await page.getByLabel('Maximum for enriched-leads · Monthly').fill('10');await page.getByLabel('Unit for enriched-leads · Monthly').fill('lead');
+  await page.getByRole('button',{name:'Save limit',exact:true}).first().click();await expect(page.getByRole('button',{name:'Saving…'})).toBeDisabled();await expect(page.getByLabel('Maximum for enriched-leads · Monthly')).toBeDisabled();
+  await expect.poll(()=>Boolean(finish)).toBe(true);finish!();await expect(page.getByRole('alert')).toHaveText('Save could not be confirmed. Reload settings.');await expect(page.getByRole('button',{name:'Reload settings'})).toBeVisible();await expect(page.getByRole('status')).toHaveCount(0);
+});
+test('member limit shows the organization cap without claiming capacity',async({page})=>{
+  await page.route('**/api/organizations/*/applications/*/usage-limits',async route=>{
+    const body=route.request().postDataJSON();expect(body.membershipId).toBe(`ch_mem_${'b'.repeat(32)}`);
+    await route.fulfill({status:200,json:{providerEnforcementConfirmed:false,revision:{schemaVersion:1,usageLimitId:`ch_lim_${'a'.repeat(32)}`,organizationId:`ch_org_${'a'.repeat(32)}`,productInstanceId:`ch_inst_${'a'.repeat(32)}`,...body,expectedRevision:undefined,revision:1}}});
+  });
+  await page.goto('/?screen=member-usage-limits');await expect(page.getByText('Organization limit: 0 lead')).toBeVisible();await expect(page.getByLabel('Unit for enriched-leads · Monthly')).toBeDisabled();
+  await page.getByLabel('Maximum for enriched-leads · Monthly').fill('100');await page.getByRole('button',{name:'Save limit',exact:true}).first().click();await expect(page.getByText('Organization limit: 0 lead')).toBeVisible();await expect(page.getByRole('status')).toHaveText('Limit saved. Enforcement is not confirmed.');
+});
+test('usage limit empty catalog is explicit',async({page})=>{
+  await page.goto('/?screen=empty-usage-limits');await expect(page.getByRole('heading',{name:'No usage meters available'})).toBeVisible();await expect(page.getByRole('button',{name:'Save limit',exact:true})).toHaveCount(0);
+});
