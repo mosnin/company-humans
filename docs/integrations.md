@@ -121,3 +121,9 @@ The restricted capability worker stages the full saved set, independently reads 
 Source freshness is checked against current canonical preferences/catalog/bindings at claim and completion. Superseded results remain historical; the worker never resumes a member. Provider fixtures exercise this orchestration. Real Scalar transport, production execution credentials/scheduling, automatic snapshot refresh, retry administration, full runtime entitlement gates and activation remain incomplete.
 
 Member entitlement administration now shows latest capability snapshot delivery, source/eligibility freshness and bounded attempt history. Refresh requests fresh server data; it does not retry operations or grant access. A successful preference save immediately clears the prior delivery display until refreshed state arrives. Capability and usage-limit diagnostics share the existing presentation primitives. Automatic snapshot refresh, operator retry and final activation remain separate unfinished work.
+
+## Automatic snapshot refresh boundary
+
+refreshCapabilitySnapshots provides a bounded tenant/product scan for a trusted scheduler. It uses keyset pagination (default 25, maximum 50), returns scanned/prepared/reused/skipped counts and a next cursor, and refreshes changed preference/catalog/target sources under per-member locks. Unchanged sources reuse history; new snapshots atomically queue staging. No provider call occurs during preparation.
+
+A scheduler must exhaust the returned cursor, then repeat from null so new or previously skipped members are reconsidered. Page failures can be retried safely; earlier committed work is deduplicated. No production preparer credential or schedule is configured yet. This covers initial bound suspended members, not active-member access changes, remote drift reconciliation or final activation.

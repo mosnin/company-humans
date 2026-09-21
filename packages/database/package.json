@@ -87,6 +87,10 @@
     "./capability-worker": {
       "types": "./dist/capability-worker.d.ts",
       "default": "./dist/capability-worker.js"
+    },
+    "./capability-preparer": {
+      "types": "./dist/capability-preparer.d.ts",
+      "default": "./dist/capability-preparer.js"
     }
   },
   "scripts": {

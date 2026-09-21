@@ -44,7 +44,7 @@ describe.skipIf(!databaseUrl)('durable member capability snapshots',()=>{
    await sql.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)",[users[0],org.organizationId]);
    await expect(sql.query('UPDATE member_capability_snapshots SET payload=$2 WHERE product_membership_id=$1',[mapping,{}])).rejects.toThrow('permission denied');
    await expect(sql.query('DELETE FROM member_capability_snapshots WHERE product_membership_id=$1',[mapping])).rejects.toThrow('permission denied');
-   await expect(sql.query('INSERT INTO member_capability_snapshots SELECT organization_id,product_membership_id,8,source,jsonb_set(payload,\'{policyRevision}\',\'8\'),actor_user_id,now() FROM member_capability_snapshots WHERE product_membership_id=$1 AND policy_revision=1',[mapping])).rejects.toThrow('must follow');
+   await expect(sql.query('INSERT INTO member_capability_snapshots(organization_id,product_membership_id,policy_revision,source,payload,actor_user_id,created_at) SELECT organization_id,product_membership_id,8,source,jsonb_set(payload,\'{policyRevision}\',\'8\'),actor_user_id,now() FROM member_capability_snapshots WHERE product_membership_id=$1 AND policy_revision=1',[mapping])).rejects.toThrow('must follow');
    const guard=`caps_audit_${suffix}`;
    await admin.query(`CREATE FUNCTION public.${guard}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.target_id='${mapping}' AND NEW.action='product.capabilities.prepared' THEN RAISE EXCEPTION 'fixture audit failure'; END IF; RETURN NEW; END; $$`);
    await admin.query(`CREATE TRIGGER ${guard} BEFORE INSERT ON identity_audit_events FOR EACH ROW EXECUTE FUNCTION public.${guard}()`);

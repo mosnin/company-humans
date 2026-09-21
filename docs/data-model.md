@@ -99,3 +99,5 @@ Migration 0038 adds member_capability_snapshots keyed by product membership and 
 ## Capability execution journal
 
 Migration 0039 adds capability_jobs and capability_attempts keyed by product membership and snapshot revision, with composite tenant references. Every new snapshot enqueues atomically; backfill schedules only the latest snapshot. Jobs retain leases, retry times and bounded status; completed attempts retain immutable worker provenance and apply/readback receipts. The capability worker can update journal state but cannot change snapshot configuration or product-member access.
+
+Migration 0040 adds service provenance to member_capability_snapshots. Each row has exactly one human or capability-preparer service actor; existing human history remains unchanged. Source policy revisions still identify original policy records/authors. The restricted preparer can append snapshots and enqueue their jobs but cannot update snapshots, delivery results or product-member access.
