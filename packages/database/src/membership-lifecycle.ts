@@ -155,6 +155,9 @@ export async function changeMembershipStatus(databaseUrl: string, input: {
     await client.query("BEGIN");
     await setServiceContext(client, actorUserId, organizationId);
     const actor = await requireMembershipAdmin(client, actorUserId, organizationId);
+    // Acquire the parent transition lock before the explicit row lock. Mapping
+    // INSERT holds this same lock before its foreign-key row check.
+    await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [`product-member-parent:${organizationId}:${membershipId}`]);
     const target = await client.query<{ role_key: RoleKey; status: string }>(
       "SELECT role_key, status FROM public.memberships WHERE id = $1 AND organization_id = $2 FOR UPDATE",
       [membershipId, organizationId],
@@ -174,6 +177,21 @@ export async function changeMembershipStatus(databaseUrl: string, input: {
        updated_at = now() WHERE id = $2 AND organization_id = $3`,
       [next, membershipId, organizationId],
     );
+    if (next !== "active") {
+      const affected = await client.query<{ id: string; desired_revision: number }>(
+        `UPDATE public.product_memberships SET desired_enabled=false,desired_revision=desired_revision+1,updated_at=now()
+         WHERE organization_id=$1 AND membership_id=$2 RETURNING id,desired_revision`,[organizationId,membershipId]);
+      for (const mapping of affected.rows) {
+        const operation = next === "removed" ? "removeMember" : "suspendMember";
+        await client.query(`INSERT INTO public.product_membership_commands
+          (id,organization_id,product_membership_id,desired_revision,operation,idempotency_key,actor_user_id)
+          VALUES ($1,$2,$3,$4,$5,$6,$7)`,[createCanonicalId("provisioningOperation"),organizationId,mapping.id,
+          mapping.desired_revision,operation,`${mapping.id}:member:${mapping.desired_revision}`,actorUserId]);
+        await appendIdentityAudit(client,{organizationId,actorUserId,actorMembershipId:actor.membershipId,
+          action:"product.membership.access_denied",targetType:"product_membership",targetId:mapping.id,
+          afterState:{desiredEnabled:false,desiredRevision:mapping.desired_revision,reason:next,requestedOperation:operation}});
+      }
+    }
     if (next === "removed") {
       await client.query(
         "UPDATE public.team_memberships SET ended_at = now() WHERE membership_id = $1 AND organization_id = $2 AND ended_at IS NULL",

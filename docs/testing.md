@@ -19,7 +19,7 @@ Migration, seed and database tests require `DATABASE_URL`. Without it, integrati
 ## Current evidence
 
 - 9 shared-contract tests: canonical IDs, versioned envelopes, signatures/tampering, role policy definitions, product metadata and adapter interface shape.
-- 13 database integration scenarios: migration/seed idempotency, user synchronization/tombstones, organization identity, RLS, role/team scope, invitation lifecycle, product intent, durable provisioning attempts, restricted dispatcher activation, and restricted write credentials.
+- 14 database integration scenarios: migration/seed idempotency, user synchronization/tombstones, organization identity, RLS, role/team scope, invitation lifecycle, product intent, durable provisioning attempts, restricted dispatcher activation, and restricted write credentials.
 - 35 web/backend tests: configuration/authentication boundaries, provider issuer/subject mapping, same-origin profile synchronization, verified-email ownership, session revocation/expiry/owner mismatch, account-linking denial, organization creation, invitation denial, and audited role-policy conflict/actor binding.
 - The restricted-role scenario uses actual non-owner database logins. It exercises creation, invitation, teams, grant changes, audit reads, suspension, removal, reinvitation, cross-tenant denial and direct privilege-escalation attempts. It also proves the Phase 00 user/organization/membership/signed-event scenario.
 - Twenty-two Playwright component tests exercise desktop and 390px mobile interaction. They cover invite links, removal confirmation/denial, team assignment, stale permission edits, role-aware navigation invitation persistence through a simulated sign-in return, OAuth start failures and sign-out failures.
@@ -67,3 +67,9 @@ The restricted-login integration scenario proves contributor/cross-tenant denial
 ## Product membership mapping
 
 57 automated tests pass. The new restricted-login scenario verifies six concurrent mapping requests yield one canonical ID/audit record, inactive-instance denial, cross-tenant actor/foreign-key denial, read isolation, denial of forged provider fields and activation, denied deletion, and denial of automatic re-enable after disablement. It passes on both local and hosted verification PostgreSQL. The connected product instance is an explicit test fixture; no Scalar member was created. Migration 0022 was then applied to production. Typecheck, lint and build pass.
+
+## Member offboarding commands
+
+The new restricted-role scenario covers a member administrator without applications.manage, contributor denial, atomic denial plus revisioned commands, preservation of actual provider state, no restoration on resume/reinvite, immutable command history, rollback after command insertion failure, and concurrent mapping versus suspension. A deterministic database race observes an INSERT waiting on the parent transition lock, then verifies rejection after suspension commits. The new scenario and prior mapping scenario also pass on hosted verification PostgreSQL. Full suite is 58 tests; typecheck, lint and production build pass. No external product was contacted.
+
+A broader suite run reproduced a membership-row/advisory-lock deadlock. The corrected service acquires the advisory lock first; ten consecutive focused race runs, the full suite and the hosted scenario passed after that repair.

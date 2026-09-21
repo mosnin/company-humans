@@ -31,3 +31,7 @@ The Applications admin page exposes setup diagnostics, normalized failures and a
 The kernel now persists tenant-bound product-membership intent with provider-neutral IDs and restricted provider-result fields. Requesting the mapping does not call Scalar or grant sponsored access. Adapter member dispatch, validated receipts, entitlement/limit application, suspension and offboarding synchronization remain incomplete.
 
 Scalar connection-doctor confirmed an OAuth-capable MCP endpoint at https://www.tryscalar.xyz/api/mcp/mcp?profile=codex on 2026-09-21. Native login reached Scalar's sign-in page but expired without a callback; the stale authorization page was closed. Authenticated tools and account reads are not verified. The source main revision remains f773ee94e32406c93b6d51dd408aa40e51938975. MCP discovery alone does not prove the organization/member control API.
+
+## Durable member lifecycle intent
+
+Provisioning requests now persist an initial member command. Workspace suspension/removal atomically denies mapped product access intent and records a revisioned suspension/removal command, including for members.manage actors without application configuration authority. Actual external state is preserved until an adapter receipt confirms a change. Provider dispatch must reconcile the latest desired revision and avoid executing superseded provision commands. A worker, leases/retries, receipt validation, entitlement enforcement and actual Scalar calls are still required. This command log is not completed external offboarding.

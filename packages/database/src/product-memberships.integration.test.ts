@@ -48,7 +48,7 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
     } finally {
       await runtime.end();
-      for(const table of ["product_memberships","identity_audit_events","product_instances","memberships","roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
+      for(const table of ["product_membership_commands","product_memberships","identity_audit_events","product_instances","memberships","roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
       await admin.query("DELETE FROM organizations WHERE id=ANY($1)",[orgs]);await admin.query("DELETE FROM users WHERE id=ANY($1)",[[alice,bob]]);
       await admin.query(`DROP ROLE ${role}`);await admin.end();
     }

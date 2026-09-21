@@ -24,17 +24,17 @@
     "first_mutation": {
       "satisfied": true,
       "miss_count": 0,
-      "satisfied_at": "2026-09-21T17:54:17.311232Z"
+      "satisfied_at": "2026-09-21T18:03:41.362272Z"
     },
     "first_runtime": {
       "satisfied": false,
-      "miss_count": 5,
-      "last_checked_at": "2026-09-21T17:54:17.311232Z"
+      "miss_count": 6,
+      "last_checked_at": "2026-09-21T18:03:41.362272Z"
     },
     "first_render": {
       "satisfied": false,
-      "miss_count": 2,
-      "last_checked_at": "2026-09-21T17:54:17.311232Z"
+      "miss_count": 3,
+      "last_checked_at": "2026-09-21T18:03:41.362272Z"
     },
     "connected_r3": {
       "miss_count": 0,
@@ -171,6 +171,11 @@
           "kind": "tested_mapping_prerequisite",
           "path": "packages/database/src/product-memberships.ts",
           "sha256": "a163b9ccfdf52d73af9775b5626616d52f6c2cf9c223b0f210e075d64bdba413"
+        },
+        {
+          "kind": "offboarding_command_boundary",
+          "path": "packages/database/src/membership-lifecycle.ts",
+          "sha256": "faca2b944b21cdddd2867f0cbe6712d3597c5ab4c9dae89de50615ae85fd62c0"
         }
       ]
     },
@@ -449,6 +454,21 @@
         "path": "packages/database/src/product-memberships.ts",
         "sha256": "a163b9ccfdf52d73af9775b5626616d52f6c2cf9c223b0f210e075d64bdba413"
       }
+    },
+    {
+      "$schema": "company-os.mission-execution-event.v1",
+      "event_id": "product-member-offboarding-20260921",
+      "kind": "artifact_materialized",
+      "occurred_at": "2026-09-21T18:03:41.362272Z",
+      "event_sha256": "fad27c255cfc11135311eb7ed4c94a4d4b03f0784771a2f5e37591afcb231925",
+      "work_class": "repair",
+      "units": 1.0,
+      "capability_id": "phase:02",
+      "evidence": {
+        "kind": "offboarding_command_boundary",
+        "path": "packages/database/src/membership-lifecycle.ts",
+        "sha256": "faca2b944b21cdddd2867f0cbe6712d3597c5ab4c9dae89de50615ae85fd62c0"
+      }
     }
   ],
   "work_units": {
@@ -460,7 +480,7 @@
     "implementation": 4.0,
     "integration": 3.0,
     "packaging": 0.0,
-    "repair": 1.0,
+    "repair": 2.0,
     "research": 0.0,
     "runtime": 0.0
   },
@@ -518,6 +538,20 @@
       "worker_id": "current-bottleneck-worker",
       "reason": "second miss of first_render",
       "issued_at": "2026-09-21T17:54:17.311232Z"
+    },
+    {
+      "order_id": "replace-manager:current-bottleneck-manager:first_runtime",
+      "kind": "replace_manager",
+      "manager_id": "current-bottleneck-manager",
+      "reason": "repeated mission deadline failure: first_runtime",
+      "issued_at": "2026-09-21T18:03:41.362272Z"
+    },
+    {
+      "order_id": "replace-manager:current-bottleneck-manager:first_render",
+      "kind": "replace_manager",
+      "manager_id": "current-bottleneck-manager",
+      "reason": "repeated mission deadline failure: first_render",
+      "issued_at": "2026-09-21T18:03:41.362272Z"
     }
   ],
   "consumed_wake_keys": [],
@@ -633,7 +667,7 @@
     "$schema": "company-os.outcome-executive-decision.v1",
     "objective_id": "company-human",
     "objective": "Build and independently verify the complete Company Human platform in mosnin/company-humans against the canonical Notion tree and phases 00\u201316. Preserve company-os-web. Use Convex OAuth, organization-sponsored ecosystem access with Scalar first, scoped roles and admin activity visibility, bounded usage and centralized commercial control, modular human work/CRM/context/creator workspaces, recoverable Chippi referral attribution, immutable commissions and real regulated payouts while merchant billing remains independent. Verify sales, referral and UGC configurations without forks. Use Symbolic context and Flow when connected; inspect Callix UTM tracking for reuse. Expansion remains conditional on stable first-party contracts and actual demand.",
-    "budget_fraction_consumed": 0.04770058070601852,
+    "budget_fraction_consumed": 0.05422894922453703,
     "reality_level": "R0",
     "reality_level_index": 0,
     "mode": "normal",
@@ -795,7 +829,7 @@
         "existing_implementation": null
       }
     ],
-    "decision_sha256": "6c8e12b36baf3ad480683e5f91f3d4f5d6ecea269073eaf53f5f726c82d857df",
+    "decision_sha256": "0d560bd7f477297c9c05dc2c23352a1506d0b7e8c0b3348a47f66e4e780565ea",
     "navigation_decision_sha256": "a40ccc5f921acddaf691e931bb0726558fe9d5bf6e7551e6c646b046a7d1c821",
     "navigation_mode": "navigate",
     "waypoint": "R3_FIRST_REALITY",
@@ -843,7 +877,7 @@
     }
   },
   "checkpoint": null,
-  "state_sha256": "434afb6140d461bac5cbb46c3a53c4bd8d1f19e50719a7c296fe59954bd2c074",
+  "state_sha256": "148b267270436b879d661de5ccc992de6a8081d79663f67695dc5987fad6d838",
   "goal_route_sha256": "fbe18be85de19dee2838b7e5484d00de48083c72abd2c5bf57928acbf0178344",
   "root_goal_sha256": "03d30ad602d562e0245176463ef01d2c90f14d5300bfdfdecc84f825e56644a5",
   "scheduler_binding": "Active Codex thread goal; this local lease is not an installed background automation",

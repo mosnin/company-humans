@@ -56,3 +56,7 @@ A regression run initially failed ten of twelve route boundary scenarios. After 
 ## Invitation cancellation
 
 Invitation history requires members.manage, tenant-scoped database context and explicit token-free projection. Revocation requires same-origin DELETE and a server-derived canonical actor; database capability policies independently restrict updates. Acceptance and revocation serialize on the invitation row. Revoked links fail acceptance; repeated revocation is harmless and writes one audit entry. Accepted invitations cannot be revoked retroactively: use membership suspension/removal to disable access.
+
+## Product mapping offboarding
+
+Membership suspension/removal disables product mapping intent, records a durable provider command, and appends audit in one transaction. Provider state is not rewritten to imply remote success. Transaction locks prevent new mapping inserts from racing beyond parent suspension; they preserve existing owner-protection policies. Command insertion failure rolls back membership and mapping updates. Workspace reactivation and reinvitation do not restore product mappings. External token/session revocation remains an adapter acceptance requirement.

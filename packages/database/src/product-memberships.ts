@@ -35,6 +35,9 @@ export async function requestProductMembership(databaseUrl: string, input: {
     const id=createCanonicalId("productMembership");
     await client.query(`INSERT INTO public.product_memberships (id,organization_id,product_instance_id,membership_id,created_by_user_id)
       VALUES ($1,$2,$3,$4,$5)`,[id,organizationId,instanceId,membershipId,actorUserId]);
+    await client.query(`INSERT INTO public.product_membership_commands
+      (id,organization_id,product_membership_id,desired_revision,operation,idempotency_key,actor_user_id)
+      VALUES ($1,$2,$3,1,'provisionMember',$4,$5)`,[createCanonicalId("provisioningOperation"),organizationId,id,`${id}:member:1`,actorUserId]);
     await appendIdentityAudit(client,{organizationId,actorUserId,actorMembershipId:MembershipIdSchema.parse(actor.rows[0]!.id),
       action:"product.membership.requested",targetType:"product_membership",targetId:id,
       afterState:{membershipId,productInstanceId:instanceId,desiredEnabled:true,provisioningStatus:"pending"}});
