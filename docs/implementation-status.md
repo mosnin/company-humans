@@ -12,8 +12,8 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 164 contract/database/route/Convex tests pass. Fifty-six desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
-- Local development/verification and hosted verification/production databases have 33 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
+- 165 contract/database/route/Convex tests pass. Fifty-six desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
+- Local development/verification and hosted verification/production databases have 34 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
 
@@ -255,3 +255,13 @@ All 164 automated tests, typecheck, lint and production build pass. The expanded
 The initial write/check attempt failed because the disk was full, before migration creation. Only this repository's generated Next build output was removed; the migration and all checks then succeeded.
 
 Migration 0033 then applied to local development and hosted production; production replay applied no changes. All four databases have 33 migrations. No production fixture records or worker credentials were created.
+
+## Restricted usage-limit application/readback worker — 2026-09-21
+
+Added tenant/product-scoped dispatch under a separate restricted role. Claims use two-minute leases, at most five attempts and a stable policy-revision idempotency key. Unbound provider targets remain pending. Current revision, catalog meter, organization/product state and applicable member identity are checked before dispatch and completion; zero-limit cleanup remains possible after disable. Revision locks serialize completion with policy changes.
+
+The dispatcher validates exact apply receipts, then separately reads provider state. Missing, malformed or mismatched readback cannot succeed. Apply receipts survive readback transport failures; retries preserve their key. Expired leases fail, superseded receipts remain historical, and attempts plus service audit commit atomically. The worker cannot edit policy, identity, product membership or activate access. Successful jobs describe one observed limit, not a complete effective-policy snapshot or an activation grant.
+
+All 165 automated tests (24 contracts, 20 database, 121 web), typecheck, lint and production build pass. The new restricted-role scenario covers concurrent claims, wrong tenant/product, privilege denial, audit rollback, apply/readback mismatch, pending/invalid responses, retry/lease exhaustion, policy supersession, suspended member binding and zero cleanup after disable. Provider calls use explicit fixture adapters. No UI changed; browser evidence remains 56 checks at 2c2c94c. Previous journal commit 9baaa7b passed hosted CI 35649558789. Real Scalar transport, hosted execution credentials/scheduling, full entitlement application/resolution, activation and real OAuth remain unfinished.
+
+The restricted worker scenario also passed on hosted verification PostgreSQL (42.13 seconds). Migration 0034 then applied to local development and hosted production; production replay made no changes. All four databases have 34 migrations. No production fixture records, worker login or scheduler were created.

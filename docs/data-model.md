@@ -82,4 +82,6 @@ product_usage_limits uses canonical ch_lim IDs, tenant-bound instance/member ref
 
 ## Usage-limit execution journal
 
-Migration 0033 adds usage_limit_jobs and usage_limit_attempts. Job identity is (usage_limit_id, revision), with composite organization foreign keys to immutable policy history. New revisions enqueue atomically through an invoker-rights trigger. Backfill selects the latest revision per policy. Jobs reserve bounded lease/retry state; attempts retain immutable provenance and completed apply/readback receipts. No worker currently executes these rows. No job or receipt substitutes for the complete current-policy activation gate.
+Migration 0033 adds usage_limit_jobs and usage_limit_attempts. Job identity is (usage_limit_id, revision), with composite organization foreign keys to immutable policy history. New revisions enqueue atomically through an invoker-rights trigger. Backfill selects the latest revision per policy. Jobs reserve bounded lease/retry state; attempts retain immutable provenance and completed apply/readback receipts. The restricted dispatcher is now implemented; production execution remains unconfigured. No job or receipt substitutes for the complete current-policy activation gate.
+
+Migration 0034 enables the restricted usage-limit worker role and scoped journal access. Jobs now execute through leases; attempts preserve validated apply/readback receipts, normalized outcome and worker provenance. Superseded results remain history. No new domain tables or product-access state transitions are introduced.

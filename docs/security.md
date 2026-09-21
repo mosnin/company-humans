@@ -143,4 +143,8 @@ All 157 automated tests, typecheck, lint and production build pass. The expanded
 
 ## Usage-limit journal boundary
 
-The web service has only scoped SELECT and column-specific INSERT of organization/limit/revision into usage_limit_jobs. Default state is pending. It cannot UPDATE/DELETE jobs, INSERT attempts, or fabricate execution status. Both tables enforce RLS and composite tenant references. The enqueue trigger uses invoker rights. Attempt updates cannot alter provenance and cannot modify completed history. Restricted worker grants and execution are not yet installed.
+The web service has only scoped SELECT and column-specific INSERT of organization/limit/revision into usage_limit_jobs. Default state is pending. It cannot UPDATE/DELETE jobs, INSERT attempts, or fabricate execution status. Both tables enforce RLS and composite tenant references. The enqueue trigger uses invoker rights. Attempt updates cannot alter provenance and cannot modify completed history. Migration 0034 and the dispatcher add restricted execution as described below; production worker credentials remain unconfigured.
+
+## Usage-limit worker isolation
+
+Migration 0034 grants company_human_limit_worker journal-only mutations, tenant/product-scoped policy and mapping reads, minimal identity columns and service-attributed audit inserts. Runtime checks reject superusers, RLS-bypass roles, table owners and general web service credentials. RLS constrains job, attempt, policy and product-instance visibility through both organization and product scope. The role cannot edit identity, limits, product access or audit history. It is NOLOGIN; no production execution credential has been issued. A successful single-limit receipt cannot authorize activation.

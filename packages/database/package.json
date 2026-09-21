@@ -71,6 +71,10 @@
     "./product-usage-limits": {
       "types": "./dist/product-usage-limits.d.ts",
       "default": "./dist/product-usage-limits.js"
+    },
+    "./usage-limit-worker": {
+      "types": "./dist/usage-limit-worker.d.ts",
+      "default": "./dist/usage-limit-worker.js"
     }
   },
   "scripts": {
