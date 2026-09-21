@@ -101,3 +101,9 @@ CH-18 needs finite product/member limits before sponsored operations can be enab
 ## Exact limit acknowledgement without breaking existing adapters — 2026-09-21
 
 Canonical 05 requires versioned common semantics; 06 requires bounded usage and no outage-based unlimited spend. Existing V1/V2 numeric dictionaries lack the persisted limit's unit/window/revision. Add a separately versioned extension on V2, preserving existing organization/denial/bootstrap operations. Require exact aggregate/member scope and counter preservation. Unsupported provider semantics fail rather than using an inferred conversion. Contract validity is not provider acceptance or authorization to activate. See [limit semantics](usage-limit-semantics.md) for compatibility and adoption gates.
+
+## 2026-09-21 — staged complete capability sets
+
+Canonical documents 05/06 require entitlement application before activation and current runtime gates before spend. The legacy applyEntitlements signature does not prove provider identity, complete-set replacement, applied revision or continued suspension. ProductCapabilityAdapterV1 is an additive V2 extension requiring stageCapabilities and independent getStagedCapabilities. Existing V1 organization/denial and V2 bootstrap interfaces remain compatible; neither substitutes for this extension.
+
+A policyRevision identifies a monotonically increasing complete member capability snapshot, not one individual preference revision. The future durable snapshot producer must assign it atomically and preserve source revisions. Providers must reject stale revisions and equal revisions with different contents, replace the entire set, preserve suspension and leave limits/counters intact. Empty sets revoke all staged capabilities. These provider obligations require live proof; schema validation alone cannot establish them. No production registration or policy snapshot journal is introduced here.

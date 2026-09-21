@@ -12,7 +12,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 167 contract/database/route/Convex tests pass. Sixty-two desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
+- 173 contract/database/route/Convex tests pass. Sixty-two desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
 - Local development/verification and hosted verification/production databases have 37 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
@@ -299,3 +299,9 @@ All 166 automated tests, typecheck, lint and production build pass; both final a
 A regression reproduced substitution of another authorized administrator at the privileged SQL activation boundary after the original claimant was suspended. Migration 0037 now requires the original actor on the matching unfinished attempt for both create and connect activation. It preserves existing current-permission, lease, target and instance checks; the limited function owner has scoped attempt reads only.
 
 All 167 automated tests, typecheck, lint and build pass. Three affected scenarios passed hosted verification (59.80 seconds combined); migration 0037 is applied to all four databases. Prior a2f4f24 passed CI 35653397715. This security repair does not establish real OAuth, Scalar transport, hosted workers or full Phase 02 acceptance.
+
+## CH-18 capability staging prerequisite — 2026-09-21
+
+Implemented deterministic desired-capability snapshot resolution and the additive V2 capability staging/readback extension. Resolution rejects mixed scopes/ambiguous revisions, applies deny precedence and excludes retired catalog capabilities. Staging requires complete-set replacement, canonical/external identity agreement, policy revision and continued suspension; comparison rejects excess, missing or mismatched grants.
+
+All 173 automated tests, typecheck, lint and build pass. This is a shared contract prerequisite only: durable snapshot issuance, execution worker, effective runtime policy gates, Scalar transport and activation remain unimplemented. No provider acceptance, migration or hosted execution is claimed. CH-18 remains incomplete. Prior cdbf42f passed CI 35653785919.
