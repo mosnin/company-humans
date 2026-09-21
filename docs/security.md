@@ -38,3 +38,9 @@ Live Convex OAuth configuration/round-trip, deployed restricted roles, authentic
 ## Provisioning journal boundary
 
 Operations and attempt history use RLS requiring applications.manage in the explicit tenant context; ordinary contributor/read credentials receive no grants. Composite foreign keys prevent cross-tenant instance/operation references. Service column grants prevent rewriting operation identity or attempt ownership. Completed attempts are immutable; deletion is unavailable to runtime roles. Claim and completion independently recheck active identity, organization, membership and capability. Leases fence stale workers; they do not cancel external side effects, so provider idempotency/reconciliation remains mandatory before dispatch. No public worker endpoint or provider credential store is introduced.
+
+## Provisioner activation (0020–0021)
+
+`company_human_provisioner` has journal, product-read and provisioning-audit privileges; it is not a member of the general service role and cannot update memberships, grants or raw instances. Only this runtime role can execute `activate_provisioned_instance`. Its dedicated function owner (`company_human_activation`) is NOLOGIN, NOSUPERUSER and NOBYPASSRLS, with narrow column grants and tenant/capability policies. The function checks a live matching lease, current actor authority, desired enablement, provisioned mode, pending state, unset external ID and non-retired catalog entry under row locks. Receipt failure rolls activation back. No web route accepts provider receipts from clients.
+
+External effects that occur before local revocation remain a reconciliation/offboarding requirement. Rejection of local activation does not prove the provider cancelled its resource; the failed transaction leaves the journal available for investigation. No production worker login or credential has been created by these migrations.

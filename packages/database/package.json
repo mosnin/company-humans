@@ -47,6 +47,10 @@
     "./provisioning-operations": {
       "types": "./dist/provisioning-operations.d.ts",
       "default": "./dist/provisioning-operations.js"
+    },
+    "./provisioning-dispatcher": {
+      "types": "./dist/provisioning-dispatcher.d.ts",
+      "default": "./dist/provisioning-dispatcher.js"
     }
   },
   "scripts": {

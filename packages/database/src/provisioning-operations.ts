@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { OrganizationIdSchema, UserIdSchema, ProvisioningOperationIdSchema, type OrganizationId, type UserId } from "@company-human/contracts";
+import { OrganizationIdSchema, UserIdSchema, ProvisioningOperationIdSchema, ProductIdSchema, type ProductId, type OrganizationId, type UserId } from "@company-human/contracts";
 import { Client } from "pg";
 import { z } from "zod";
 import { appendIdentityAudit } from "./identity-audit.js";
@@ -13,7 +13,7 @@ const Result = z.discriminatedUnion("status", [
   z.object({ status: z.literal("retryable_failure"), code: Code, retryAfterSeconds: z.number().int().min(1).max(86400).optional() }).strict(),
   z.object({ status: z.literal("permanent_failure"), code: Code }).strict(),
 ]);
-interface Scope { actorUserId: UserId; organizationId: OrganizationId }
+export interface ProvisioningScope { actorUserId: UserId; organizationId: OrganizationId }
 interface OperationRow {
   id: string; product_instance_id: string; idempotency_key: string; status: string;
   attempt_count: number; lease_token: string | null; lease_expired: boolean;
@@ -23,14 +23,23 @@ export interface ProvisioningLease {
   leaseToken: string; attemptNumber: number;
 }
 
-async function transaction<T>(url: string, scope: Scope, run: (client: Client) => Promise<T>): Promise<T> {
+async function transaction<T>(url: string, scope: ProvisioningScope, run: (client: Client) => Promise<T>): Promise<T> {
   UserIdSchema.parse(scope.actorUserId);
   OrganizationIdSchema.parse(scope.organizationId);
   const client = new Client({ connectionString: url });
   await client.connect();
   try {
     await client.query("BEGIN");
-    await setServiceContext(client, scope.actorUserId, scope.organizationId);
+    const worker = await client.query<{ allowed: boolean }>(`SELECT pg_has_role(current_user,'company_human_provisioner','member')
+      AND NOT r.rolsuper AND NOT r.rolbypassrls
+      AND NOT pg_has_role(current_user,(SELECT relowner FROM pg_class WHERE oid = 'public.product_instances'::regclass),'member') AS allowed
+      FROM pg_roles r WHERE rolname = current_user`);
+    if (worker.rows[0]?.allowed) {
+      await client.query("SELECT set_config('company_human.user_id',$1,true),set_config('company_human.organization_id',$2,true)",
+        [scope.actorUserId, scope.organizationId]);
+    } else {
+      await setServiceContext(client, scope.actorUserId, scope.organizationId);
+    }
     const permission = await client.query<{ allowed: boolean }>(
       "SELECT company_human_private.has_capability($1,'applications.manage') AS allowed", [scope.organizationId]);
     if (!permission.rows[0]?.allowed) throw new Error("Application administration denied");
@@ -44,15 +53,16 @@ async function transaction<T>(url: string, scope: Scope, run: (client: Client) =
 }
 
 /** Server-only: obtain one tenant-scoped lease; callers must not expose this as an unauthenticated worker API. */
-export async function claimProvisioningOperation(url: string, scope: Scope): Promise<ProvisioningLease | null> {
+export async function claimProvisioningOperation(url: string, scope: ProvisioningScope, productId?: ProductId): Promise<ProvisioningLease | null> {
+  if (productId !== undefined) ProductIdSchema.parse(productId);
   return transaction(url, scope, async (client) => {
     const selected = await client.query<OperationRow>(
-      `SELECT o.*, o.lease_expires_at <= now() AS lease_expired FROM public.provisioning_operations o
+      `SELECT o.*, o.lease_expires_at <= clock_timestamp() AS lease_expired FROM public.provisioning_operations o
        JOIN public.product_instances i ON i.organization_id = o.organization_id AND i.id = o.product_instance_id
-       WHERE o.organization_id = $1 AND i.desired_enabled AND i.mode = 'provisioned' AND i.provisioning_status = 'pending'
+       WHERE o.organization_id = $1 AND ($2::text IS NULL OR i.product_id = $2) AND i.desired_enabled AND i.mode = 'provisioned' AND i.provisioning_status = 'pending'
          AND ((o.status IN ('pending','retry_wait') AND o.next_attempt_at <= now())
            OR (o.status = 'running' AND o.lease_expires_at <= now()))
-       ORDER BY o.next_attempt_at, o.id FOR UPDATE OF o SKIP LOCKED LIMIT 1`, [scope.organizationId]);
+       ORDER BY o.next_attempt_at, o.id FOR UPDATE OF o SKIP LOCKED LIMIT 1`, [scope.organizationId, productId ?? null]);
     const row = selected.rows[0];
     if (!row) return null;
     if (row.status === "running") {
@@ -81,17 +91,22 @@ export async function claimProvisioningOperation(url: string, scope: Scope): Pro
   });
 }
 
-/** Persist a normalized adapter receipt, never arbitrary provider payloads or credentials. Does not activate product access. */
-export async function finishProvisioningAttempt(url: string, scope: Scope, operationId: string, leaseToken: string,
-  result: z.input<typeof Result>): Promise<void> {
+/** Persist a normalized adapter receipt, never arbitrary provider payloads or credentials. Activation requires a separate restricted provisioner credential and is atomic with its receipt. */
+export async function finishProvisioningAttempt(url: string, scope: ProvisioningScope, operationId: string, leaseToken: string,
+  result: z.input<typeof Result>, options: { activateInstance?: boolean } = {}): Promise<void> {
   ProvisioningOperationIdSchema.parse(operationId);
   z.string().uuid().parse(leaseToken);
   const parsed = Result.parse(result);
   await transaction(url, scope, async (client) => {
-    const selected = await client.query<OperationRow>(`SELECT *, lease_expires_at <= now() AS lease_expired
+    const selected = await client.query<OperationRow>(`SELECT *, lease_expires_at <= clock_timestamp() AS lease_expired
       FROM public.provisioning_operations WHERE id = $1 AND organization_id = $2 FOR UPDATE`, [operationId, scope.organizationId]);
     const row = selected.rows[0];
     if (!row || row.status !== "running" || row.lease_token !== leaseToken || row.lease_expired) throw new Error("Stale provisioning lease");
+    if (options.activateInstance) {
+      if (parsed.status !== "succeeded") throw new Error("Only successful provisioning can activate an instance");
+      await client.query("SELECT company_human_private.activate_provisioned_instance($1,$2,$3)",
+        [row.id, leaseToken, parsed.providerReference]);
+    }
     const retryable = parsed.status === "pending" || parsed.status === "retryable_failure";
     const exhausted = retryable && row.attempt_count >= 5;
     const status = parsed.status === "succeeded" ? "succeeded" : retryable && !exhausted ? "retry_wait" : "failed";
@@ -107,6 +122,6 @@ export async function finishProvisioningAttempt(url: string, scope: Scope, opera
       next_attempt_at = now() + ($5 * interval '1 second'), updated_at = now() WHERE id = $1`,
     [row.id, status, code, reference, delay]);
     await appendIdentityAudit(client, { ...scope, action: "product.provisioning.received", targetType: "provisioning_operation",
-      targetId: row.id, afterState: { status, outcome: parsed.status, attemptNumber: row.attempt_count, code } });
+      targetId: row.id, afterState: { status, outcome: parsed.status, attemptNumber: row.attempt_count, code, instanceActivated: options.activateInstance === true } });
   });
 }

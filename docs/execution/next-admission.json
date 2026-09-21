@@ -1,16 +1,16 @@
 {
   "$schema": "company-os.work-admission-receipt.v1",
-  "request_id": "provisioning-journal-20260921",
-  "task_id": "CH-15-durable-operation-journal",
+  "request_id": "provider-dispatch-20260921",
+  "task_id": "CH-15-provider-dispatch-activation",
   "manager_id": "root",
   "work_class": "implementation",
   "admitted": true,
   "blockers": [],
-  "mission_state_sha256": "a3acc2c3f879b4a7e12ef0fe5ce2d3da706ffa8ac1b95ce51e4f50d83b2e051a",
-  "governor_decision_sha256": "0f374beb2bd9d44079ef3ee6ec6dc30076ab2070860591e9fa4acb29a6735e81",
+  "mission_state_sha256": "f6aa9588f4161d338d7cf1e60122ac31b509422b2513204cb562e2928505e19b",
+  "governor_decision_sha256": "b399e479ddfa7fdda3b31c0415726ce3b3587d2c3fab5c5b18214092428a603d",
   "governor_mode": "normal",
   "dominant_bottleneck": {
-    "capability_id": "phase:02",
+    "capability_id": "phase:03",
     "state": "missing",
     "critical": true,
     "priority": 100,
@@ -30,13 +30,13 @@
     "checkpoint"
   ],
   "replacement_orders": [],
-  "navigation_decision_sha256": "4142dcac83a78afc47acfc33e0f6e579cd95b4a2bcece98bb07a7918e582040f",
+  "navigation_decision_sha256": "b6d3fa3c544e82d669671c2a6e74777be7f3f7ed03d934ec97e1b0c79e42f645",
   "navigation_mode": "navigate",
   "next_action": {
     "action_kind": "materialize",
     "work_class": "implementation",
-    "capability_id": "phase:02",
-    "instruction": "Materialize the smallest real phase:02 artifact that changes objective reality."
+    "capability_id": "phase:03",
+    "instruction": "Materialize the smallest real phase:03 artifact that changes objective reality."
   },
-  "receipt_sha256": "474a9893df973cb4727b688d39dc2c87f685b7ac6a733b2216144400d820a0cf"
+  "receipt_sha256": "81c2124af165027aa52b5a9468587d082a5a6a8f0edbb780f14189f22eef5107"
 }
