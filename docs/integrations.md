@@ -69,3 +69,9 @@ Organization defaults and member overrides now have versioned desired-policy sto
 ## Entitlement settings interface
 
 Admins can now configure organization defaults and mapped-member overrides in a dedicated page. This changes desired policy only. No Scalar adapter applies the settings yet; actual capabilities and usage limits remain unverified.
+
+## Suspended member provisioning contract v2 — 2026-09-21
+
+Added a separate version 2 adapter interface requiring explicit suspended creation and a strict suspended success receipt. V1 remains unchanged for existing organization/denial operations and cannot pass V2 registration validation. Normalized incompatibility, typed tenant/member input, bounded retries and strict response schemas are covered. The documented compatibility window and migration sequence precede any worker/provider rollout.
+
+No remote calls, worker, schema migration or access grant are introduced. Scalar must prove initial denial and later entitlement/budget/readback gates before this can establish usable access. The new contract tests do not prove remote enforcement.

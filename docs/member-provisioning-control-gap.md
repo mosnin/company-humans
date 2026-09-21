@@ -25,3 +25,11 @@ No existing V1 interface or applied migration is changed by this assessment. If 
 ## Acceptance still required
 
 Real Scalar create/connect, member provision/suspend/resume/remove, applied entitlements, finite limits, measured usage and policy hard stops. Fixture adapters can verify orchestration invariants but cannot prove any of these provider guarantees. Phase 01 real OAuth and Phase 02 provider acceptance remain open.
+
+## Version 2 contract introduced — 2026-09-21
+
+The additive ProductAdapterV2 contract now requires initialAccess=suspended for provisionMember and accepts only a suspended successful membership result. Its runtime validator rejects a complete V1 adapter before a call, using the normalized adapter_contract_incompatible code. The other lifecycle method signatures are retained. This is a contract boundary, not proof that a remote product honors it.
+
+Compatibility window: existing V1 organization and suspension/removal registrations remain supported until their replacements have passed provider acceptance. No V1 worker is switched to V2 by casting a registration or ignoring its version. V1 is never a fallback for new member creation. Because no live member-provision worker was deployed, no accepted live grants or queued command identities need rewriting for this additive contract.
+
+Migration sequence: implement a V2 registration for Scalar; prove direct access and spend are denied on creation; build restricted, durable orchestration using the V2 request/result schemas; record incompatible registrations as an admin-visible health failure; apply and read back entitlement/limit revisions; revalidate tenant and member state; then resume. Deploy each registration only after its common and live-provider tests pass. Runtime health reporting and the worker remain unimplemented. V1 support may be retired only after all registered consumers migrate and compatibility tests pass.
