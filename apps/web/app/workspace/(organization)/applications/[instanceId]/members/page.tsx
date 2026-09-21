@@ -13,6 +13,7 @@ export default async function ApplicationMembersPage({params,searchParams}:{para
   if(!data)return <PageHeader title="Application members unavailable" description="We could not load this application's members. Check your access or try again." actions={<Link className="t-link" href="/workspace/applications">Back to applications</Link>} />;
   return <><PageHeader title={`${data.productName} members`} description="Review requested access and the latest suspension or removal progress." actions={<Link className="t-link" href={`/workspace/applications/${instanceId}/members`}>Refresh status</Link>} />
     <Link className="mb-4 inline-block t-link" href="/workspace/applications">Back to applications</Link>
+    <Link className="ml-4 inline-block t-link" href={`/workspace/applications/${instanceId}/members/request`}>Request member access</Link>
     <ApplicationMembers instanceId={instanceId} members={data.members} />
     <nav aria-label="Application member pages" className="mt-4 flex justify-between gap-4 t-body"><span>{data.total} mapped members</span><div className="flex gap-4">{data.page>1&&<Link className="t-link" href={`?page=${data.page-1}`}>Previous</Link>}{data.page*50<data.total&&<Link className="t-link" href={`?page=${data.page+1}`}>Next</Link>}</div></nav>
   </>;

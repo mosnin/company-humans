@@ -244,3 +244,22 @@ test('member allow preserves organization denial and sends the selected member',
   await expect(page.getByRole('status')).toHaveText('Setting saved. Product access is not confirmed.');
   await expect(page.getByText('Saved request: Deny · Revision 1')).toBeVisible();
 });
+test('member access request preserves retry and acknowledges intent only',async({page},testInfo)=>{
+  let calls=0;
+  await page.route('**/api/organizations/*/applications/*/members',async route=>{
+    calls++;expect(route.request().postDataJSON()).toEqual({membershipId:`ch_mem_${'b'.repeat(32)}`});
+    await route.fulfill(calls===1?{status:503,json:{error:'Could not request access. Please retry.'}}:{status:202,json:{productMembershipId:`ch_pmem_${'a'.repeat(32)}`,providerAccessConfirmed:false}});
+  });
+  await page.goto('/?screen=request-members');
+  await page.getByRole('button',{name:'Request access',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('Please retry');
+  await page.getByRole('button',{name:'Request access',exact:true}).click();
+  await expect(page.getByRole('status')).toHaveText('Request recorded. Product access is not confirmed.');
+  await expect(page.getByRole('button',{name:'Request access',exact:true})).toHaveCount(0);
+  expect(calls).toBe(2);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath('member-request.png'),fullPage:true});
+});
+test('member selection explains empty eligibility',async({page})=>{
+  await page.goto('/?screen=empty-request-members');await expect(page.getByRole('cell',{name:'No eligible members match this search.'})).toBeVisible();
+});

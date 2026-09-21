@@ -7,6 +7,7 @@ import { createOrganization } from "./organizations.js";
 import { enableProductInstance } from "./product-instances.js";
 import { requestProductMembership } from "./product-memberships.js";
 import { referenceProductId } from "./seed.js";
+import { listApplicationMemberCandidates } from "./administration.js";
 const databaseUrl=process.env.DATABASE_URL;
 describe.skipIf(!databaseUrl)("product membership mapping",()=>{
   it("binds one pending mapping to one tenant/member/instance without allowing manufactured provider success",async()=>{
@@ -28,8 +29,16 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       await admin.query("DELETE FROM product_instances WHERE id=$1",[instance]);
       await admin.query(`INSERT INTO product_instances (id,organization_id,product_id,instance_key,mode,provisioning_status,external_organization_id,created_by_user_id)
         VALUES ($1,$2,$3,'primary','connected','active',$4,$5)`,[instance,org.organizationId,referenceProductId("scalar"),`fixture-${suffix}`,alice]);
+      const candidates=await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance);
+      expect(candidates.members).toEqual([{id:org.ownerMembershipId,name:'Alice'}]);
+      expect(candidates.total).toBe(1);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance,'missing')).members).toEqual([]);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance,'',2)).members).toEqual([]);
+      await expect(listApplicationMemberCandidates(url.toString(),bob,org.organizationId,instance)).rejects.toThrow();
+      await expect(listApplicationMemberCandidates(url.toString(),bob,other.organizationId,instance)).rejects.toThrow();
       const ids=await Promise.all(Array.from({length:6},()=>requestProductMembership(url.toString(),input)));
       expect(new Set(ids).size).toBe(1);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).members).toEqual([]);
       expect((await admin.query("SELECT provisioning_status,external_member_id FROM product_memberships WHERE id=$1",[ids[0]])).rows[0]).toEqual({provisioning_status:"pending",external_member_id:null});
       expect((await admin.query("SELECT count(*)::int AS n FROM identity_audit_events WHERE target_id=$1 AND action='product.membership.requested'",[ids[0]])).rows[0].n).toBe(1);
       await expect(requestProductMembership(url.toString(),{...input,actorUserId:bob})).rejects.toThrow();
@@ -46,6 +55,7 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("reconciliation");
       await admin.query("UPDATE product_instances SET desired_enabled=false WHERE id=$1",[instance]);
       await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).available).toBe(false);
     } finally {
       await runtime.end();
       for(const table of ["product_membership_commands","product_memberships","identity_audit_events","product_instances","memberships","roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
