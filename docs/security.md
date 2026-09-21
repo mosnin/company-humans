@@ -154,3 +154,7 @@ Usage-limit administration diagnostics require budgets.manage and return only cu
 ## Existing organization connection boundary
 
 Candidate provider IDs are untrusted intent. requestProductConnection requires applications.manage and a scoped pending connected instance with declared catalog support. Immutable target, exact receipt comparison and the restricted SQL activation function prevent substitution between request and receipt. Web credentials cannot bind targets. The real adapter must independently verify the actor/organization's remote authority through its tenant-authorized connection before returning success. No real provider proof or public ID-based connection endpoint is present.
+
+## Provisioning receipts after authority revocation
+
+Migration 0036 permits the restricted provisioner to retain tenant-scoped in-flight receipts after the initiating human loses applications.manage. New claims still require current authority. Completion requires the running unexpired lease and original initiating user; activation retains its separate current-authorization and eligible-instance checks. Expected activation denial records a failed operation requiring reconciliation while preserving the actual provider outcome/reference in immutable attempt history. Worker events use service actor organization-provisioner with initiatingUserId context. Runtime worker checks exclude general web-service credentials. No hosted execution login is created.

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { OrganizationIdSchema, UserIdSchema, ProvisioningOperationIdSchema, ProductIdSchema, type ProductId, type OrganizationId, type UserId } from "@company-human/contracts";
 import { Client } from "pg";
 import { z } from "zod";
-import { appendIdentityAudit } from "./identity-audit.js";
+import { appendIdentityAudit, appendServiceAudit } from "./identity-audit.js";
 import { setServiceContext } from "./service-context.js";
 
 const Reference = z.string().min(1).max(256);
@@ -16,6 +16,7 @@ const Result = z.discriminatedUnion("status", [
 export interface ProvisioningScope { actorUserId: UserId; organizationId: OrganizationId }
 interface OperationRow {
   operation: "provisionOrganization" | "connectOrganization"; requested_external_organization_id: string | null;
+  initiating_user_id?: string;
   id: string; product_instance_id: string; idempotency_key: string; status: string;
   attempt_count: number; lease_token: string | null; lease_expired: boolean;
 }
@@ -25,7 +26,7 @@ export interface ProvisioningLease {
   leaseToken: string; attemptNumber: number;
 }
 
-async function transaction<T>(url: string, scope: ProvisioningScope, run: (client: Client) => Promise<T>): Promise<T> {
+async function transaction<T>(url: string, scope: ProvisioningScope, run: (client: Client, worker: boolean, authorized: boolean) => Promise<T>, retainReceipt = false): Promise<T> {
   UserIdSchema.parse(scope.actorUserId);
   OrganizationIdSchema.parse(scope.organizationId);
   const client = new Client({ connectionString: url });
@@ -34,6 +35,7 @@ async function transaction<T>(url: string, scope: ProvisioningScope, run: (clien
     await client.query("BEGIN");
     const worker = await client.query<{ allowed: boolean }>(`SELECT pg_has_role(current_user,'company_human_provisioner','member')
       AND NOT r.rolsuper AND NOT r.rolbypassrls
+      AND NOT pg_has_role(current_user,'company_human_service','member')
       AND NOT pg_has_role(current_user,(SELECT relowner FROM pg_class WHERE oid = 'public.product_instances'::regclass),'member') AS allowed
       FROM pg_roles r WHERE rolname = current_user`);
     if (worker.rows[0]?.allowed) {
@@ -44,8 +46,9 @@ async function transaction<T>(url: string, scope: ProvisioningScope, run: (clien
     }
     const permission = await client.query<{ allowed: boolean }>(
       "SELECT company_human_private.has_capability($1,'applications.manage') AS allowed", [scope.organizationId]);
-    if (!permission.rows[0]?.allowed) throw new Error("Application administration denied");
-    const value = await run(client);
+    const isWorker=worker.rows[0]?.allowed===true,authorized=permission.rows[0]?.allowed===true;
+    if (!authorized && !(retainReceipt && isWorker)) throw new Error("Application administration denied");
+    const value = await run(client,isWorker,authorized);
     await client.query("COMMIT");
     return value;
   } catch (error) {
@@ -54,10 +57,16 @@ async function transaction<T>(url: string, scope: ProvisioningScope, run: (clien
   } finally { await client.end(); }
 }
 
+async function appendProvisioningAudit(client:Client,scope:ProvisioningScope,worker:boolean,change:{action:string;targetId:string;afterState:Record<string,unknown>}) {
+  if(worker) await appendServiceAudit(client,{organizationId:scope.organizationId,serviceId:'organization-provisioner',targetType:'provisioning_operation',
+    ...change,afterState:{...change.afterState,initiatingUserId:scope.actorUserId}});
+  else await appendIdentityAudit(client,{...scope,targetType:'provisioning_operation',...change});
+}
+
 /** Server-only: obtain one tenant-scoped lease; callers must not expose this as an unauthenticated worker API. */
 export async function claimProvisioningOperation(url: string, scope: ProvisioningScope, productId?: ProductId): Promise<ProvisioningLease | null> {
   if (productId !== undefined) ProductIdSchema.parse(productId);
-  return transaction(url, scope, async (client) => {
+  return transaction(url, scope, async (client,worker) => {
     const selected = await client.query<OperationRow>(
       `SELECT o.*, o.lease_expires_at <= clock_timestamp() AS lease_expired FROM public.provisioning_operations o
        JOIN public.product_instances i ON i.organization_id = o.organization_id AND i.id = o.product_instance_id
@@ -75,7 +84,7 @@ export async function claimProvisioningOperation(url: string, scope: Provisionin
     if (row.attempt_count >= 5) {
       await client.query(`UPDATE public.provisioning_operations SET status = 'failed', failure_code = 'retry_exhausted',
         lease_token = NULL, lease_expires_at = NULL, updated_at = now() WHERE id = $1`, [row.id]);
-      await appendIdentityAudit(client, { ...scope, action: "product.provisioning.exhausted", targetType: "provisioning_operation",
+      await appendProvisioningAudit(client, scope,worker, { action: "product.provisioning.exhausted",
         targetId: row.id, afterState: { status: "failed", code: "retry_exhausted" } });
       return null;
     }
@@ -87,7 +96,7 @@ export async function claimProvisioningOperation(url: string, scope: Provisionin
     await client.query(`INSERT INTO public.provisioning_attempts
       (organization_id,operation_id,attempt_number,lease_token,actor_user_id) VALUES ($1,$2,$3,$4,$5)`,
     [scope.organizationId, row.id, attemptNumber, leaseToken, scope.actorUserId]);
-    await appendIdentityAudit(client, { ...scope, action: "product.provisioning.claimed", targetType: "provisioning_operation",
+    await appendProvisioningAudit(client, scope,worker, { action: "product.provisioning.claimed",
       targetId: row.id, afterState: { attemptNumber } });
     return { operation:row.operation,requestedExternalOrganizationId:row.requested_external_organization_id,operationId: row.id, productInstanceId: row.product_instance_id, idempotencyKey: row.idempotency_key, leaseToken, attemptNumber };
   });
@@ -99,20 +108,35 @@ export async function finishProvisioningAttempt(url: string, scope: Provisioning
   ProvisioningOperationIdSchema.parse(operationId);
   z.string().uuid().parse(leaseToken);
   const parsed = Result.parse(result);
-  await transaction(url, scope, async (client) => {
-    const selected = await client.query<OperationRow>(`SELECT *, lease_expires_at <= clock_timestamp() AS lease_expired
-      FROM public.provisioning_operations WHERE id = $1 AND organization_id = $2 FOR UPDATE`, [operationId, scope.organizationId]);
+  await transaction(url, scope, async (client,worker,authorized) => {
+    const selected = await client.query<OperationRow>(`SELECT o.*,a.actor_user_id AS initiating_user_id,o.lease_expires_at <= clock_timestamp() AS lease_expired
+      FROM public.provisioning_operations o JOIN public.provisioning_attempts a ON a.operation_id=o.id AND a.organization_id=o.organization_id
+        AND a.attempt_number=o.attempt_count AND a.lease_token=o.lease_token
+      WHERE o.id = $1 AND o.organization_id = $2 FOR UPDATE OF o`, [operationId, scope.organizationId]);
     const row = selected.rows[0];
-    if (!row || row.status !== "running" || row.lease_token !== leaseToken || row.lease_expired) throw new Error("Stale provisioning lease");
+    if (!row || row.status !== "running" || row.lease_token !== leaseToken || row.lease_expired || row.initiating_user_id !== scope.actorUserId) throw new Error("Stale provisioning lease");
+    const instance=await client.query<{desired_enabled:boolean}>("SELECT desired_enabled FROM public.product_instances WHERE organization_id=$1 AND id=$2",[scope.organizationId,row.product_instance_id]);
+    let activationDenied=!authorized||!instance.rows[0]?.desired_enabled,instanceActivated=false;
     if (options.activateInstance) {
       if (parsed.status !== "succeeded") throw new Error("Only successful provisioning can activate an instance");
-      await client.query(row.operation==="connectOrganization"?"SELECT company_human_private.activate_connected_instance($1,$2,$3)":"SELECT company_human_private.activate_provisioned_instance($1,$2,$3)",
-        [row.id, leaseToken, parsed.providerReference]);
+      if (!activationDenied) {
+        await client.query('SAVEPOINT provider_activation');
+        try {
+          await client.query(row.operation==="connectOrganization"?"SELECT company_human_private.activate_connected_instance($1,$2,$3)":"SELECT company_human_private.activate_provisioned_instance($1,$2,$3)",
+            [row.id, leaseToken, parsed.providerReference]);
+          instanceActivated=true;
+        } catch(error) {
+          if(!worker || !(error instanceof Error) || !('code' in error) || error.code!=='42501'
+            || !/activation (denied|no longer allowed)/.test(error.message)) throw error;
+          await client.query('ROLLBACK TO SAVEPOINT provider_activation');activationDenied=true;
+        }
+        await client.query('RELEASE SAVEPOINT provider_activation');
+      }
     }
     const retryable = parsed.status === "pending" || parsed.status === "retryable_failure";
     const exhausted = retryable && row.attempt_count >= 5;
-    const status = parsed.status === "succeeded" ? "succeeded" : retryable && !exhausted ? "retry_wait" : "failed";
-    const code = exhausted ? "retry_exhausted" : "code" in parsed ? parsed.code : null;
+    const status = activationDenied ? "failed" : parsed.status === "succeeded" ? "succeeded" : retryable && !exhausted ? "retry_wait" : "failed";
+    const code = activationDenied ? "activation_denied_reconciliation_required" : exhausted ? "retry_exhausted" : "code" in parsed ? parsed.code : null;
     const reference = "providerReference" in parsed ? parsed.providerReference : null;
     const delay = parsed.status === "retryable_failure" && parsed.retryAfterSeconds
       ? parsed.retryAfterSeconds : Math.min(3600, 30 * 2 ** (row.attempt_count - 1));
@@ -123,7 +147,7 @@ export async function finishProvisioningAttempt(url: string, scope: Provisioning
       provider_reference = coalesce($4,provider_reference), lease_token = NULL, lease_expires_at = NULL,
       next_attempt_at = now() + ($5 * interval '1 second'), updated_at = now() WHERE id = $1`,
     [row.id, status, code, reference, delay]);
-    await appendIdentityAudit(client, { ...scope, action: "product.provisioning.received", targetType: "provisioning_operation",
-      targetId: row.id, afterState: { status, outcome: parsed.status, attemptNumber: row.attempt_count, code, instanceActivated: options.activateInstance === true } });
-  });
+    await appendProvisioningAudit(client, scope,worker, { action: "product.provisioning.received",
+      targetId: row.id, afterState: { status, outcome: parsed.status, attemptNumber: row.attempt_count, code, instanceActivated } });
+  },true);
 }

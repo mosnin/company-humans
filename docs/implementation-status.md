@@ -13,7 +13,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
 - 166 contract/database/route/Convex tests pass. Sixty-two desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
-- Local development/verification and hosted verification/production databases have 35 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
+- Local development/verification and hosted verification/production databases have 36 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
 
@@ -287,3 +287,9 @@ This is generic connection orchestration tested with fixture adapters. The real 
 Live OAuth recheck confirmed dedicated Convex signing configuration exists but both GitHub/Google credential pairs remain absent. GitHub browser still requires sign-in; the user was asked to sign in while independent work continues. No real authentication or provider access is claimed.
 
 The final connection scenario, including direct SQL target-mismatch denial, passed hosted verification (25.45 seconds). Migration 0035 then applied to local development and hosted production; replay made no changes. All four databases have 35 migrations. No production fixture records or provider connections were created.
+
+## CH-15 receipt retention after revocation — 2026-09-21
+
+Completed the previously uncommitted recovery change. Restricted organization provisioning retains a valid in-flight provider result after human revocation, instance disable or catalog retirement, refuses activation and marks the operation for reconciliation. It enforces the original initiating-user fence and audits execution as service organization-provisioner. Actual provider outcomes/references remain immutable attempt history.
+
+All 166 automated tests, typecheck, lint and production build pass; both final affected scenarios passed hosted verification (49.86 seconds combined). Migration 0036 is applied to local development/verification and hosted verification/production, with production replay unchanged. This is fixture-backed generic orchestration, not live Scalar acceptance. Remote cleanup/reconciliation, production workers, OAuth and remaining phase gates are still incomplete.

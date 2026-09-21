@@ -22,6 +22,7 @@ export async function dispatchProvisioningOperation(databaseUrl: string, scope: 
   try {
     const role = await client.query<{ allowed: boolean }>(`SELECT pg_has_role(current_user,'company_human_provisioner','member')
       AND NOT r.rolsuper AND NOT r.rolbypassrls
+      AND NOT pg_has_role(current_user,'company_human_service','member')
       AND NOT pg_has_role(current_user,(SELECT relowner FROM pg_class WHERE oid = 'public.product_instances'::regclass),'member') AS allowed
       FROM pg_roles r WHERE rolname = current_user`);
     if (!role.rows[0]?.allowed) throw new Error("Provisioning requires a restricted provisioner role");

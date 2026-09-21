@@ -55,14 +55,14 @@ describe.skipIf(!databaseUrl)("restricted provider dispatcher", () => {
       expect((await admin.query("SELECT status FROM provisioning_operations WHERE product_instance_id = $1", [instance])).rows).toEqual([{ status: "succeeded" }]);
       expect(await dispatchProvisioningOperation(worker.toString(), scope, { productId: scalar, adapter })).toBe("idle");
       expect(calls).toHaveLength(1);
-      // Simulate disabling while the external call is in progress: activation AND success receipt must roll back.
+      // Disabling during the call prevents activation but retains the remote receipt for reconciliation.
       const revoked = await enableProductInstance(service.toString(), { ...scope, productId: scalar, instanceKey: "revoked", mode: "provisioned" });
       const disabling = fixtureAdapter(async () => {
         await admin.query("UPDATE product_instances SET desired_enabled = false WHERE id = $1", [revoked]);
         return { status: "succeeded", value: { externalOrganizationId: "must-not-bind", status: "active" } };
       });
-      await expect(dispatchProvisioningOperation(worker.toString(), scope, { productId: scalar, adapter: disabling })).rejects.toThrow("no longer allowed");
-      expect((await admin.query("SELECT status FROM provisioning_operations WHERE product_instance_id = $1", [revoked])).rows).toEqual([{ status: "running" }]);
+      expect(await dispatchProvisioningOperation(worker.toString(), scope, { productId: scalar, adapter: disabling })).toBe("processed");
+      expect((await admin.query("SELECT status FROM provisioning_operations WHERE product_instance_id = $1", [revoked])).rows).toEqual([{ status: "failed" }]);
       expect((await admin.query("SELECT external_organization_id FROM product_instances WHERE id = $1", [revoked])).rows[0].external_organization_id).toBeNull();
       // Provider exceptions are normalized and remain retryable; sensitive error text is discarded.
       const failed = await enableProductInstance(service.toString(), { ...scope, productId: scalar, instanceKey: "transport", mode: "provisioned" });
@@ -96,8 +96,18 @@ describe.skipIf(!databaseUrl)("restricted provider dispatcher", () => {
         await admin.query("UPDATE memberships SET status = 'suspended' WHERE organization_id = $1", [org.organizationId]);
         return { status: "succeeded", value: { externalOrganizationId: "must-not-bind", status: "active" } };
       });
-      await expect(dispatchProvisioningOperation(worker.toString(), scope, { productId: scalar, adapter: suspending })).rejects.toThrow("Application administration denied");
+      expect(await dispatchProvisioningOperation(worker.toString(), scope, { productId: scalar, adapter: suspending })).toBe("processed");
       expect((await admin.query("SELECT external_organization_id FROM product_instances WHERE id = $1", [suspended])).rows[0].external_organization_id).toBeNull();
+      for(const target of [revoked,suspended]){
+        const result=(await admin.query("SELECT status,failure_code,provider_reference FROM provisioning_operations WHERE product_instance_id=$1",[target])).rows[0];
+        expect(result).toEqual({status:'failed',failure_code:'activation_denied_reconciliation_required',provider_reference:'must-not-bind'});
+        expect((await admin.query("SELECT a.outcome,a.provider_reference FROM provisioning_attempts a JOIN provisioning_operations o ON o.id=a.operation_id WHERE o.product_instance_id=$1",[target])).rows[0]).toEqual({outcome:'succeeded',provider_reference:'must-not-bind'});
+      }
+      const workerEvents=(await admin.query("SELECT actor_type,actor_service_id,actor_user_id,after_state FROM identity_audit_events WHERE organization_id=$1 AND target_type='provisioning_operation'",[org.organizationId])).rows;
+      expect(workerEvents.length).toBeGreaterThan(4);
+      expect(workerEvents.every(e=>e.actor_type==='service'&&e.actor_service_id==='organization-provisioner'&&e.actor_user_id===null)).toBe(true);
+      expect(workerEvents.filter(e=>e.after_state.code==='activation_denied_reconciliation_required').every(e=>e.after_state.instanceActivated===false)).toBe(true);
+      await expect(dispatchProvisioningOperation(worker.toString(),scope,{productId:scalar,adapter})).rejects.toThrow('Application administration denied');
     } finally {
       await sql.end(); await serviceSql.end();
       for (const table of ["provisioning_attempts", "provisioning_operations", "product_instances", "identity_audit_events", "memberships", "roles"]) {

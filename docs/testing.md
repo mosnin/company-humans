@@ -235,3 +235,9 @@ This is generic connection orchestration tested with fixture adapters. The real 
 Live OAuth recheck confirmed dedicated Convex signing configuration exists but both GitHub/Google credential pairs remain absent. GitHub browser still requires sign-in; the user was asked to sign in while independent work continues. No real authentication or provider access is claimed.
 
 The final connection scenario, including direct SQL target-mismatch denial, passed hosted verification (25.45 seconds). Migration 0035 then applied to local development and hosted production; replay made no changes. All four databases have 35 migrations. No production fixture records or provider connections were created.
+
+## Provisioning receipt retention — 2026-09-21
+
+All 166 automated tests (24 contracts, 21 database, 121 web), typecheck, lint and production build passed on the final receipt-retention code. Extended restricted-role scenarios cover disable, human suspension and catalog retirement during provider calls, retained successful remote receipts without local activation, service actor attribution, rejection of substituted initiating users, and continued claim denial after suspension. Existing stale-lease, tenant, target-mismatch and audit rollback regressions remain in the suite. Provider responses are fixtures; no live Scalar success or remote reconciliation is claimed. No UI changed; browser evidence remains the 62 previously recorded fixture checks.
+
+Both final provisioning/create and existing-connection scenarios passed hosted verification PostgreSQL (49.86 seconds combined test execution). Migration 0036 applied to local development and hosted production; replay reported current. Together with local/hosted verification, all four databases now have 36 migrations. No production fixture records, provider calls or worker credentials were created.

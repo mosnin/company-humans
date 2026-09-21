@@ -55,6 +55,7 @@ describe.skipIf(!databaseUrl)('existing product organization connections',()=>{
    expect((await admin.query('SELECT failure_code FROM provisioning_operations WHERE id=$1',[inactiveOp])).rows[0].failure_code).toBe('provider_organization_not_active');
    // Even bypassing the dispatcher cannot bind a mismatched target through SQL.
    const guarded=await setup('guarded');await request(guarded);const guardedLease=(await claimProvisioningOperation(worker.toString(),scope,product))!;
+   await expect(finishProvisioningAttempt(worker.toString(),{...scope,actorUserId:createCanonicalId('user')},guardedLease.operationId,guardedLease.leaseToken,{status:'succeeded',providerReference:'fixture-target'},{activateInstance:true})).rejects.toThrow('Stale');
    await expect(finishProvisioningAttempt(worker.toString(),scope,guardedLease.operationId,guardedLease.leaseToken,{status:'succeeded',providerReference:'wrong-direct-target'},{activateInstance:true})).rejects.toThrow('mismatched connection');
    expect((await admin.query('SELECT external_organization_id FROM product_instances WHERE id=$1',[guarded])).rows[0].external_organization_id).toBeNull();
    await finishProvisioningAttempt(worker.toString(),scope,guardedLease.operationId,guardedLease.leaseToken,{status:'succeeded',providerReference:'fixture-target'},{activateInstance:true});
@@ -66,9 +67,16 @@ describe.skipIf(!databaseUrl)('existing product organization connections',()=>{
    finally{await admin.query(`DROP TRIGGER ${guard} ON identity_audit_events`);await admin.query(`DROP FUNCTION public.${guard}()`);}
    // Revocation while a provider call is in flight prevents local binding.
    const revoked=await setup('revoked');await request(revoked);
-   await expect(dispatch(adapter(async()=>{await admin.query('UPDATE product_instances SET desired_enabled=false WHERE id=$1',[revoked]);return {status:'succeeded',value:{externalOrganizationId:'fixture-target',status:'active'}};}))).rejects.toThrow('no longer allowed');
+   expect(await dispatch(adapter(async()=>{await admin.query('UPDATE product_instances SET desired_enabled=false WHERE id=$1',[revoked]);return {status:'succeeded',value:{externalOrganizationId:'fixture-target',status:'active'}};}))).toBe('processed');
+   expect((await admin.query('SELECT failure_code,provider_reference FROM provisioning_operations WHERE product_instance_id=$1',[revoked])).rows[0]).toEqual({failure_code:'activation_denied_reconciliation_required',provider_reference:'fixture-target'});
    expect((await admin.query('SELECT external_organization_id FROM product_instances WHERE id=$1',[revoked])).rows[0].external_organization_id).toBeNull();
    await expect(request(revoked)).rejects.toThrow('unavailable');
+   // SQL activation rejection after the initial permission check also preserves the receipt.
+   const retired=await setup('retired');const retiredOp=await request(retired);
+   expect(await dispatch(adapter(async()=>{await admin.query("UPDATE products SET catalog_status='retired' WHERE id=$1",[product]);return {status:'succeeded',value:{externalOrganizationId:'fixture-target',status:'active'}};}))).toBe('processed');
+   expect((await admin.query('SELECT status,failure_code,provider_reference FROM provisioning_operations WHERE id=$1',[retiredOp])).rows[0]).toEqual({status:'failed',failure_code:'activation_denied_reconciliation_required',provider_reference:'fixture-target'});
+   expect((await admin.query('SELECT external_organization_id FROM product_instances WHERE id=$1',[retired])).rows[0].external_organization_id).toBeNull();
+   await admin.query("UPDATE products SET catalog_status='ready' WHERE id=$1",[product]);
    const unsupported=await setup('unsupported');await admin.query('UPDATE products SET catalog_metadata=NULL WHERE id=$1',[product]);await expect(request(unsupported)).rejects.toThrow('unavailable');
   }finally{
    await sql.end();for(const table of ['provisioning_attempts','provisioning_operations','product_instances','identity_audit_events','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);

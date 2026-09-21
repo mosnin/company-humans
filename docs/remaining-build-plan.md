@@ -9,7 +9,7 @@ Rebased 2026-09-21 against committed application revision `2d4b5d7`, current imp
 - Phase 02 has catalog, organization provisioning machinery, member diagnostics, product-member mapping, local product disable, and a restricted suspend/remove executor with durable receipts and service audit. No real Scalar provisioning or member access has been demonstrated. Persisting a command does not revoke access in a remote product.
 - Phases 03–15 remain unfinished; Phase 16 is conditional expansion.
 - Dedicated Convex, Neon PostgreSQL and Vercel resources exist. The stable web deployment was verified at `8d72e92`; latest code is newer. Preview READY does not prove production acceptance.
-- Current recorded verification: 166 automated contract/database/route/Convex tests; 35 applied migrations; typecheck/lint/build pass. The usage-limit editor has recorded 62 passing desktop/mobile fixture checks and full local checks. These are recorded results, not a fresh test run or live provider acceptance.
+- Current recorded verification: 166 automated contract/database/route/Convex tests; 36 applied migrations; typecheck/lint/build pass. The usage-limit editor has recorded 62 passing desktop/mobile fixture checks and full local checks. These are recorded results, not a fresh test run or live provider acceptance.
 - Exact finite organization/member usage limits, immutable revisions, scoped administration reads and the authenticated mutation API are committed. The usage-limit editor is implemented and locally verified. Saved limits do not yet stop remote product usage.
 - Organization/member entitlement configuration, scoped reads, mutation API and administration UI are implemented. Member access requests and tenant-scoped member selection are implemented. Both return or display unconfirmed provider access; neither grants remote access.
 - Adapter V2 now requires creating a remote member suspended and validates that receipt. The restricted V2 suspended-creation worker and receipt-backed suspended identity binding are implemented with local and hosted database verification; real Scalar transport, policy/limit acknowledgement, reconciliation and final activation remain incomplete. Existing V1 organization and denial workers are preserved.
@@ -18,9 +18,9 @@ Rebased 2026-09-21 against committed application revision `2d4b5d7`, current imp
 
 This refresh preserves the canonical phase numbers and does not restart completed infrastructure. The Notion roadmap and tracker schema were fetched again for this planning pass. Recorded test counts above were read from repository evidence; no application test suite was rerun for this documentation update.
 
-### Finish the current bounded change
+### Completed recovery change
 
-The working tree contains migration `0036_provisioner_receipt_retention.sql` and related provisioning code/tests. They are not part of committed revision `2d4b5d7`. Complete review of receipt retention after permission revocation/product disable, service actor auditing and original initiating-user fencing. Confirm final local and hosted verification, migration application/replay, documentation and commit before counting this change as delivered. Retaining a provider receipt does not itself implement reconciliation or safe activation.
+Migration `0036_provisioner_receipt_retention.sql` and related provisioning code/tests now retain receipts after permission revocation/product disable, use service actor auditing and enforce the original initiating-user fence. Final local tests/typecheck/lint/build and both affected hosted scenarios passed; all four databases have migration 0036 and production replay made no changes. Retaining a provider receipt does not itself implement reconciliation or safe activation.
 
 ### What has advanced since the previous baseline
 
@@ -231,7 +231,6 @@ Then evaluate public adapter SDK, marketplace/security review, additional payout
 
 ## Immediate bounded task queue
 
-0. Finish and verify the uncommitted provisioning receipt-retention change described above; record its exact migration/deployment state and commit it independently.
 1. Configure the dedicated Convex OAuth provider and prove real sign-in/sign-out with canonical identity. Complete native Symbolic sign-in separately to inspect existing runs; do not claim new evaluation execution through a read-only connection.
 2. Run the real two-organization create/invite/accept/assign/switch/suspend lifecycle; repair findings and verify the exact deployed revision before closing Phase 01.
 3. Use the implemented restricted usage-limit apply/readback worker and exact adapter extension (application/readback schemas and revision/target matching) to build the next orchestration stage on the implemented restricted V2 suspended-creation worker: apply current policy/finite limits to the now-bound suspended provider identity, read back state and fence activation against revoked intent. Existing request API, selection UI, V2 schema and bootstrap journal do not need rebuilding.
