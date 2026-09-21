@@ -86,3 +86,9 @@ The denial worker may append only its named service actor, approved member-denia
 ## Entitlement configuration boundary
 
 setProductEntitlement requires applications.manage and validates tenant instance/member identity. RLS and composite references protect both policy and revision tables. Unsupported or retired capabilities cannot receive allow through this boundary; deny/inherit remain available. Runtime mutation permissions are append-only. These are desired settings, not usable access: product state, membership, roles/team scope, budgets, health and compliance still need the effective resolver and provider enforcement.
+
+## Entitlement mutation API — 2026-09-21
+
+POST /api/organizations/[organizationId]/applications/[instanceId]/entitlements binds the authenticated actor and URL scope, rejects unknown body fields and foreign/missing Origin, and calls the audited applications.manage boundary. Stale revisions return 409; unavailable capabilities return 422; tenant/permission denial returns 403; infrastructure errors are normalized. Success returns the saved revision with providerAccessConfirmed=false and no-store.
+
+All 92 automated tests, typecheck, lint and production build pass. Local production-server HTTP checks return 403 for missing/foreign Origin and 503 Identity unavailable for valid Origin with the current unconfigured local identity. Authenticated handler tests use explicit identity/database mocks; actual OAuth remains unverified. No UI, effective authorization, provider grant or usage enforcement is added by this endpoint. After verification, generated .next output was removed to recover disk space; source and evidence were preserved.
