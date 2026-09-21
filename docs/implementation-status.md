@@ -12,7 +12,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 69 contract/database/route/Convex tests pass. Twenty-four desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at b7c756a passed in run 35635987769.
+- 69 contract/database/route/Convex tests pass. Twenty-eight desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at b7c756a passed in run 35635987769.
 - Local development/verification and hosted verification/production databases have 27 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
@@ -123,3 +123,9 @@ Verified: 68 automated tests, 24 explicit-fixture desktop/mobile checks, typeche
 Added product-bound suspend/remove dispatch under a dedicated restricted worker role, tenant-scoped job leases, five-attempt retry ceiling, stable provider keys, immutable completed attempts, validated receipts and superseded-revision handling. Previously authorized cleanup continues after the initiating member is suspended. The worker cannot grant access or alter identity/mapping provider state.
 
 Verified: all 69 automated tests, typecheck, lint and build; the new multi-case restricted-credential scenario also passed on hosted verification PostgreSQL. Migration 0027 then applied to development and production. Prior UI/API commit 76a6c52 passed hosted CI. No UI changed. No production worker login/scheduler, real Scalar call or provider-state projection is installed; provider-aware reconciliation, provision/resume/entitlements and real OAuth remain outstanding.
+
+## Application member diagnostics — 2026-09-21
+
+Added a dedicated per-application member-access page linked from Applications. It shows desired access, current-revision denial progress and attempt history without exposing provider references or leases. Empty, restricted and unavailable states and pagination are explicit. No action or job status grants access or claims unobserved revocation.
+
+Verified: 69 automated tests, 28 fixture-backed desktop/mobile checks, typecheck, lint and build. The extended authorization/projection scenario also passes on hosted verification PostgreSQL. Previous worker commit 2a8efa9 passed CI 35638862793. Updated connection checks leave Symbolic discovery broken and Scalar waiting for native account sign-in; actual application OAuth/provider gates remain incomplete.

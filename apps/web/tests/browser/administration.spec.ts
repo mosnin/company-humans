@@ -156,3 +156,20 @@ test("application disable confirms scope, recovers failure and distinguishes rem
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
   await page.screenshot({path:testInfo.outputPath("application-disabled.png"),fullPage:true});
 });
+
+test("application members distinguish queued, failed and provider-reported denial",async({page},testInfo)=>{
+  await page.goto('/?screen=application-members');
+  await expect(page.getByRole('row',{name:/Queued Contributor/})).toContainText('Awaiting worker');
+  const failed=page.getByRole('row',{name:/Retry Contributor/});
+  await expect(failed).toContainText('Needs attention');
+  await failed.getByText('Attempt history',{exact:true}).click();
+  await expect(failed).toContainText('adapter transport failure');
+  await expect(page.getByRole('row',{name:/Removed Contributor/})).toContainText('Provider reported removal');
+  await expect(page.getByText('Requested access does not prove product access.',{exact:false})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath('application-members.png'),fullPage:true});
+});
+test("application member list explains an empty mapping",async({page})=>{
+  await page.goto('/?screen=empty-application-members');
+  await expect(page.getByRole('cell',{name:'No members mapped to this application.'})).toBeVisible();
+});

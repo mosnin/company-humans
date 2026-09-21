@@ -1,4 +1,4 @@
-import { OrganizationIdSchema, UserIdSchema, type Capability } from "@company-human/contracts";
+import { OrganizationIdSchema, ProductInstanceIdSchema, UserIdSchema, type Capability } from "@company-human/contracts";
 import { Client } from "pg";
 import { setServiceContext } from "./service-context.js";
 
@@ -111,5 +111,35 @@ export async function listInvitations(databaseUrl: string, actorUserId: string, 
       expires_at::text AS "expiresAt" FROM public.membership_invitations WHERE organization_id = $1
       ORDER BY created_at DESC,id DESC LIMIT 50 OFFSET $2`, [organizationId,(currentPage-1)*50]);
     return { invitations: records.rows, total: Number(count.rows[0]!.total), page: currentPage };
+  });
+}
+
+export interface ApplicationMemberDiagnostic {
+  id: string; memberName: string; membershipStatus: string; desiredEnabled: boolean;
+  denial: null | { operation: string; status: string; attemptCount: number; failureCode: string | null;
+    attempts: { number: number; startedAt: string; finishedAt: string | null; outcome: string | null; failureCode: string | null }[] };
+}
+/** Current-revision denial progress only; no lease, provider identity or raw payload leaves this query. */
+export async function listApplicationMemberDiagnostics(databaseUrl: string, actorUserId: string, organizationId: string, instanceId: string, page = 1) {
+  ProductInstanceIdSchema.parse(instanceId);
+  const currentPage=Number.isSafeInteger(page)&&page>0?Math.min(page,100000):1;
+  return readAdministration(databaseUrl,actorUserId,organizationId,["applications.manage"],async client=>{
+    const instance=await client.query<{productName:string}>(`SELECT p.display_name AS "productName" FROM public.product_instances i
+      JOIN public.products p ON p.id=i.product_id WHERE i.organization_id=$1 AND i.id=$2`,[organizationId,instanceId]);
+    if(!instance.rows[0]) throw new AdministrationDenied();
+    const count=await client.query<{total:string}>("SELECT count(*) AS total FROM public.product_memberships WHERE organization_id=$1 AND product_instance_id=$2",[organizationId,instanceId]);
+    const records=await client.query<ApplicationMemberDiagnostic>(`SELECT pm.id,COALESCE(u.display_name,'Member') AS "memberName",
+      m.status AS "membershipStatus",pm.desired_enabled AS "desiredEnabled",
+      CASE WHEN c.id IS NULL THEN NULL ELSE jsonb_build_object('operation',c.operation,'status',COALESCE(j.status,'queued'),
+        'attemptCount',COALESCE(j.attempt_count,0),'failureCode',j.failure_code,'attempts',COALESCE((SELECT jsonb_agg(
+          jsonb_build_object('number',a.attempt_number,'startedAt',a.started_at,'finishedAt',a.finished_at,'outcome',a.outcome,'failureCode',a.failure_code)
+          ORDER BY a.attempt_number) FROM public.member_denial_attempts a WHERE a.organization_id=pm.organization_id AND a.command_id=c.id),'[]'::jsonb)) END AS denial
+      FROM public.product_memberships pm JOIN public.memberships m ON m.id=pm.membership_id AND m.organization_id=pm.organization_id
+      LEFT JOIN public.users u ON u.id=m.user_id
+      LEFT JOIN public.product_membership_commands c ON c.organization_id=pm.organization_id AND c.product_membership_id=pm.id
+        AND c.desired_revision=pm.desired_revision AND c.operation IN ('suspendMember','removeMember')
+      LEFT JOIN public.member_denial_jobs j ON j.organization_id=c.organization_id AND j.command_id=c.id
+      WHERE pm.organization_id=$1 AND pm.product_instance_id=$2 ORDER BY pm.created_at,pm.id LIMIT 50 OFFSET $3`,[organizationId,instanceId,(currentPage-1)*50]);
+    return {productName:instance.rows[0].productName,members:records.rows,total:Number(count.rows[0]!.total),page:currentPage};
   });
 }

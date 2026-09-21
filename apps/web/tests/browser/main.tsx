@@ -1,3 +1,4 @@
+import { ApplicationMembers } from "@/components/administration/application-members";
 import { InvitationsTable } from "@/components/administration/invitations";
 import { ApplicationDiagnostics } from "@/components/administration/applications";
 import { OAuthSignIn } from "@/components/auth/sign-in";
@@ -17,6 +18,12 @@ const screen = new URLSearchParams(location.search).get("screen") ?? "people";
 const restricted = new URLSearchParams(location.search).get("role") === "contributor";
 createRoot(document.getElementById("root")!).render(<WorkspaceShell organizationName="Test organization" capabilities={ROLE_CAPABILITIES[restricted ? "contributor" : "owner"]}>
   <PageHeader title={screen.charAt(0).toUpperCase()+screen.slice(1)} description="Local component test fixture. Authentication and API responses are mocked." />
+  {screen === "application-members" && <ApplicationMembers members={[
+    {id:"queued",memberName:"Queued Contributor",membershipStatus:"suspended",desiredEnabled:false,denial:{operation:"suspendMember",status:"queued",attemptCount:0,failureCode:null,attempts:[]}},
+    {id:"failed",memberName:"Retry Contributor",membershipStatus:"active",desiredEnabled:false,denial:{operation:"suspendMember",status:"failed",attemptCount:5,failureCode:"retry_exhausted",attempts:[{number:5,startedAt:"2026-09-21T12:00:00Z",finishedAt:"2026-09-21T12:00:01Z",outcome:"retryable_failure",failureCode:"adapter_transport_failure"}]}},
+    {id:"done",memberName:"Removed Contributor",membershipStatus:"removed",desiredEnabled:false,denial:{operation:"removeMember",status:"succeeded",attemptCount:1,failureCode:null,attempts:[]}},
+  ]} />}
+  {screen === "empty-application-members" && <ApplicationMembers members={[]} />}
   {screen === "invitations" && <InvitationsTable organizationId={org} owner invitations={[{id:`ch_inv_${"b".repeat(32)}`,email:"pending@example.test",roleKey:"contributor",status:"pending",expiresAt:"2026-10-01T12:00:00Z"}]} />}
   {screen === "applications" && <ApplicationDiagnostics organizationId={org} applications={[{ id: "fixture-app", productName: "Scalar", instanceKey: "primary", mode: "provisioned", desiredEnabled: true, provisioningStatus: "pending", operation: { status: "failed", attemptCount: 1, failureCode: "authentication_required", nextAttemptAt: "2026-09-21T12:00:00Z", attempts: [{ number: 1, startedAt: "2026-09-21T12:00:00Z", finishedAt: "2026-09-21T12:00:01Z", outcome: "permanent_failure", failureCode: "authentication_required" }] } }]} />}
   {screen === "empty-applications" && <ApplicationDiagnostics organizationId={org} applications={[]} />}

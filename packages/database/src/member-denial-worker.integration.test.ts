@@ -6,6 +6,7 @@ import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { requestProductMembership } from "./product-memberships.js";
 import { disableProductInstance } from "./product-instances.js";
+import { listApplicationMemberDiagnostics } from "./administration.js";
 import { referenceProductId } from "./seed.js";
 import { claimMemberDenial,finishMemberDenial,dispatchMemberDenial } from "./member-denial-worker.js";
 const databaseUrl=process.env.DATABASE_URL;
@@ -39,6 +40,11 @@ describe.skipIf(!databaseUrl)('durable member denial worker',()=>{
     const sql=new Client({connectionString:worker.toString()});await sql.connect();
     try {
       const first=await setup('first');await setup('unrequested',false);
+      const read=()=>listApplicationMemberDiagnostics(service.toString(),owner,org.organizationId,first.instance);
+      const queued=await read();expect(queued.total).toBe(1);expect(queued.members[0]!.denial?.status).toBe('queued');
+      expect(queued.members[0]!.desiredEnabled).toBe(false);
+      expect((await listApplicationMemberDiagnostics(service.toString(),owner,org.organizationId,first.instance,2)).members).toEqual([]);
+      await expect(listApplicationMemberDiagnostics(service.toString(),owner,foreign.organizationId,first.instance)).rejects.toThrow('administration denied');
       await expect(claimMemberDenial(service.toString(),org.organizationId,scalar)).rejects.toThrow('restricted worker');
       await expect(claimMemberDenial(databaseUrl!,org.organizationId,scalar)).rejects.toThrow('restricted worker');
       expect(await claimMemberDenial(worker.toString(),foreign.organizationId,scalar)).toBeNull();
@@ -54,9 +60,14 @@ describe.skipIf(!databaseUrl)('durable member denial worker',()=>{
       await expect(finishMemberDenial(worker.toString(),org.organizationId,lease,{status:'succeeded',value:{externalMemberId:'fixture',status:'suspended'}})).rejects.toThrow('Stale');
       // The initiating actor is no longer active; cleanup must still complete.
       await admin.query("UPDATE memberships SET status='suspended' WHERE id=$1",[member]);
+      await expect(read()).rejects.toThrow('administration denied');
       await finishMemberDenial(worker.toString(),org.organizationId,retried,{status:'succeeded',value:{externalMemberId:'fixture-member',status:'suspended'}});
       expect((await admin.query('SELECT status,provider_reference FROM member_denial_jobs WHERE command_id=$1',[lease.commandId])).rows[0]).toEqual({status:'succeeded',provider_reference:'fixture-member'});
       await admin.query("UPDATE memberships SET status='active' WHERE id=$1",[member]);
+      const confirmed=await read();expect(confirmed.members[0]!.denial?.status).toBe('succeeded');
+      expect(confirmed.members[0]!.denial?.attempts).toHaveLength(2);
+      const projection=JSON.stringify(confirmed);
+      for(const secret of [lease.leaseToken,retried.leaseToken,'fixture-operation','fixture-member','provider_reference','worker_role'])expect(projection).not.toContain(secret);
       await sql.query("SELECT set_config('company_human.organization_id',$1,false)",[org.organizationId]);
       await expect(sql.query("UPDATE product_memberships SET provisioning_status='active' WHERE id=$1",[first.mapping])).rejects.toThrow('permission denied');
       await expect(sql.query("DELETE FROM member_denial_attempts WHERE command_id=$1",[lease.commandId])).rejects.toThrow('permission denied');

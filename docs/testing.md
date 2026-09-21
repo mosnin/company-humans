@@ -87,3 +87,7 @@ Real local Next production-server requests reject missing/foreign origins with 4
 ## Restricted member denial dispatcher
 
 69 automated tests, typecheck, lint and build pass. The new scenario also passes on hosted verification PostgreSQL using separate service and worker logins. It tests wrong-role/owner rejection, tenant/product isolation, six concurrent claims, stable retry keys, pending delay, stale lease rejection, cleanup after initiating-member suspension, denied mapping mutation/history deletion, completed-attempt immutability, sanitized transport failure, invalid active success, mismatched external member, superseded suspension followed by removal, and five-attempt crash/retry exhaustion. Explicit fixture adapters are used; no provider acceptance is claimed. No UI changed.
+
+## Application member diagnostics
+
+69 automated tests, typecheck, lint and build pass; 28 desktop/mobile component checks pass. The existing denial integration scenario now verifies queued/provider-reported states, capability denial after membership suspension, foreign-instance denial, pagination and absence of lease/provider/worker identifiers in the projection. It also passes on hosted verification PostgreSQL. Browser fixtures verify queued, failed, completed and empty states, expandable attempts and bounded mobile table scrolling. Mobile screenshot inspected. Authentication and provider responses remain fixtures in browser checks.

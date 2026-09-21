@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ export function ApplicationDiagnostics({ applications, organizationId }: { appli
         {attempt.failureCode && <p className="mt-1 t-caption text-ink-2 break-all">{attempt.failureCode.replaceAll("_", " ")}</p>}
       </li>)}</ol></details>}
     </>}
+    <Link className="inline-block t-link" href={`/workspace/applications/${application.id}/members`}>View member access</Link>
     {application.desiredEnabled && <DisableApplication application={application} organizationId={organizationId} onDisabled={() => setDisabledIds(ids => [...ids,application.id])} />}
   </CardContent></Card>; })}</div>;
 }

@@ -49,3 +49,9 @@ The Applications admin page now calls a same-origin POST at `/api/organizations/
 `dispatchMemberDenial` executes one current suspendMember/removeMember command through a product-bound registered V1 adapter, under a dedicated restricted worker credential. It handles pending, retryable/permanent failure, normalized receipts, stable idempotency, bounded leases/retries and superseded revisions. Suspension accepts suspended/removed; removal accepts removed only. A known external member mismatch fails. Provision/resume and access grants are intentionally outside this denial credential.
 
 Only fixture adapters have been run. No real Scalar call, hosted schedule, production worker login, provider-state projection or reconciled restore is accepted. Late side effects after a timeout/expired lease require provider-aware reconciliation before restoring access; this journal alone does not prove remote revocation.
+
+## Application member administration
+
+Applications now link to a dedicated paginated member-access page. It displays desired access and the latest revision's denial request: queued, running, waiting, failed, superseded or provider-reported success, with bounded attempt history. No older success is substituted for a newer command. The projection excludes provider references, lease tokens and execution-role details. Missing jobs are shown as awaiting worker; no optimistic remote success is invented.
+
+Fresh connection checks on 2026-09-21 using updated Scalar/Symbolic plugin packages still found Scalar OAuth login available but no authenticated read, and Symbolic HTTP 401 without OAuth discovery. A fresh native Scalar consent flow was opened; account sign-in is pending. No product connection acceptance is inferred.
