@@ -11,7 +11,7 @@ Rebased 2026-09-21 against committed application revision `2175f4c`, current imp
 - Dedicated Convex, Neon PostgreSQL and Vercel resources exist. The stable web deployment was verified at `8d72e92`; latest code is newer. Preview READY does not prove production acceptance.
 - Current recorded verification: 113 automated contract/database/route/Convex tests; 44 browser component checks using explicit fixtures; 29 applied migrations; typecheck/lint/build pass. Browser checks were recorded at `2832918`; the additive adapter contract at `2175f4c` changed no UI. These are recorded task results, not a fresh test run or live provider acceptance.
 - Organization/member entitlement configuration, scoped reads, mutation API and administration UI are implemented. Member access requests and tenant-scoped member selection are implemented. Both return or display unconfirmed provider access; neither grants remote access.
-- Adapter V2 now requires creating a remote member suspended and validates that receipt. The V2 worker, real Scalar transport, policy/limit acknowledgement and final activation sequence remain to be implemented. Existing V1 organization and denial workers are preserved.
+- Adapter V2 now requires creating a remote member suspended and validates that receipt. The restricted V2 suspended-creation worker is implemented with local verification; real Scalar transport, policy/limit acknowledgement, reconciliation and final activation remain incomplete. Existing V1 organization and denial workers are preserved.
 
 ## Execution rules
 
@@ -207,7 +207,7 @@ Then evaluate public adapter SDK, marketplace/security review, additional payout
 
 1. Configure the dedicated Convex OAuth provider and prove real sign-in/sign-out with canonical identity. Complete native Symbolic sign-in separately before claiming any Context/Flow execution.
 2. Run the real two-organization create/invite/accept/assign/switch/suspend lifecycle; repair findings and verify the exact deployed revision before closing Phase 01.
-3. Implement the restricted durable V2 suspended-member bootstrap worker, receipt validation, idempotency, stale-command rejection and tenant/security tests. Existing request API, selection UI and V2 schema do not need rebuilding.
+3. Build the next orchestration stage on the implemented restricted V2 suspended-creation worker: bind confirmed provider identity, apply current policy/finite limits, read back state and fence activation against revoked intent. Existing request API, selection UI, V2 schema and bootstrap journal do not need rebuilding.
 4. Establish Scalar's real control API and test organization. Implement its V2 adapter; prove initial denial, current entitlement/finite-limit acknowledgement, state readback and authorized activation. If upstream contracts are missing, document the concrete gap rather than simulating success.
 5. Finish provider reconciliation, safe resume/restore, health, administrator retry/diagnostics and least-privilege hosted worker deployment. Verify existing access configuration and member request screens with real authentication.
 6. Pass the full real Scalar organization/member lifecycle; then implement measured usage and hierarchical budgets, proving hard stops before broader expensive access.

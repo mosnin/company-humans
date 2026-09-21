@@ -143,3 +143,11 @@ Added a separate version 2 adapter interface requiring explicit suspended creati
 No remote calls, worker, schema migration or access grant are introduced. Scalar must prove initial denial and later entitlement/budget/readback gates before this can establish usable access. The new contract tests do not prove remote enforcement.
 
 Verified for the v2 contract increment: 113 automated tests (15 contracts, 17 database, 81 web), typecheck, lint and production build pass. No UI or database schema changed; no provider test is claimed.
+
+## Suspended member bootstrap verification — 2026-09-21
+
+All 114 automated tests (15 contracts, 18 database, 81 web), typecheck, lint and production build pass. The new restricted-login PostgreSQL scenario covers tenant/product binding, incompatible V1 rejection before claim, concurrent claims, stable retries, invalid active success, transport error normalization, expired leases, retry exhaustion, revocation during execution, inactive identity layers, no provider projection mutation, immutable history and audit rollback/spoof rejection. Only explicit fixture adapters execute. The initial fixture used an invalid user status and then attempted a guarded organization status update; fixture setup was corrected without changing production authorization guards.
+
+No UI changed; browser component checks were not repeated. No real OAuth or Scalar control call is implied by these results.
+
+The bootstrap scenario also passed on the isolated hosted verification database (32.49 seconds). Migration 0030 then applied to local development and hosted production; production replay applied no changes. Both local databases and both hosted databases now have 30 migrations. No production fixture records, execution login or scheduler were created.

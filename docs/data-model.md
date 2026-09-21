@@ -67,3 +67,7 @@ Audit rows now distinguish human and service actors. Human events retain actor_u
 ## Versioned entitlement intent (0029)
 
 Entitlement policies have canonical ch_ent IDs and tenant-bound instance/member references. A null member identifies an organization default; a member ID identifies an override. Partial unique indexes prevent duplicate policies at either scope. Revisions append allow/deny/inherit with actor and timestamp; the database enforces consecutive revisions. Runtime credentials cannot update or delete policy/history. The server uses optimistic expectedRevision and serializes concurrent changes, recording the revision and human audit in one transaction.
+
+## Suspended member bootstrap journal (0030)
+
+member_bootstrap_jobs and member_bootstrap_attempts reference immutable tenant-bound provisionMember commands. Jobs use pending/running/retry_wait/succeeded/failed/superseded states; attempts retain lease, execution role, outcome, normalized code and provider reference. Completed attempts are immutable. A succeeded bootstrap means only that the V2 adapter reported suspended creation. The canonical product-membership projection remains pending and no access is granted. Later policy/readback/activation orchestration must explicitly consume and revalidate this evidence. Superseded receipts remain available for reconciliation.

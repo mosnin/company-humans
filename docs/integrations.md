@@ -75,3 +75,7 @@ Admins can now configure organization defaults and mapped-member overrides in a 
 Added a separate version 2 adapter interface requiring explicit suspended creation and a strict suspended success receipt. V1 remains unchanged for existing organization/denial operations and cannot pass V2 registration validation. Normalized incompatibility, typed tenant/member input, bounded retries and strict response schemas are covered. The documented compatibility window and migration sequence precede any worker/provider rollout.
 
 No remote calls, worker, schema migration or access grant are introduced. Scalar must prove initial denial and later entitlement/budget/readback gates before this can establish usable access. The new contract tests do not prove remote enforcement.
+
+## Suspended member bootstrap execution — 2026-09-21
+
+dispatchMemberBootstrap now executes a single provisionMember command through a complete product-bound V2 registration, using a restricted durable journal. It sends initialAccess=suspended and rejects an active success response. Existing V1 organization/denial workers are unchanged. No real Scalar adapter, worker registration/schedule, access grant, entitlement/limit application or resume is included. A persisted suspended receipt is a prerequisite to subsequent orchestration, not provider lifecycle acceptance.

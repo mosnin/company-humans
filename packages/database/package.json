@@ -63,6 +63,10 @@
     "./product-entitlements": {
       "types": "./dist/product-entitlements.d.ts",
       "default": "./dist/product-entitlements.js"
+    },
+    "./member-bootstrap-worker": {
+      "types": "./dist/member-bootstrap-worker.d.ts",
+      "default": "./dist/member-bootstrap-worker.js"
     }
   },
   "scripts": {

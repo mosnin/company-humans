@@ -112,3 +112,9 @@ Admins can open a dedicated member request page from application member diagnost
 Verified: 109 automated tests, typecheck, lint, build and 44 explicit-fixture desktop/mobile checks. The expanded restricted-role selection/mapping scenario also passes on hosted verification PostgreSQL. Tests cover scoped results, search, pagination, foreign actors/instances, exclusion after mapping and disabled instance availability. Browser tests verify request/retry, selected member ID, empty eligibility and unconfirmed-access feedback; mobile screenshot inspected without page overflow. Real OAuth, provider lifecycle, effective entitlements and budgets remain unverified. No migration required.
 
 Symbolic native OAuth session expired without callback; its obsolete sign-in tab was closed. OAuth discovery remains available, but authenticated Context/Flow remains unverified. Prior endpoint commit 414b5e3 passed CI 35643239508.
+
+## Suspended member bootstrap credential
+
+Migration 0030 creates a separate NOLOGIN company_human_bootstrap_worker role. The execution login must be non-owner, non-superuser, non-RLS-bypass and separate from the general service role. Tenant-scoped reads cover only provisionMember commands, mappings, instances and the minimal identity columns needed to check active user/member/organization state. It cannot alter identity, mappings, entitlement policies or grant access. No production execution login or scheduler is installed.
+
+The V2 dispatcher requests suspended creation only. It rechecks current intent and target liveness at claim and completion; a revoked target's receipt is retained as superseded. Audit and journal changes commit together. Provider exceptions are normalized. Expired leases cannot complete, retries use the same provider key and stop after five attempts. Timeouts do not cancel remote effects; reconciliation of late effects remains required before activation or complete offboarding can be accepted.
