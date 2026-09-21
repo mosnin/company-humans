@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { createCanonicalId, MembershipIdSchema, OrganizationIdSchema, UserIdSchema, type InvitationId, type MembershipId, type OrganizationId, type RoleKey, type UserId } from "@company-human/contracts";
+import { createCanonicalId, InvitationIdSchema, MembershipIdSchema, OrganizationIdSchema, UserIdSchema, type InvitationId, type MembershipId, type OrganizationId, type RoleKey, type UserId } from "@company-human/contracts";
 import { Client } from "pg";
 import { z } from "zod";
 import { appendIdentityAudit } from "./identity-audit.js";
@@ -210,4 +210,34 @@ export async function changeMembershipStatus(databaseUrl: string, input: {
   } finally {
     await client.end();
   }
+}
+
+/** Serialize with acceptance; a revoked token can never activate a membership. */
+export async function revokeInvitation(databaseUrl: string, input: {
+  actorUserId: string; organizationId: string; invitationId: string;
+}): Promise<void> {
+  const actorUserId = UserIdSchema.parse(input.actorUserId);
+  const organizationId = OrganizationIdSchema.parse(input.organizationId);
+  const invitationId = InvitationIdSchema.parse(input.invitationId);
+  const client = new Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    await client.query("BEGIN");
+    await setServiceContext(client, actorUserId, organizationId);
+    const actor = await requireMembershipAdmin(client, actorUserId, organizationId);
+    const result = await client.query<{ status: string; role_key: string }>(
+      "SELECT status, role_key FROM public.membership_invitations WHERE id = $1 AND organization_id = $2 FOR UPDATE",
+      [invitationId, organizationId]);
+    const invitation = result.rows[0];
+    if (!invitation || (invitation.role_key === "admin" && actor.roleKey !== "owner")) throw new Error("Invitation unavailable");
+    if (invitation.status !== "revoked") {
+      if (invitation.status !== "pending") throw new Error("Invitation unavailable");
+      await client.query("UPDATE public.membership_invitations SET status = 'revoked', revoked_at = now() WHERE id = $1 AND organization_id = $2", [invitationId, organizationId]);
+      await appendIdentityAudit(client, { organizationId, actorUserId, actorMembershipId: actor.membershipId,
+        action: "invitation.revoked", targetType: "invitation", targetId: invitationId,
+        beforeState: { status: "pending" }, afterState: { status: "revoked" } });
+    }
+    await client.query("COMMIT");
+  } catch (error) { await client.query("ROLLBACK"); throw error; }
+  finally { await client.end(); }
 }

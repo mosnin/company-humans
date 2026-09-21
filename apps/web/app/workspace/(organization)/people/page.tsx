@@ -14,6 +14,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   if (!data) return <PageHeader title="People unavailable" description="We could not load your organization members. Please try again." />;
   return <><PageHeader title="People" description="Manage invitations, roles, and access to your organization." />
     <InvitePerson organizationId={context.organizationId} owner={context.roleKey === "owner"} />
+    <Link className="mb-4 inline-block t-link" href="/workspace/people/invitations">Review invitations</Link>
     <form className="mb-4 flex max-w-md gap-2"><Input name="q" aria-label="Search people" placeholder="Search by name or email" defaultValue={query} /><Button variant="secondary" type="submit">Search</Button></form>
     <PeopleTable people={data.people} organizationId={context.organizationId} actorUserId={context.userId} owner={context.roleKey === "owner"} />
     <nav aria-label="People pages" className="mt-4 flex items-center justify-between t-body"><span>{data.total} people</span><div className="flex gap-4">{data.page > 1 && <Link className="t-link" href={`?q=${encodeURIComponent(query)}&page=${data.page-1}`}>Previous</Link>}{data.page * 50 < data.total && <Link className="t-link" href={`?q=${encodeURIComponent(query)}&page=${data.page+1}`}>Next</Link>}</div></nav>

@@ -99,3 +99,17 @@ export async function listApplicationDiagnostics(databaseUrl: string, actorUserI
     return { applications: records.rows, total: Number(count.rows[0]!.total), page: currentPage };
   });
 }
+
+export interface InvitationSummary { id: string; email: string; roleKey: string; status: string; expiresAt: string }
+/** Never expose invitation hashes or recover bearer links from persisted records. */
+export async function listInvitations(databaseUrl: string, actorUserId: string, organizationId: string, page = 1) {
+  const currentPage = Number.isSafeInteger(page) && page > 0 ? Math.min(page, 100000) : 1;
+  return readAdministration(databaseUrl, actorUserId, organizationId, ["members.manage"], async client => {
+    const count = await client.query<{ total: string }>("SELECT count(*) AS total FROM public.membership_invitations WHERE organization_id = $1", [organizationId]);
+    const records = await client.query<InvitationSummary>(`SELECT id,recipient_email AS email,role_key AS "roleKey",
+      CASE WHEN status = 'pending' AND expires_at <= now() THEN 'expired' ELSE status END AS status,
+      expires_at::text AS "expiresAt" FROM public.membership_invitations WHERE organization_id = $1
+      ORDER BY created_at DESC,id DESC LIMIT 50 OFFSET $2`, [organizationId,(currentPage-1)*50]);
+    return { invitations: records.rows, total: Number(count.rows[0]!.total), page: currentPage };
+  });
+}

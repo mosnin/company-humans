@@ -109,3 +109,22 @@ test("applications explain the empty configuration", async ({ page }) => {
   await page.goto("/?screen=empty-applications");
   await expect(page.getByRole("heading", { name: "No applications configured" })).toBeVisible();
 });
+
+
+test("invitation revocation confirms intent and preserves retry after denial", async ({ page }, testInfo) => {
+  let calls = 0;
+  await page.route("**/api/organizations/*/invitations/*", async route => {
+    expect(route.request().method()).toBe("DELETE"); calls++;
+    await route.fulfill(calls === 1 ? { status:403,json:{error:"Revocation denied"} } : { json:{status:"revoked"} });
+  });
+  await page.goto("/?screen=invitations");
+  await page.getByRole("button",{name:"Revoke invitation",exact:true}).click();
+  expect(calls).toBe(0);
+  await page.getByRole("button",{name:"Confirm revocation"}).click();
+  await expect(page.getByRole("alert")).toHaveText("Revocation denied");
+  await page.getByRole("button",{name:"Confirm revocation"}).click();
+  await expect(page.getByRole("status")).toHaveText("Invitation revoked.");
+  expect(calls).toBe(2);
+  await expect(page.getByRole("cell",{name:"revoked",exact:true})).toBeVisible();
+  await page.screenshot({path:testInfo.outputPath("invitation-revoked.png"),fullPage:true});
+});
