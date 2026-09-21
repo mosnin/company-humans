@@ -393,3 +393,13 @@ No migration or provider configuration changed. CH-19 has implemented/local-veri
 ## Isolated Convex development environment — 2026-09-21
 
 Configured and deployed this checkout to an anonymous local Convex backend, avoiding the recorded cloud-development quota. Preserved existing local database entries and cloud production configuration. Ignored local deployment state and secrets; generated separate local signing keys in memory. Convex TypeScript, real local OIDC discovery, public-only JWKS and anonymous identity query passed. See authentication.md for startup and callback configuration. No fake user/session or OAuth bypass was added. Real provider credentials, consent and authenticated tenant lifecycle remain outstanding. No application runtime code or database migration changed; prior application tests were not repeated for this environment/documentation change.
+
+## Real local anonymous authentication runtime — 2026-09-21
+
+Added `npm run test:runtime:anonymous -w @company-human/web`, a separate Playwright suite against the running Next application at 127.0.0.1:3000 and isolated Convex at 127.0.0.1:3210. Start both services first, with no AUTH_ENABLED_PROVIDERS configured. The suite does not mock routes, identities or provider calls, and does not seed users or create organizations. It is excluded from Vitest and remains separate from the Vite fixture suite.
+
+Four desktop/mobile checks passed against the actual development server: local Convex anonymous identity is null; organization listing and same-origin identity sync return 401; missing/foreign mutation Origin returns 403; unconfigured sign-in has no provider button; the organization selector presents a sign-in link and no create/open action; protected Applications redirects to sign-in. No browser page errors or horizontal overflow were observed, and both screenshots were inspected. Typecheck and lint passed. The first browser run found a selector collision with Next's accessibility announcer; the selector now targets the application alert by its expected message.
+
+This proves anonymous denial and rendered configuration/error states in a real local runtime. It does not prove OAuth consent, session establishment, tenant lifecycle or production deployment. The existing 233 automated and 80 browser fixture counts remain distinct from these four runtime checks. No application behavior or migration changed.
+
+The local production build compiled successfully but failed while writing its TypeScript/Turbopack cache with ENOSPC. Only this repository's generated `.next` output was removed afterward. This run is not a passing production build; hosted CI remains the build gate for this test-only increment.

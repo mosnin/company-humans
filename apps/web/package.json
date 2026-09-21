@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test:runtime:anonymous": "playwright test --config playwright.runtime.config.ts"
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
