@@ -97,12 +97,17 @@ export async function finishMemberBootstrap(url:string,organizationId:Organizati
     const wrongMember=receipt.status==='succeeded'&&row.external_member_id!==null&&row.external_member_id!==receipt.value.externalMemberId;
     const normalized:Receipt=wrongMember?{status:'permanent_failure',code:'provider_member_mismatch'}:receipt;
     const retry=normalized.status==='pending'||normalized.status==='retryable_failure';
-    const status=!row.current_revision?'superseded':normalized.status==='succeeded'?'succeeded':retry&&row.attempt_count<5?'retry_wait':'failed';
-    const code=!row.current_revision?'superseded_revision':retry&&row.attempt_count>=5?'retry_exhausted':'code' in normalized?normalized.code:null;
+    let status=!row.current_revision?'superseded':normalized.status==='succeeded'?'succeeded':retry&&row.attempt_count<5?'retry_wait':'failed';
+    let code=!row.current_revision?'superseded_revision':retry&&row.attempt_count>=5?'retry_exhausted':'code' in normalized?normalized.code:null;
     const reference=normalized.status==='succeeded'?normalized.value.externalMemberId:normalized.status==='pending'?normalized.operationId:null;
     const delay=normalized.status==='retryable_failure'&&normalized.retryAfterSeconds?normalized.retryAfterSeconds:Math.min(3600,30*2**(row.attempt_count-1));
     await client.query(`UPDATE public.member_bootstrap_attempts SET finished_at=now(),outcome=$3,failure_code=$4,provider_reference=$5
       WHERE command_id=$1 AND attempt_number=$2`,[row.command_id,row.attempt_count,normalized.status,'code' in normalized?normalized.code:null,reference]);
+    if (row.current_revision && normalized.status === 'succeeded') {
+      const binding = await client.query<{ bound: boolean }>(
+        "SELECT company_human_private.bind_suspended_product_member($1,$2) AS bound", [row.command_id, lease.leaseToken]);
+      if (!binding.rows[0]?.bound) { status = 'failed'; code = 'provider_binding_rejected'; }
+    }
     await client.query(`UPDATE public.member_bootstrap_jobs SET status=$2,failure_code=$3,provider_reference=coalesce($4,provider_reference),
       lease_token=NULL,lease_expires_at=NULL,next_attempt_at=now()+($5*interval '1 second'),updated_at=now() WHERE command_id=$1`,[row.command_id,status,code,reference,delay]);
     await appendServiceAudit(client,{organizationId,serviceId:"member-bootstrap-worker",action:"product.member_bootstrap.received",

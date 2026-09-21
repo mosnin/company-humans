@@ -79,3 +79,7 @@ No remote calls, worker, schema migration or access grant are introduced. Scalar
 ## Suspended member bootstrap execution — 2026-09-21
 
 dispatchMemberBootstrap now executes a single provisionMember command through a complete product-bound V2 registration, using a restricted durable journal. It sends initialAccess=suspended and rejects an active success response. Existing V1 organization/denial workers are unchanged. No real Scalar adapter, worker registration/schedule, access grant, entitlement/limit application or resume is included. A persisted suspended receipt is a prerequisite to subsequent orchestration, not provider lifecycle acceptance.
+
+## Suspended identity projection — 2026-09-21
+
+The bootstrap completion transaction now projects a valid current suspended receipt into the canonical product membership through a narrowly privileged function. It records an immutable attempt reference and a service audit event. Conflicts retain the receipt and fail the job for reconciliation. Superseded work cannot overwrite the mapping. This makes the external identity available to later policy and denial handling; effective policy, limits, readback, resume and real Scalar transport remain outstanding.

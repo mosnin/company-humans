@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { Client } from "pg";
 import { describe, expect, it } from "vitest";
-import { assertProductAdapterV2, PRODUCT_ADAPTER_METHODS, createCanonicalId, type ProductAdapterV2 } from "@company-human/contracts";
+import { AuditEnvelopeV1Schema, assertProductAdapterV2, PRODUCT_ADAPTER_METHODS, createCanonicalId, type ProductAdapterV2 } from "@company-human/contracts";
 import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { requestProductMembership } from "./product-memberships.js";
@@ -28,6 +28,7 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
     const owner = await syncAuthUser(databaseUrl!, { authIssuer: "https://identity.example.test", authSubject: `bootstrap-${suffix}`, displayName: "Bootstrap fixture", primaryEmail: null, status: "active", eventTimestamp: 1 });
     const org = await createOrganization(databaseUrl!, { ownerUserId: owner, name: "Bootstrap fixture", slug: `bootstrap-${suffix}` });
     const foreign = await createOrganization(databaseUrl!, { ownerUserId: owner, name: "Other fixture", slug: `bootstrap-other-${suffix}` });
+    const fixtureUsers = [owner];
     const orgIds = [org.organizationId, foreign.organizationId], scalar = referenceProductId("scalar");
     const member = (await admin.query("SELECT id FROM memberships WHERE organization_id=$1", [org.organizationId])).rows[0].id;
     async function setup(key: string) {
@@ -54,6 +55,16 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
       expect(claims.filter(Boolean)).toHaveLength(1); const lease = claims.find(Boolean)!;
       expect(lease.operation).toBe("provisionMember"); expect(lease.idempotencyKey).toBe(`${first.mapping}:member:1`);
       await expect(finishMemberBootstrap(worker.toString(), foreign.organizationId, lease, suspended)).rejects.toThrow("Stale");
+      await sql.query("SELECT set_config('company_human.organization_id',$1,false)", [org.organizationId]);
+      await expect(sql.query("SELECT company_human_private.bind_suspended_product_member($1,$2)", [lease.commandId, lease.leaseToken])).rejects.toThrow("receipt required");
+      expect((await sql.query("SELECT pg_has_role(current_user,'company_human_member_binding','member') AS owns")).rows[0].owns).toBe(false);
+      const serviceSql = new Client({ connectionString: service.toString() }); await serviceSql.connect();
+      try {
+        await expect(serviceSql.query("SELECT company_human_private.bind_suspended_product_member($1,$2)", [lease.commandId, lease.leaseToken])).rejects.toThrow("permission denied");
+      } finally { await serviceSql.end(); }
+      await sql.query("SELECT set_config('company_human.organization_id',$1,false)", [foreign.organizationId]);
+      await expect(sql.query("SELECT company_human_private.bind_suspended_product_member($1,$2)", [lease.commandId, lease.leaseToken])).rejects.toThrow("Stale");
+      await sql.query("SELECT set_config('company_human.organization_id',$1,false)", [org.organizationId]);
       // Audit and receipt are a single transaction.
       const guard = `boot_audit_failure_${suffix}`;
       await admin.query(`CREATE FUNCTION public.${guard}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
@@ -62,6 +73,8 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
       try {
         await expect(finish(lease)).rejects.toThrow("fixture audit failure");
         expect((await admin.query("SELECT status FROM member_bootstrap_jobs WHERE command_id=$1", [lease.commandId])).rows[0].status).toBe("running");
+        expect((await admin.query("SELECT external_member_id FROM product_memberships WHERE id=$1", [first.mapping])).rows[0].external_member_id).toBeNull();
+        expect((await admin.query("SELECT count(*)::int AS n FROM identity_audit_events WHERE target_id=$1 AND action='product.member_bootstrap.bound'", [lease.commandId])).rows[0].n).toBe(0);
         expect((await admin.query("SELECT finished_at FROM member_bootstrap_attempts WHERE command_id=$1", [lease.commandId])).rows[0].finished_at).toBeNull();
       } finally { await admin.query(`DROP TRIGGER ${guard} ON identity_audit_events`); await admin.query(`DROP FUNCTION public.${guard}()`); }
       await finishMemberBootstrap(worker.toString(), org.organizationId, lease, { status: "pending", operationId: "fixture-pending" });
@@ -71,7 +84,7 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
       expect(retried.idempotencyKey).toBe(lease.idempotencyKey); expect(retried.attemptNumber).toBe(2);
       await expect(finish(lease)).rejects.toThrow("Stale"); await finish(retried);
       expect((await admin.query("SELECT status,provider_reference FROM member_bootstrap_jobs WHERE command_id=$1", [lease.commandId])).rows[0]).toEqual({ status: "succeeded", provider_reference: "fixture-suspended" });
-      expect((await admin.query("SELECT provisioning_status,external_member_id FROM product_memberships WHERE id=$1", [first.mapping])).rows[0]).toEqual({ provisioning_status: "pending", external_member_id: null });
+      expect((await admin.query("SELECT provisioning_status,external_member_id FROM product_memberships WHERE id=$1", [first.mapping])).rows[0]).toEqual({ provisioning_status: "suspended", external_member_id: "fixture-suspended" });
       await sql.query("SELECT set_config('company_human.organization_id',$1,false)", [org.organizationId]);
       await expect(sql.query("UPDATE product_memberships SET provisioning_status='active' WHERE id=$1", [first.mapping])).rejects.toThrow("permission denied");
       await expect(sql.query("UPDATE memberships SET status='active' WHERE id=$1", [member])).rejects.toThrow("permission denied");
@@ -82,8 +95,23 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
       await sql.query("SELECT set_config('company_human.organization_id',$1,false)", [foreign.organizationId]);
       expect((await sql.query("SELECT * FROM member_bootstrap_jobs WHERE command_id=$1", [lease.commandId])).rowCount).toBe(0);
       await expect(sql.query("INSERT INTO member_bootstrap_jobs (command_id,organization_id) VALUES ($1,$2)", [createCanonicalId("provisioningOperation"), org.organizationId])).rejects.toThrow();
-      const events = (await admin.query("SELECT actor_type,actor_service_id FROM identity_audit_events WHERE target_id=$1", [lease.commandId])).rows;
-      expect(events).toHaveLength(4); expect(events.every(e => e.actor_type === "service" && e.actor_service_id === "member-bootstrap-worker")).toBe(true);
+      const events = (await admin.query("SELECT actor_type,actor_service_id,envelope,after_state FROM identity_audit_events WHERE target_id=$1", [lease.commandId])).rows;
+      expect(events).toHaveLength(5);
+      for (const event of events) AuditEnvelopeV1Schema.parse(event.envelope);
+      expect(JSON.stringify(events)).not.toContain("fixture-suspended");
+      const provenance = (await admin.query("SELECT provider_receipt_reference,provisioned_at FROM product_memberships WHERE id=$1", [first.mapping])).rows[0];
+      expect(provenance.provider_receipt_reference).toBe(`${lease.commandId}:attempt:2`); expect(provenance.provisioned_at).not.toBeNull();
+      await sql.query("SELECT set_config('company_human.organization_id',$1,false)", [org.organizationId]);
+      await expect(sql.query("SELECT company_human_private.bind_suspended_product_member($1,$2)", [retried.commandId, retried.leaseToken])).rejects.toThrow("Stale");
+      // A second canonical member cannot claim the same provider identity in an instance.
+      const otherUser = await syncAuthUser(databaseUrl!, { authIssuer: "https://identity.example.test", authSubject: `bootstrap-other-${suffix}`, displayName: "Collision fixture", primaryEmail: null, status: "active", eventTimestamp: 1 });
+      fixtureUsers.push(otherUser); const otherMember = createCanonicalId("membership");
+      await admin.query("INSERT INTO memberships (id,organization_id,user_id,status,role_key) VALUES ($1,$2,$3,'active','contributor')", [otherMember, org.organizationId, otherUser]);
+      const collision = await requestProductMembership(service.toString(), { actorUserId: owner, organizationId: org.organizationId, productInstanceId: first.instance, membershipId: otherMember });
+      const collisionLease = (await claim())!; await finish(collisionLease);
+      expect((await admin.query("SELECT status,failure_code,provider_reference FROM member_bootstrap_jobs WHERE command_id=$1", [collisionLease.commandId])).rows[0]).toEqual({ status: "failed", failure_code: "provider_binding_rejected", provider_reference: "fixture-suspended" });
+      expect((await admin.query("SELECT external_member_id,provisioning_status FROM product_memberships WHERE id=$1", [collision])).rows[0]).toEqual({ external_member_id: null, provisioning_status: "pending" });
+      expect(events.every(e => e.actor_type === "service" && e.actor_service_id === "member-bootstrap-worker")).toBe(true);
       // The dispatcher sends explicit initial denial, never resume/access operations.
       await setup("dispatch"); let called = false;
       await dispatchMemberBootstrap(worker.toString(), org.organizationId, { productId: scalar, adapter: adapter(async input => {
@@ -101,6 +129,7 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
       await disableProductInstance(service.toString(), { actorUserId: owner, organizationId: org.organizationId, productInstanceId: revoked.instance });
       await finish(oldLease);
       expect((await admin.query("SELECT status,provider_reference FROM member_bootstrap_jobs WHERE command_id=$1", [oldLease.commandId])).rows[0]).toEqual({ status: "superseded", provider_reference: "fixture-suspended" });
+      expect((await admin.query("SELECT external_member_id FROM product_memberships WHERE id=$1", [revoked.mapping])).rows[0].external_member_id).toBeNull();
       // Every identity layer is rechecked before a claim, and a revoked target cannot finish current work.
       await setup("inactive-target");
       for (const [table, id, status] of [["memberships", member, "suspended"], ["users", owner, "deleted"]]) {
@@ -137,7 +166,7 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
     } finally {
       await sql.end();
       for (const table of ["member_bootstrap_attempts", "member_bootstrap_jobs", "product_membership_commands", "product_memberships", "identity_audit_events", "product_instances", "memberships", "roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`, [orgIds]);
-      await admin.query("DELETE FROM organizations WHERE id=ANY($1)", [orgIds]); await admin.query("DELETE FROM users WHERE id=$1", [owner]);
+      await admin.query("DELETE FROM organizations WHERE id=ANY($1)", [orgIds]); await admin.query("DELETE FROM users WHERE id=ANY($1)", [fixtureUsers]);
       for (const role of [serviceRole, workerRole]) await admin.query(`DROP ROLE ${role}`); await admin.end();
     }
   });

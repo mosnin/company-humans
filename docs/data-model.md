@@ -71,3 +71,7 @@ Entitlement policies have canonical ch_ent IDs and tenant-bound instance/member 
 ## Suspended member bootstrap journal (0030)
 
 member_bootstrap_jobs and member_bootstrap_attempts reference immutable tenant-bound provisionMember commands. Jobs use pending/running/retry_wait/succeeded/failed/superseded states; attempts retain lease, execution role, outcome, normalized code and provider reference. Completed attempts are immutable. A succeeded bootstrap means only that the V2 adapter reported suspended creation. The canonical product-membership projection remains pending and no access is granted. Later policy/readback/activation orchestration must explicitly consume and revalidate this evidence. Superseded receipts remain available for reconciliation.
+
+## Suspended provider identity binding (0031)
+
+A current successful bootstrap receipt now binds product_memberships.external_member_id and sets provisioning_status to suspended. provider_receipt_reference identifies the immutable command/attempt, and provisioned_at records the receipt time. The suspended mapping remains unusable until later policy, finite-limit, readback and activation gates. A superseded receipt stays in the journal without changing the mapping. A conflicting external identity is rejected with provider_binding_rejected while its receipt remains available for reconciliation.

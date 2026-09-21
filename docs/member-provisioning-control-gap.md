@@ -37,3 +37,7 @@ Migration sequence: implement a V2 registration for Scalar; prove direct access 
 ## Bootstrap execution prerequisite implemented — 2026-09-21
 
 The restricted V2 worker and migration 0030 now journal suspended identity creation with stable retries, validated receipts, target revalidation and atomic audit. It cannot change canonical mappings or activate access. Current successful receipts and superseded late results are retained separately from usable access. Remaining steps are real Scalar control verification, entitlement/finite-limit application, provider state readback, reconciliation and an independently authorized activation boundary. No hosted worker is scheduled.
+
+## Suspended mapping boundary implemented — 2026-09-21
+
+Migration 0031 adds audited, lease- and receipt-bound projection of the remote member identity in suspended state. General workers have no direct mapping update authority. The boundary refuses identity replacement and current-scope mismatches. This provides a canonical reference for subsequent policy/readback stages while leaving access suspended. It does not fulfill steps 3–7 above or validate Scalar's actual remote enforcement.

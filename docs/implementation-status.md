@@ -13,7 +13,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
 - 114 contract/database/route/Convex tests pass. Forty-four desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
-- Local development/verification and hosted verification/production databases have 30 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
+- Local development/verification and hosted verification/production databases have 31 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
 
@@ -203,3 +203,11 @@ Implemented a restricted V2 provisionMember dispatcher with tenant/product scope
 All 114 automated tests, typecheck, lint and production build pass. No real provider adapter, hosted worker credential/scheduler, entitlement/limit application, provider-state projection, readback, resume or launch access is installed. CH-17 and Phase 02 remain incomplete; Phase 01 real OAuth remains unverified.
 
 The bootstrap scenario also passed on the isolated hosted verification database (32.49 seconds). Migration 0030 then applied to local development and hosted production; production replay applied no changes. Both local databases and both hosted databases now have 30 migrations. No production fixture records, execution login or scheduler were created.
+
+## Suspended provider identity binding — 2026-09-21
+
+The bootstrap worker now binds a successful current suspended receipt to the canonical product membership through migration 0031's restricted function. The mapping records external identity, suspended status, receipt provenance and timestamp; an atomic service audit records the binding without leaking provider identity. The function cannot activate access, replace an existing different remote identity, bind a duplicate identity in one instance or project superseded work. Collisions preserve receipts for reconciliation.
+
+All 114 automated tests, typecheck, lint and production build pass. Effective entitlements/finite limits, provider readback, activation, hosted workers, real Scalar transport and real OAuth remain unverified. No later phase is marked complete.
+
+The extended restricted-login binding scenario also passed on hosted verification PostgreSQL (36.74 seconds). Migration 0031 then applied to development and production; production replay applied zero changes. All four databases now have 31 migrations. Prior worker commit 293d2d1 passed hosted CI run 35645244935. No provider or production authenticated journey is claimed.

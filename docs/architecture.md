@@ -23,3 +23,7 @@ The database package now exposes a bounded server-only denial dispatcher using a
 ## Entitlement intent prerequisite
 
 Versioned organization/member capability configuration is stored in PostgreSQL and exposed through a scoped server boundary. Policy intent is separate from the future effective authorization resolver and remote adapter application. No route, worker or product launcher treats a saved allow as access.
+
+## Suspended member binding
+
+Member creation now has two verified kernel boundaries: the restricted V2 execution journal and an audited database function that projects a successful current receipt into a suspended canonical mapping. The function uses a dedicated minimal owner role; the worker can invoke it but cannot directly edit mapping state. Receipt and audit provenance stay atomic. Product activation remains a separate unfinished boundary requiring current policy, finite limits and provider readback.

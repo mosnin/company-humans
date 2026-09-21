@@ -151,3 +151,9 @@ All 114 automated tests (15 contracts, 18 database, 81 web), typecheck, lint and
 No UI changed; browser component checks were not repeated. No real OAuth or Scalar control call is implied by these results.
 
 The bootstrap scenario also passed on the isolated hosted verification database (32.49 seconds). Migration 0030 then applied to local development and hosted production; production replay applied no changes. Both local databases and both hosted databases now have 30 migrations. No production fixture records, execution login or scheduler were created.
+
+## Suspended identity binding verification — 2026-09-21
+
+All 114 automated tests, typecheck, lint and production build pass after extending the bootstrap integration scenario. New assertions cover receipt-required binding, service-role execution denial, worker inability to assume the function owner, direct cross-tenant function denial, suspended projection with immutable attempt provenance, stale repeat rejection, external-identity collision, audit-envelope schema validation and transaction rollback of the projection plus binding audit. Superseded work leaves the external mapping unset. Fixture provider responses remain explicit; no live OAuth or Scalar acceptance is inferred. No UI changed.
+
+The extended restricted-login binding scenario also passed on hosted verification PostgreSQL (36.74 seconds). Migration 0031 then applied to development and production; production replay applied zero changes. All four databases now have 31 migrations. Prior worker commit 293d2d1 passed hosted CI run 35645244935. No provider or production authenticated journey is claimed.
