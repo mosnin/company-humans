@@ -421,3 +421,19 @@ test("catalog preserves setup choice when the server denies a changed registrati
  await page.goto("/?screen=application-catalog");await page.getByLabel("Scalar setup type").selectOption("connected");await page.getByRole("button",{name:"Set up Scalar"}).click();
  await expect(page.getByRole("alert")).toContainText("unavailable");await expect(page.getByLabel("Scalar setup type")).toHaveValue("connected");await expect(page.getByRole("button",{name:"Set up Scalar"})).toBeEnabled();
 });
+
+
+test("health view distinguishes historical success, stale results and failed checks",async({page},testInfo)=>{
+ await page.goto("/?screen=health-healthy");await expect(page.getByRole("heading",{name:"Healthy at last check"})).toBeVisible();await expect(page.getByText("0",{exact:true})).toBeVisible();
+ await expect(page.getByText("Not reported",{exact:true})).toBeVisible();await page.getByRole("button",{name:"Refresh recorded status"}).click();
+ await expect(page.getByText("Refresh reloads saved results.",{exact:false})).toBeVisible();
+ await page.goto("/?screen=health-stale");await expect(page.getByRole("heading",{name:"Health check is stale"})).toBeVisible();await expect(page.getByRole("heading",{name:"Healthy at last check"})).toHaveCount(0);
+ await page.goto("/?screen=health-failed");await expect(page.getByText("Previous successful checks do not confirm current health.",{exact:false})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);await page.screenshot({path:testInfo.outputPath("application-health.png"),fullPage:true});
+});
+test("health view explains missing, degraded and reauthorization states",async({page})=>{
+ await page.goto("/?screen=health-empty");await expect(page.getByRole("heading",{name:"Health not checked"})).toBeVisible();
+ await page.goto("/?screen=health-degraded");await expect(page.getByRole("heading",{name:"Degraded at last check"})).toBeVisible();
+ await page.goto("/?screen=health-reauth");await expect(page.getByText("Reauthorization is not available here yet.",{exact:false})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Reconnect",exact:true})).toHaveCount(0);
+});

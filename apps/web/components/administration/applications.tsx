@@ -50,6 +50,7 @@ export function ApplicationDiagnostics({ applications, organizationId }: { appli
     <Link className="inline-block t-link" href={`/workspace/applications/${application.id}/members`}>View member access</Link>
     <Link className="ml-4 inline-block t-link" href={`/workspace/applications/${application.id}/entitlements`}>Access settings</Link>
     <Link className="ml-4 inline-block t-link" href={`/workspace/applications/${application.id}/usage-limits`}>Usage limits</Link>
+    <Link className="ml-4 inline-block t-link" href={`/workspace/applications/${application.id}/health`}>Connection health</Link>
     {application.desiredEnabled && <DisableApplication application={application} organizationId={organizationId} onDisabled={() => setDisabledIds(ids => [...ids,application.id])} />}
   </CardContent></Card>; })}</div>;
 }
