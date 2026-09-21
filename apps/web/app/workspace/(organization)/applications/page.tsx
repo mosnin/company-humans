@@ -1,5 +1,6 @@
+import { ApplicationCatalog } from "@/components/administration/application-catalog";
 import Link from "next/link";
-import { listApplicationDiagnostics } from "@company-human/database/administration";
+import { listApplicationCatalog, listApplicationDiagnostics } from "@company-human/database/administration";
 import { getWorkspace } from "@/lib/workspace";
 import { PageHeader } from "@/components/ui/page-header";
 import { ApplicationDiagnostics } from "@/components/administration/applications";
@@ -12,6 +13,8 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
   const page = Number((await searchParams).page ?? 1);
   const data = process.env.DATABASE_SERVICE_URL
     ? await listApplicationDiagnostics(process.env.DATABASE_SERVICE_URL, context.userId, context.organizationId, page).catch(() => null) : null;
+  const catalog = process.env.DATABASE_SERVICE_URL
+    ? await listApplicationCatalog(process.env.DATABASE_SERVICE_URL, context.userId, context.organizationId).catch(() => null) : null;
   if (!data) return <PageHeader title="Applications unavailable" description="We could not load setup progress. Please try again." actions={<Link href="/workspace/applications" className="t-link">Try again</Link>} />;
   return <><PageHeader title="Applications" description="Review application setup and connection attempts for your workspace." actions={<Link href="/workspace/applications" className="t-link">Refresh status</Link>} />
     <ApplicationDiagnostics organizationId={context.organizationId} applications={data.applications} />
@@ -19,5 +22,6 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
       {data.page > 1 && <Link className="t-link" href={`?page=${data.page - 1}`}>Previous</Link>}
       {data.page * 50 < data.total && <Link className="t-link" href={`?page=${data.page + 1}`}>Next</Link>}
     </div></nav>
+    <div className="mt-8">{catalog ? <ApplicationCatalog products={catalog} organizationId={context.organizationId} /> : <p role="alert" className="t-body">Application catalog unavailable. Refresh to try again.</p>}</div>
   </>;
 }

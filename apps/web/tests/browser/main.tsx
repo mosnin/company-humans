@@ -1,3 +1,4 @@
+import { ApplicationCatalog } from "@/components/administration/application-catalog";
 import type { UsageLimitDelivery } from "@company-human/database/administration";
 import { UsageLimitEditor } from "@/components/administration/usage-limits";
 import { RequestApplicationMembers } from "@/components/administration/request-application-members";
@@ -38,6 +39,7 @@ createRoot(document.getElementById("root")!).render(<WorkspaceShell organization
   {screen === "invitations" && <InvitationsTable organizationId={org} owner invitations={[{id:`ch_inv_${"b".repeat(32)}`,email:"pending@example.test",roleKey:"contributor",status:"pending",expiresAt:"2026-10-01T12:00:00Z"}]} />}
   {screen === "applications" && <ApplicationDiagnostics organizationId={org} applications={[{ id: "fixture-app", productName: "Scalar", instanceKey: "primary", mode: "provisioned", desiredEnabled: true, provisioningStatus: "pending", operation: { status: "failed", attemptCount: 1, failureCode: "authentication_required", nextAttemptAt: "2026-09-21T12:00:00Z", attempts: [{ number: 1, startedAt: "2026-09-21T12:00:00Z", finishedAt: "2026-09-21T12:00:01Z", outcome: "permanent_failure", failureCode: "authentication_required" }] } }]} />}
   {screen === "connect-application" && <ApplicationDiagnostics organizationId={org} applications={[{id:`ch_inst_${"a".repeat(32)}`,productName:"Scalar",instanceKey:"primary",mode:"connected",desiredEnabled:true,provisioningStatus:"pending",operation:null}]} />}
+  {screen === "application-catalog" && <ApplicationCatalog organizationId={org} products={[{id:`ch_prod_${"a".repeat(32)}`,name:"Scalar",description:"Outbound and enrichment",ready:true,modes:["provisioned","connected"],capabilities:["lead-enrichment"],usageMeters:["enriched-leads"],requiredPermissions:["product.use"],connectionRequirements:["service-credential"],billingBehavior:"organization_sponsored"},{id:`ch_prod_${"b".repeat(32)}`,name:"Stored",description:null,ready:false,modes:[],capabilities:[],usageMeters:[],requiredPermissions:[],connectionRequirements:[],billingBehavior:null}]} />}
   {screen === "empty-applications" && <ApplicationDiagnostics organizationId={org} applications={[]} />}
   {screen === "oauth" && <OAuthSignIn returnToInvite providers={["google", "github"]} />}
   {screen === "invite" && <AcceptInvitationPage />}

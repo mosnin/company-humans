@@ -1,9 +1,12 @@
 import { rejectCrossOriginMutation } from "@/lib/mutation-origin";
 import { NextRequest, NextResponse } from "next/server";
-import { OrganizationIdSchema, ProductIdSchema, ProvisioningModeSchema } from "@company-human/contracts";
-import { enableProductInstance, listProductInstances } from "@company-human/database/product-instances";
+import { OrganizationIdSchema, ProductIdSchema } from "@company-human/contracts";
+import { requestCatalogProductInstance, listProductInstances } from "@company-human/database/product-instances";
 import { resolveAccessContext } from "@company-human/database/rls";
 import { resolveAuthenticatedUser } from "@/lib/authenticated-user";
+
+import { z } from "zod";
+const SetupBody = z.object({productId: ProductIdSchema, mode: z.enum(["provisioned", "connected"]), instanceKey: z.string().max(64).regex(/^[a-z][a-z0-9-]*$/).default("primary")}).strict();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,21 +41,18 @@ export async function POST(request: NextRequest, context: { params: Promise<{ or
   if (!databaseUrl) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
-  const data = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+  const data = SetupBody.safeParse(body);
   const organizationId = OrganizationIdSchema.safeParse((await context.params).organizationId);
-  const productId = ProductIdSchema.safeParse(data.productId);
-  const mode = ProvisioningModeSchema.safeParse(data.mode);
-  const instanceKey = typeof data.instanceKey === "string" ? data.instanceKey : "primary";
-  if (!organizationId.success || !productId.success || !mode.success) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
+  if (!data.success || !organizationId.success) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   try {
-    const instanceId = await enableProductInstance(databaseUrl, {
+    const instanceId = await requestCatalogProductInstance(databaseUrl, {
       actorUserId: identity.userId, organizationId: organizationId.data,
-      productId: productId.data, mode: mode.data, instanceKey,
+      ...data.data,
     });
     return NextResponse.json({ instanceId }, { status: 202, headers: { "cache-control": "no-store" } });
-  } catch {
-    return NextResponse.json({ error: "Application enable denied or invalid" }, { status: 403 });
+  } catch (error) {
+    if (error instanceof Error && ["Instance mode cannot change during enable", "Disabled instance requires reconciliation before re-enabling"].includes(error.message)) return NextResponse.json({error:"Existing setup requires review. Refresh Applications before retrying."},{status:409});
+    if (error instanceof Error && ["Application administration denied", "Product unavailable", "Product setup unavailable"].includes(error.message)) return NextResponse.json({error:"Application setup unavailable or permission denied"},{status:403});
+    return NextResponse.json({error:"Could not request application setup. Please retry."},{status:503});
   }
 }

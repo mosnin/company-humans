@@ -3,7 +3,9 @@ import { Client } from "pg";
 import { describe, expect, it } from "vitest";
 import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
-import { enableProductInstance, listProductInstances } from "./product-instances.js";
+import { enableProductInstance, requestCatalogProductInstance, listProductInstances } from "./product-instances.js";
+import { createCanonicalId } from "@company-human/contracts";
+import { listApplicationCatalog } from "./administration.js";
 import { referenceProductId } from "./seed.js";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -30,6 +32,7 @@ describe.skipIf(!databaseUrl)("organization product instances", () => {
     const aliceOrg = await createOrganization(databaseUrl!, { ownerUserId: alice, slug: `app-alice-${suffix}`, name: "Alice" });
     const bobOrg = await createOrganization(databaseUrl!, { ownerUserId: bob, slug: `app-bob-${suffix}`, name: "Bob" });
     const scalarId = referenceProductId("scalar");
+    const catalogId=createCanonicalId("product");
     try {
       const concurrent = await Promise.all(Array.from({ length: 8 }, () => enableProductInstance(serviceUrl.toString(), {
         actorUserId: alice, organizationId: aliceOrg.organizationId, productId: scalarId, mode: "provisioned",
@@ -60,6 +63,25 @@ describe.skipIf(!databaseUrl)("organization product instances", () => {
         actorUserId: bob, organizationId: bobOrg.organizationId, productId: scalarId, mode: "provisioned",
       });
       expect(independent).not.toBe(first);
+      await admin.query("INSERT INTO products(id,product_key,display_name) VALUES($1,$2,'Catalog fixture')",[catalogId,`catalog-${suffix}`]);
+      const request={actorUserId:alice,organizationId:aliceOrg.organizationId,productId:catalogId,mode:"connected" as const};
+      await expect(requestCatalogProductInstance(serviceUrl.toString(),request)).rejects.toThrow("Product setup unavailable");
+      expect((await listApplicationCatalog(serviceUrl.toString(),alice,aliceOrg.organizationId)).find(p=>p.id===catalogId)?.ready).toBe(false);
+      await expect(listApplicationCatalog(serviceUrl.toString(),bob,aliceOrg.organizationId)).rejects.toThrow("denied");
+      await admin.query("UPDATE products SET catalog_status='ready' WHERE id=$1",[catalogId]);
+      await expect(requestCatalogProductInstance(serviceUrl.toString(),request)).rejects.toThrow("Product setup unavailable");
+      const metadata={schemaVersion:1,description:"Fixture registration",category:"sales",supportedCapabilities:["leads"],provisioningModes:["connected"],supportedMemberOperations:[],usageMeters:["leads"],requiredPermissions:[],adapterVersion:"2",billingBehavior:"organization_sponsored",deepLinks:{},connectionRequirements:[]};
+      await admin.query("UPDATE products SET catalog_metadata=$2 WHERE id=$1",[catalogId,metadata]);
+      const entry=(await listApplicationCatalog(serviceUrl.toString(),alice,aliceOrg.organizationId)).find(p=>p.id===catalogId)!;
+      expect(entry.ready).toBe(true);expect(entry.modes).toEqual(["connected"]);expect(entry).not.toHaveProperty("catalog_metadata");
+      await expect(requestCatalogProductInstance(serviceUrl.toString(),{...request,mode:"provisioned"})).rejects.toThrow("Product setup unavailable");
+      await expect(requestCatalogProductInstance(serviceUrl.toString(),{...request,actorUserId:bob})).rejects.toThrow("Application administration denied");
+      const catalogInstance=await requestCatalogProductInstance(serviceUrl.toString(),request);
+      expect(await requestCatalogProductInstance(serviceUrl.toString(),request)).toBe(catalogInstance);
+      expect((await admin.query("SELECT provisioning_status FROM product_instances WHERE id=$1",[catalogInstance])).rows[0].provisioning_status).toBe("pending");
+      await admin.query("UPDATE products SET catalog_status='retired' WHERE id=$1",[catalogId]);
+      expect((await listApplicationCatalog(serviceUrl.toString(),alice,aliceOrg.organizationId)).find(p=>p.id===catalogId)).toBeUndefined();
+      await expect(requestCatalogProductInstance(serviceUrl.toString(),request)).rejects.toThrow("Product unavailable");
     } finally {
       const orgIds = [aliceOrg.organizationId, bobOrg.organizationId];
       await admin.query("DELETE FROM provisioning_operations WHERE organization_id = ANY($1)", [orgIds]);
@@ -69,6 +91,7 @@ describe.skipIf(!databaseUrl)("organization product instances", () => {
       await admin.query("DELETE FROM roles WHERE organization_id = ANY($1)", [orgIds]);
       await admin.query("DELETE FROM organizations WHERE id = ANY($1)", [orgIds]);
       await admin.query("DELETE FROM users WHERE id = ANY($1)", [[alice, bob]]);
+      await admin.query("DELETE FROM products WHERE id=$1",[catalogId]);
       await admin.query(`DROP ROLE ${roleName}`);
       await admin.query(`DROP ROLE ${serviceRoleName}`);
       await admin.end();

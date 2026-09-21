@@ -405,3 +405,19 @@ test("connection conflict preserves the organization ID and reports the server e
   await expect(page.getByLabel("Scalar organization ID",{exact:true})).toHaveValue("scalar-workspace");
   await expect(page.getByRole("button",{name:"Request connection",exact:true})).toBeEnabled();
 });
+
+
+test("catalog requests the selected organization mode and keeps draft products unavailable",async({page},testInfo)=>{
+ let body:unknown;await page.route("**/api/organizations/*/applications",async route=>{body=route.request().postDataJSON();await route.fulfill({status:202,json:{instanceId:"fixture"}});});
+ await page.goto("/?screen=application-catalog");await page.getByText("Permissions and usage",{exact:true}).click();
+ await expect(page.getByText("lead-enrichment",{exact:true})).toBeVisible();await expect(page.getByRole("button",{name:"Set up Stored"})).toHaveCount(0);
+ await page.getByLabel("Scalar setup type").selectOption("connected");await page.getByRole("button",{name:"Set up Scalar"}).click();
+ expect(body).toEqual({productId:`ch_prod_${"a".repeat(32)}`,mode:"connected",instanceKey:"primary"});
+ await expect(page.getByRole("status")).toContainText("access is not confirmed");await expect(page.getByLabel("Scalar setup type")).toBeDisabled();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);await page.screenshot({path:testInfo.outputPath("application-catalog.png"),fullPage:true});
+});
+test("catalog preserves setup choice when the server denies a changed registration",async({page})=>{
+ await page.route("**/api/organizations/*/applications",route=>route.fulfill({status:403,json:{error:"Application setup unavailable or permission denied"}}));
+ await page.goto("/?screen=application-catalog");await page.getByLabel("Scalar setup type").selectOption("connected");await page.getByRole("button",{name:"Set up Scalar"}).click();
+ await expect(page.getByRole("alert")).toContainText("unavailable");await expect(page.getByLabel("Scalar setup type")).toHaveValue("connected");await expect(page.getByRole("button",{name:"Set up Scalar"})).toBeEnabled();
+});

@@ -309,3 +309,26 @@ export async function readApplicationUsageLimits(databaseUrl: string, actorUserI
     return { productName: product.productName, membershipId, memberName, settings, providerEnforcementConfirmed: false as const };
   });
 }
+
+
+export interface CatalogApplication {
+  id: string; name: string; description: string | null; ready: boolean;
+  modes: ("provisioned" | "connected")[]; capabilities: string[];
+  usageMeters: string[]; requiredPermissions: string[]; connectionRequirements: string[];
+  billingBehavior: string | null;
+}
+/** Administration-only allowlisted projection; no provider endpoints or credentials. */
+export async function listApplicationCatalog(databaseUrl: string, actorUserId: string, organizationId: string): Promise<CatalogApplication[]> {
+  return readAdministration(databaseUrl, actorUserId, organizationId, ["applications.manage"], async client => {
+    const rows = await client.query<{id:string; display_name:string; catalog_status:string; catalog_metadata:unknown}>(
+      "SELECT id,display_name,catalog_status,catalog_metadata FROM public.products WHERE catalog_status <> 'retired' ORDER BY display_name,id LIMIT 200");
+    return rows.rows.map(row => {
+      const parsed = ProductCatalogMetadataV1Schema.safeParse(row.catalog_metadata);
+      const metadata = parsed.success ? parsed.data : null;
+      const modes = metadata?.provisioningModes.filter((mode): mode is "provisioned" | "connected" => mode === "provisioned" || mode === "connected") ?? [];
+      return {id:row.id,name:row.display_name,description:metadata?.description ?? null,ready:row.catalog_status === "ready" && metadata !== null && modes.length > 0,
+        modes,capabilities:metadata?.supportedCapabilities ?? [],usageMeters:metadata?.usageMeters ?? [],requiredPermissions:metadata?.requiredPermissions ?? [],
+        connectionRequirements:metadata?.connectionRequirements ?? [],billingBehavior:metadata?.billingBehavior ?? null};
+    });
+  });
+}

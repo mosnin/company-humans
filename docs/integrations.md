@@ -135,3 +135,7 @@ Read-only review of Scalar main at f773ee94e32406c93b6d51dd408aa40e51938975 foun
 ## Connected intent administration — 2026-09-21
 
 The pending connected-instance form and authenticated POST connection endpoint now expose requestProductConnection. Submission records intent and reports providerConnectionConfirmed=false; product authorization, ownership verification and actual transport remain required. See the current [implementation evidence](implementation-status.md).
+
+## Catalog setup entry — 2026-09-21
+
+An administration-scoped catalog now exposes supported create/connect organization modes for ready valid registrations. The public setup endpoint uses a catalog-validated service, records pending intent only and normalizes conflicts. Draft integrations remain visible but unavailable. No reference registration, provider credential or live access was changed. Complete permission/data-use and cost disclosures, authenticated provider connection and real acceptance remain required.

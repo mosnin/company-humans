@@ -9,7 +9,7 @@ Rebased 2026-09-21 against committed application revision `26b236c`, current imp
 - Phase 02 has catalog, organization provisioning machinery, member diagnostics, product-member mapping, local product disable, and a restricted suspend/remove executor with durable receipts and service audit. No real Scalar provisioning or member access has been demonstrated. Persisting a command does not revoke access in a remote product.
 - Phases 03–15 remain unfinished; Phase 16 is conditional expansion.
 - Dedicated Convex, Neon PostgreSQL and Vercel resources exist. The stable web deployment was verified at `8d72e92`; latest code is newer. Preview READY does not prove production acceptance.
-- Current recorded verification: 195 automated contract/database/route/Convex tests; 40 applied migrations; typecheck/lint/build pass. The usage-limit editor has recorded 72 passing desktop/mobile fixture checks and full local checks. These are recorded results, not a fresh test run or live provider acceptance.
+- Current recorded verification: 199 automated contract/database/route/Convex tests; 40 applied migrations; typecheck/lint/build pass. The usage-limit editor has recorded 76 passing desktop/mobile fixture checks and full local checks. These are recorded results, not a fresh test run or live provider acceptance.
 - Exact finite organization/member usage limits, immutable revisions, scoped administration reads and the authenticated mutation API are committed. The usage-limit editor is implemented and locally verified. Saved limits do not yet stop remote product usage.
 - Organization/member entitlement configuration, scoped reads, mutation API and administration UI are implemented. Member access requests and tenant-scoped member selection are implemented. Both return or display unconfirmed provider access; neither grants remote access.
 - Adapter V2 now requires creating a remote member suspended and validates that receipt. The restricted V2 suspended-creation worker and receipt-backed suspended identity binding are implemented with local and hosted database verification; real Scalar transport, policy/limit acknowledgement, reconciliation and final activation remain incomplete. Existing V1 organization and denial workers are preserved.
@@ -279,3 +279,7 @@ If OAuth or provider credentials remain externally blocked, record the blocker a
 ## Connection request checkpoint
 
 Pending connected instances now have an administration form and authenticated request endpoint. Catalog selection, initial create/connect choice and provider authorization remain unfinished; the form alone does not prove a connection or ownership. See implementation status for 195 automated checks, 72 browser fixtures and runtime limitations.
+
+## Catalog entry checkpoint
+
+Registered-product catalog and ready-registration create/connect intent UI/API are implemented. Provider authorization, complete data-use/cost disclosures and real lifecycle acceptance remain open. Current evidence: 199 automated tests, 76 browser fixture checks and hosted restricted-login catalog/setup verification.

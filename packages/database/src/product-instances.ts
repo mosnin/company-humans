@@ -1,4 +1,4 @@
-import { createCanonicalId, MembershipIdSchema, OrganizationIdSchema, ProductIdSchema, ProductInstanceIdSchema, ProvisioningModeSchema, UserIdSchema, type OrganizationId, type ProductId, type ProductInstanceId, type UserId } from "@company-human/contracts";
+import { ProductCatalogMetadataV1Schema, createCanonicalId, MembershipIdSchema, OrganizationIdSchema, ProductIdSchema, ProductInstanceIdSchema, ProvisioningModeSchema, UserIdSchema, type OrganizationId, type ProductId, type ProductInstanceId, type UserId } from "@company-human/contracts";
 import { Client } from "pg";
 import { z } from "zod";
 import { appendIdentityAudit } from "./identity-audit.js";
@@ -14,6 +14,15 @@ const EnableSchema = z.object({
 
 /** Records intent to enable. Only an adapter may later set status active. */
 export async function enableProductInstance(databaseUrl: string, input: z.input<typeof EnableSchema>): Promise<ProductInstanceId> {
+  return enableInstance(databaseUrl, input, false);
+}
+
+/** Public catalog requests require a ready registration and a supported organization mode. */
+export async function requestCatalogProductInstance(databaseUrl: string, input: z.input<typeof EnableSchema>): Promise<ProductInstanceId> {
+  return enableInstance(databaseUrl, input, true);
+}
+
+async function enableInstance(databaseUrl: string, input: z.input<typeof EnableSchema>, requireReady: boolean): Promise<ProductInstanceId> {
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
   const parsed = EnableSchema.parse(input);
   const client = new Client({ connectionString: databaseUrl });
@@ -31,10 +40,15 @@ export async function enableProductInstance(databaseUrl: string, input: z.input<
       [parsed.organizationId, parsed.actorUserId],
     );
     if (actor.rowCount !== 1) throw new Error("Application administration denied");
-    const product = await client.query<{ catalog_status: string }>(
-      "SELECT catalog_status FROM public.products WHERE id = $1", [parsed.productId],
+    const product = await client.query<{ catalog_status: string; catalog_metadata: unknown }> (
+      "SELECT catalog_status, catalog_metadata FROM public.products WHERE id = $1", [parsed.productId],
     );
     if (!product.rows[0] || product.rows[0].catalog_status === "retired") throw new Error("Product unavailable");
+    if (requireReady) {
+      const metadata = ProductCatalogMetadataV1Schema.safeParse(product.rows[0].catalog_metadata);
+      if (product.rows[0].catalog_status !== "ready" || !metadata.success || !metadata.data.provisioningModes.includes(parsed.mode)
+        || !["provisioned", "connected"].includes(parsed.mode)) throw new Error("Product setup unavailable");
+    }
     // A row lock cannot serialize the first insert because no row exists yet.
     // Lock this tenant/product/key through commit, including its audit event.
     await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
