@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createCanonicalId } from "@company-human/contracts";
 import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
+import { readApplicationUsageLimits } from "./administration.js";
 import { setProductUsageLimit } from "./product-usage-limits.js";
 const databaseUrl = process.env.DATABASE_URL;
 describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
@@ -29,10 +30,23 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       const id = first.value.usageLimitId;
       expect(first.value.maximumQuantity).toBe("999999999999.999999");
       expect((await admin.query("SELECT maximum_quantity FROM product_usage_limit_revisions WHERE usage_limit_id=$1", [id])).rows[0].maximum_quantity).toBe("999999999999.999999");
+      const firstRead = await readApplicationUsageLimits(url.toString(), alice, org.organizationId, instance);
+      expect(firstRead.providerEnforcementConfirmed).toBe(false);
+      expect(firstRead.settings.find(row => row.window === "utc_month")?.maximumQuantity).toBe("999999999999.999999");
+      expect(firstRead.settings.find(row => row.window === "utc_day")).toEqual({ meterKey: "enriched-leads", unit: "lead", window: "utc_day", revision: 0, maximumQuantity: null, organizationMaximumQuantity: null, memberMaximumQuantity: null, nonzeroAvailable: true });
       const stopped = await setProductUsageLimit(url.toString(), { ...input, maximumQuantity: "0.000000", expectedRevision: 1 });
       expect(stopped.maximumQuantity).toBe("0");
       const member = await setProductUsageLimit(url.toString(), { ...input, membershipId: org.ownerMembershipId, maximumQuantity: "2.5" });
       expect(member.usageLimitId).not.toBe(id);
+      const memberRead = await readApplicationUsageLimits(url.toString(), alice, org.organizationId, instance, org.ownerMembershipId);
+      expect(memberRead.memberName).toBe("Alice");
+      expect(memberRead.settings.find(row => row.window === "utc_month")).toEqual({ meterKey: "enriched-leads", unit: "lead", window: "utc_month", revision: 1, maximumQuantity: "2.5", organizationMaximumQuantity: "0", memberMaximumQuantity: "2.5", nonzeroAvailable: true });
+      const defaultRead = await readApplicationUsageLimits(url.toString(), alice, org.organizationId, instance);
+      expect(defaultRead.settings.find(row => row.window === "utc_month")?.revision).toBe(2);
+      expect(defaultRead.settings.every(row => row.memberMaximumQuantity === null)).toBe(true);
+      await expect(readApplicationUsageLimits(url.toString(), bob, org.organizationId, instance)).rejects.toThrow("administration denied");
+      await expect(readApplicationUsageLimits(url.toString(), bob, other.organizationId, instance)).rejects.toThrow("administration denied");
+      await expect(readApplicationUsageLimits(url.toString(), alice, org.organizationId, instance, other.ownerMembershipId)).rejects.toThrow("administration denied");
       await expect(setProductUsageLimit(url.toString(), { ...input, expectedRevision: 1 })).rejects.toThrow("Reload");
       await expect(setProductUsageLimit(url.toString(), { ...input, unit: "second", expectedRevision: 2 })).rejects.toThrow("unit is immutable");
       await expect(setProductUsageLimit(url.toString(), { ...input, unit: "second", window: "utc_day" })).rejects.toThrow("unit is immutable across scopes");
@@ -42,6 +56,10 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       await expect(setProductUsageLimit(url.toString(), { ...input, meterKey: "unknown" })).rejects.toThrow("Meter unavailable");
       await admin.query("UPDATE products SET catalog_metadata=NULL WHERE id=$1", [product]);
       await expect(setProductUsageLimit(url.toString(), { ...input, expectedRevision: 2 })).rejects.toThrow("Meter unavailable");
+      const missingCatalog = await readApplicationUsageLimits(url.toString(), alice, org.organizationId, instance);
+      expect(missingCatalog.settings).toHaveLength(3);
+      expect(missingCatalog.settings.every(row => !row.nonzeroAvailable)).toBe(true);
+      expect(missingCatalog.settings.find(row => row.window === "utc_month")?.maximumQuantity).toBe("0");
       await admin.query("UPDATE products SET catalog_metadata=$2 WHERE id=$1", [product, metadata]);
       const guard = `limit_audit_failure_${suffix}`;
       await admin.query(`CREATE FUNCTION public.${guard}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
@@ -54,6 +72,9 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       await admin.query("UPDATE products SET catalog_status='retired' WHERE id=$1", [product]);
       await expect(setProductUsageLimit(url.toString(), { ...input, expectedRevision: 2 })).rejects.toThrow("Meter unavailable");
       await setProductUsageLimit(url.toString(), { ...input, maximumQuantity: "0", expectedRevision: 2 });
+      const retiredRead = await readApplicationUsageLimits(url.toString(), alice, org.organizationId, instance);
+      expect(retiredRead.settings.find(row => row.window === "utc_month")?.revision).toBe(3);
+      expect(retiredRead.settings.every(row => !row.nonzeroAvailable)).toBe(true);
       expect((await admin.query("SELECT revision,maximum_quantity FROM product_usage_limit_revisions WHERE usage_limit_id=$1 ORDER BY revision", [id])).rows).toEqual([{ revision: 1, maximum_quantity: "999999999999.999999" }, { revision: 2, maximum_quantity: "0" }, { revision: 3, maximum_quantity: "0" }]);
       expect((await admin.query("SELECT count(*)::int n FROM identity_audit_events WHERE target_id=$1", [id])).rows[0].n).toBe(3);
       await runtime.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)", [bob, other.organizationId]);
@@ -70,6 +91,7 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       const bobMembership = createCanonicalId("membership");
       await admin.query("INSERT INTO memberships(id,organization_id,user_id,status,role_key) VALUES($1,$2,$3,'active','contributor')", [bobMembership, org.organizationId, bob]);
       await expect(setProductUsageLimit(url.toString(), { ...input, actorUserId: bob, expectedRevision: 3 })).rejects.toThrow("Budget administration denied");
+      await expect(readApplicationUsageLimits(url.toString(), bob, org.organizationId, instance)).rejects.toThrow("administration denied");
       await runtime.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)", [bob, org.organizationId]);
       expect((await runtime.query("SELECT * FROM product_usage_limits WHERE id=$1", [id])).rowCount).toBe(0);
     } finally {

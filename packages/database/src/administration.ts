@@ -1,4 +1,4 @@
-import { OrganizationIdSchema, ProductInstanceIdSchema, UserIdSchema, MembershipIdSchema, ProductCatalogMetadataV1Schema, EntitlementEffectSchema, requestedEntitlementEffect, type Capability } from "@company-human/contracts";
+import { OrganizationIdSchema, ProductInstanceIdSchema, UserIdSchema, MembershipIdSchema, ProductCatalogMetadataV1Schema, EntitlementEffectSchema, requestedEntitlementEffect, LimitQuantitySchema, LimitWindowSchema, type Capability } from "@company-human/contracts";
 import { Client } from "pg";
 import { setServiceContext } from "./service-context.js";
 
@@ -207,5 +207,46 @@ export async function listApplicationMemberCandidates(databaseUrl:string,actorUs
     const count=await client.query<{total:string}>(`SELECT count(*) AS total ${filter}`,values);
     const members=await client.query<{id:string;name:string}>(`SELECT m.id,COALESCE(u.display_name,'Member') AS name ${filter} ORDER BY COALESCE(u.display_name,'Member'),m.id LIMIT 50 OFFSET $4`,[...values,(currentPage-1)*50]);
     return {productName:instance.rows[0].productName,available:true,members:members.rows,total:Number(count.rows[0]!.total),page:currentPage,search:query};
+  });
+}
+
+/** Desired quantities only. Null means unconfigured, never unlimited or authorized spend. */
+export async function readApplicationUsageLimits(databaseUrl: string, actorUserId: string, organizationId: string, instanceId: string, membershipId: string | null = null) {
+  ProductInstanceIdSchema.parse(instanceId);
+  if (membershipId !== null) MembershipIdSchema.parse(membershipId);
+  return readAdministration(databaseUrl, actorUserId, organizationId, ["budgets.manage"], async client => {
+    const instance = await client.query<{ productName: string; catalog_status: string; catalog_metadata: unknown }>(
+      `SELECT p.display_name AS "productName",p.catalog_status,p.catalog_metadata FROM public.product_instances i
+       JOIN public.products p ON p.id=i.product_id WHERE i.organization_id=$1 AND i.id=$2`, [organizationId, instanceId]);
+    const product = instance.rows[0]; if (!product) throw new AdministrationDenied();
+    let memberName: string | null = null;
+    if (membershipId !== null) {
+      const member = await client.query<{ name: string }>(`SELECT COALESCE(u.display_name,'Member') AS name FROM public.memberships m
+        JOIN public.users u ON u.id=m.user_id WHERE m.organization_id=$1 AND m.id=$2`, [organizationId, membershipId]);
+      if (!member.rows[0]) throw new AdministrationDenied(); memberName = member.rows[0].name;
+    }
+    const catalog = ProductCatalogMetadataV1Schema.safeParse(product.catalog_metadata);
+    const supported = catalog.success ? catalog.data.usageMeters : [];
+    // Units are immutable across every scope/window in this tenant instance.
+    // Return unit metadata without other members' quantities or identity.
+    const units = await client.query<{ meter_key: string; unit: string }>(
+      "SELECT DISTINCT meter_key,unit FROM public.product_usage_limits WHERE organization_id=$1 AND product_instance_id=$2", [organizationId, instanceId]);
+    const policies = await client.query<{ meter_key: string; window_key: string; membership_id: string | null; revision: number; maximum_quantity: string }>(
+      `SELECT l.meter_key,l.window_key,l.membership_id,r.revision,r.maximum_quantity FROM public.product_usage_limits l
+       JOIN LATERAL (SELECT revision,maximum_quantity FROM public.product_usage_limit_revisions
+         WHERE organization_id=l.organization_id AND usage_limit_id=l.id ORDER BY revision DESC LIMIT 1) r ON true
+       WHERE l.organization_id=$1 AND l.product_instance_id=$2 AND (l.membership_id IS NULL OR l.membership_id=$3)`, [organizationId, instanceId, membershipId]);
+    const meters = [...new Set([...supported, ...policies.rows.map(row => row.meter_key)])].sort();
+    const settings = meters.flatMap(meterKey => LimitWindowSchema.options.map(window => {
+      const organization = policies.rows.find(row => row.meter_key === meterKey && row.window_key === window && row.membership_id === null);
+      const member = membershipId === null ? undefined : policies.rows.find(row => row.meter_key === meterKey && row.window_key === window && row.membership_id === membershipId);
+      const selected = membershipId === null ? organization : member;
+      return { meterKey, window, unit: units.rows.find(row => row.meter_key === meterKey)?.unit ?? null,
+        revision: selected?.revision ?? 0, maximumQuantity: selected ? LimitQuantitySchema.parse(selected.maximum_quantity) : null,
+        organizationMaximumQuantity: organization ? LimitQuantitySchema.parse(organization.maximum_quantity) : null,
+        memberMaximumQuantity: member ? LimitQuantitySchema.parse(member.maximum_quantity) : null,
+        nonzeroAvailable: catalog.success && product.catalog_status !== 'retired' && supported.includes(meterKey) };
+    }));
+    return { productName: product.productName, membershipId, memberName, settings, providerEnforcementConfirmed: false as const };
   });
 }
