@@ -118,21 +118,19 @@ export async function dispatchUsageLimit(url: string, organizationId: Organizati
   assertProductUsageLimitAdapterV1(registration.adapter);
   const lease = await claimUsageLimit(url,organizationId,registration.productId); if (!lease) return 'idle';
   let apply: Receipt = {status:'retryable_failure',code:'adapter_transport_failure'}, readback: Receipt | null = null;
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline=performance.now()+60000;
+  const bounded=async<T>(operation:Promise<T>):Promise<T>=>{
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    try{return await Promise.race([operation,new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('Adapter deadline exceeded')),Math.max(1,deadline-performance.now()));})]);}
+    finally{if(timer)clearTimeout(timer);}
+  };
   const parse = (value: unknown): Receipt => { const result = UsageLimitAdapterResultSchema.safeParse(value); return result.success ? result.data : {status:'permanent_failure',code:'invalid_adapter_response'}; };
-  // Resolve into local results only after both calls finish; a timed-out promise cannot mutate the persisted outcome later.
   try {
-    const pair = await Promise.race([(async () => {
-      const applied = parse(await registration.adapter.applyUsageLimit({...lease.state,idempotencyKey:lease.idempotencyKey}));
-      let observed: Receipt | null = null;
-      if (applied.status==='succeeded' && matchesAppliedUsageLimit(lease.state,applied.value)) {
-        try { observed=parse(await registration.adapter.getUsageLimitState(lease.state)); }
-        catch { observed={status:'retryable_failure',code:'adapter_transport_failure'}; }
-      }
-      return { applied, observed };
-    })(),new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('Adapter deadline exceeded')),60000);})]);
-    apply=pair.applied;readback=pair.observed;
-  } catch { /* Retrying uses the same provider idempotency key; exception details are not persisted. */ }
-  finally {if(timer)clearTimeout(timer);}
+    apply=parse(await bounded(registration.adapter.applyUsageLimit({...lease.state,idempotencyKey:lease.idempotencyKey})));
+    if(apply.status==='succeeded'&&matchesAppliedUsageLimit(lease.state,apply.value)){
+      try{readback=parse(await bounded(registration.adapter.getUsageLimitState(lease.state)));}
+      catch{readback={status:'retryable_failure',code:'adapter_transport_failure'};}
+    }
+  }catch{ /* Preserve completed apply receipts; late promises cannot rewrite the recorded outcome. */ }
   await finishUsageLimit(url,organizationId,lease,apply,readback);return 'processed';
 }

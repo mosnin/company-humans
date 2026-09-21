@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { Client } from 'pg';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createCanonicalId, PRODUCT_ADAPTER_METHODS, assertProductUsageLimitAdapterV1, AuditEnvelopeV1Schema, type ProductUsageLimitAdapterV1 } from '@company-human/contracts';
 import { syncAuthUser } from './auth-users.js';
 import { readApplicationUsageLimits } from './administration.js';
@@ -68,12 +68,28 @@ describe.skipIf(!databaseUrl)('restricted exact usage-limit dispatch',()=>{
       expect(readCalled).toBe(false);expect((await status(id,2)).failure_code).toBe('provider_limit_mismatch');
       await save(2);await dispatch(adapter(good().applyUsageLimit,async state=>({status:'succeeded',value:{...state,target:{...state.target,externalOrganizationId:'foreign'}}})));
       expect((await status(id,3)).failure_code).toBe('provider_limit_mismatch');
-      await save(3);await dispatch(adapter(good().applyUsageLimit,async()=>{throw new Error('secret-not-to-persist');}));
+      await save(3);
+      // Accelerate only the adapter deadline, retaining real PostgreSQL timers.
+      // A completed apply must survive timeout of the separate provider readback.
+      const realTimeout=globalThis.setTimeout;
+      const deadlineTimer=vi.spyOn(globalThis,'setTimeout').mockImplementation(((callback: (...args: unknown[])=>void, delay?:number, ...args: unknown[])=>
+        realTimeout(callback,delay!==undefined && delay>59000 && delay<=60000 ? 1 : delay,...args)) as typeof setTimeout);
+      let releaseReadback: (()=>void) | undefined;
+      try {
+        await dispatch(adapter(good().applyUsageLimit,state=>new Promise(resolve=>{releaseReadback=()=>resolve({status:'succeeded',value:state});})));
+      } finally {deadlineTimer.mockRestore();}
+      expect(releaseReadback).toBeDefined();
       expect((await status(id,4)).status).toBe('retry_wait');expect(await claim()).toBeNull();
       const attempt=(await admin.query('SELECT apply_receipt,readback_receipt FROM usage_limit_attempts WHERE usage_limit_id=$1 AND revision=4',[id])).rows[0];
       expect(attempt.apply_receipt.status).toBe('succeeded');expect(attempt.readback_receipt.code).toBe('adapter_transport_failure');
+      releaseReadback!();await Promise.resolve();
+      expect((await admin.query('SELECT apply_receipt,readback_receipt FROM usage_limit_attempts WHERE usage_limit_id=$1 AND revision=4',[id])).rows[0]).toEqual(attempt);
       await admin.query("UPDATE usage_limit_jobs SET next_attempt_at=now()-interval '1 second' WHERE usage_limit_id=$1 AND revision=4",[id]);
-      const retry=(await claim())!;expect(retry.attemptNumber).toBe(2);expect(retry.idempotencyKey).toBe(`usage-limit:${id}:4`);
+      await dispatch(adapter(good().applyUsageLimit,async()=>{throw new Error('secret-not-to-persist');}));
+      const exceptionAttempt=(await admin.query('SELECT apply_receipt,readback_receipt FROM usage_limit_attempts WHERE usage_limit_id=$1 AND revision=4 AND attempt_number=2',[id])).rows[0];
+      expect(exceptionAttempt.apply_receipt.status).toBe('succeeded');expect(exceptionAttempt.readback_receipt).toEqual({status:'retryable_failure',code:'adapter_transport_failure'});
+      await admin.query("UPDATE usage_limit_jobs SET next_attempt_at=now()-interval '1 second' WHERE usage_limit_id=$1 AND revision=4",[id]);
+      const retry=(await claim())!;expect(retry.attemptNumber).toBe(3);expect(retry.idempotencyKey).toBe(`usage-limit:${id}:4`);
       await save(4,'0');await finishUsageLimit(worker.toString(),org.organizationId,retry,{status:'succeeded',value:retry.state},{status:'succeeded',value:retry.state});
       expect((await status(id,4)).status).toBe('superseded');await dispatch();expect((await status(id,5)).status).toBe('succeeded');
       // Expired leases cannot complete; retries keep one key and stop after five attempts.

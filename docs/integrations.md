@@ -139,3 +139,11 @@ The pending connected-instance form and authenticated POST connection endpoint n
 ## Catalog setup entry — 2026-09-21
 
 An administration-scoped catalog now exposes supported create/connect organization modes for ready valid registrations. The public setup endpoint uses a catalog-validated service, records pending intent only and normalizes conflicts. Draft integrations remain visible but unavailable. No reference registration, provider credential or live access was changed. Complete permission/data-use and cost disclosures, authenticated provider connection and real acceptance remain required.
+
+## Preserve applied limits through readback timeout — 2026-09-21
+
+Reproduced a dispatcher defect with a restricted PostgreSQL integration regression: an immediate successful provider apply followed by readback that exceeded the deadline was stored as a generic apply failure, losing the provider's successful receipt. The old implementation raced the entire pair and assigned receipts only after both calls completed.
+
+The worker now bounds each awaited call against the same 60-second overall deadline, retains a completed apply result before reading state, and records readback timeout/exception separately as a normalized retryable failure. Late provider completion cannot rewrite local receipts or completed journal rows. The same idempotency key and existing five-attempt, lease, current-policy and tenant fences remain in force; a timeout does not imply provider cancellation, and an apply receipt alone never confirms enforcement or grants access.
+
+The regression failed before the fix (expected succeeded apply, received retryable_failure), then passed locally and on hosted verification PostgreSQL (47.30 seconds). Coverage includes late readback completion, readback exceptions with private detail redaction, stable retry key and existing revocation/immutability checks. All 199 automated tests, typecheck, lint and production build pass. No UI or migration changed; the previously recorded 76 browser checks were not rerun. Application catalog commit fef03b4 passed CI 35658896236. No live provider or OAuth acceptance is claimed.

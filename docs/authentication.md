@@ -32,3 +32,7 @@ Dashboard: https://dashboard.convex.dev/t/mosnin-s-projects/company-humans/sensi
 Dependencies use patched `@auth/core` 0.41.3 or later. The older version shown in the setup guide had published vulnerabilities and was not retained.
 
 References: [Convex Auth setup](https://labs.convex.dev/auth/setup), [Next.js integration](https://labs.convex.dev/auth/authz/nextjs), [OAuth configuration](https://labs.convex.dev/auth/config/oauth).
+
+## Local identity configuration check — 2026-09-21
+
+The local `.env.local` contains the three database variable names but no NEXT_PUBLIC_CONVEX_URL; `readProviderIdentity` therefore correctly returns unavailable before querying a session. The separate ignored production Convex environment file is not automatically loaded by Next. Do not solve this by silently connecting ordinary local development to production. Complete an isolated development deployment/local backend configuration and its provider callback setup. The GitHub browser tab still showed sign-in during this check; the owner has a pending sign-in request. No browser OAuth flow or credential configuration completed.

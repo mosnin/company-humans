@@ -12,7 +12,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 199 contract/database/route/Convex tests pass. Seventy-six desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Latest checked application CI at 61a3aa5 passed in run 35658395141.
+- 199 contract/database/route/Convex tests pass. Seventy-six desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Latest checked application CI at fef03b4 passed in run 35658896236.
 - Local development/verification and hosted verification/production databases have 40 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
@@ -353,3 +353,11 @@ The public setup API now rejects unknown body fields and uses requestCatalogProd
 Verified: 199 automated tests (30 contracts, 25 database, 144 web), typecheck, lint and production build. All 76 desktop/mobile fixture browser checks pass and both catalog screenshots were inspected. Expanded restricted-login catalog/setup tests also passed on hosted verification PostgreSQL (15.74 seconds): foreign tenant denial, draft/malformed/unsupported/retired registration denial, valid idempotent pending setup and allowlisted catalog output. No migrations or production fixture writes. Prior application commit 61a3aa5 passed CI run 35658395141.
 
 Real OAuth, complete product disclosures/estimated costs, verified product authorization, Scalar transport and live sponsored access remain open. The seven reference products were not promoted to ready by this work. Phase 02 and its real-provider tracker acceptance remain incomplete.
+
+## Preserve applied limits through readback timeout — 2026-09-21
+
+Reproduced a dispatcher defect with a restricted PostgreSQL integration regression: an immediate successful provider apply followed by readback that exceeded the deadline was stored as a generic apply failure, losing the provider's successful receipt. The old implementation raced the entire pair and assigned receipts only after both calls completed.
+
+The worker now bounds each awaited call against the same 60-second overall deadline, retains a completed apply result before reading state, and records readback timeout/exception separately as a normalized retryable failure. Late provider completion cannot rewrite local receipts or completed journal rows. The same idempotency key and existing five-attempt, lease, current-policy and tenant fences remain in force; a timeout does not imply provider cancellation, and an apply receipt alone never confirms enforcement or grants access.
+
+The regression failed before the fix (expected succeeded apply, received retryable_failure), then passed locally and on hosted verification PostgreSQL (47.30 seconds). Coverage includes late readback completion, readback exceptions with private detail redaction, stable retry key and existing revocation/immutability checks. All 199 automated tests, typecheck, lint and production build pass. No UI or migration changed; the previously recorded 76 browser checks were not rerun. Application catalog commit fef03b4 passed CI 35658896236. No live provider or OAuth acceptance is claimed.
