@@ -25,7 +25,7 @@ Convex backend tests exercise session existence, expiration, owner mismatch, rev
 
 The checked-in `_generated` files were regenerated during the real production push on 2026-09-21. Convex schema validation and function deployment succeeded. The CLI does not find the workspace-hoisted TypeScript binary, so `../../node_modules/.bin/tsc -p convex/tsconfig.json --noEmit` was run successfully before `CONVEX_DEPLOYMENT=prod:sensible-dinosaur-165 npx convex deploy --typecheck disable`.
 
-Deployment signing keys (`JWT_PRIVATE_KEY`, `JWKS`) were generated in memory and set directly without printing or committing private values. Live checks verified that anonymous `identity:current` returns null, OIDC discovery uses the dedicated issuer, and JWKS contains one RSA public key without private material. `SITE_URL` and OAuth provider credentials remain unconfigured: real sign-in is not accepted yet. The ignored `.env.convex-production` records this explicit deployment target; it does not make ordinary local development point at production.
+Deployment signing keys (`JWT_PRIVATE_KEY`, `JWKS`) were generated in memory and set directly without printing or committing private values. Live checks verified that anonymous `identity:current` returns null, OIDC discovery uses the dedicated issuer, and JWKS contains one RSA public key without private material. `SITE_URL` is now `https://company-humans.vercel.app`. OAuth provider credentials remain unconfigured: real sign-in is not accepted yet. The ignored `.env.convex-production` records this explicit deployment target; it does not make ordinary local development point at production.
 
 Dashboard: https://dashboard.convex.dev/t/mosnin-s-projects/company-humans/sensible-dinosaur-165
 
