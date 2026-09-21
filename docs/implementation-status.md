@@ -12,8 +12,8 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 68 contract/database/route/Convex tests pass. Twenty-four desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at b7c756a passed in run 35635987769.
-- Local development/verification and hosted verification/production databases have 26 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
+- 69 contract/database/route/Convex tests pass. Twenty-four desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at b7c756a passed in run 35635987769.
+- Local development/verification and hosted verification/production databases have 27 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
 
@@ -117,3 +117,9 @@ Verified: 59 automated tests, typecheck, lint, build and the new hosted verifica
 The Applications page now offers a confirmed disable action using inherited controls. The new POST binds the canonical actor on the server, enforces same-origin and tenant/capability checks, and returns accepted local intent without claiming remote revocation. Error/retry and busy states are covered; successful local denial is reflected immediately. The UI states remote access is unconfirmed and restoring access is not yet available.
 
 Verified: 68 automated tests, 24 explicit-fixture desktop/mobile checks, typecheck, lint and build pass. Live local HTTP checks prove origin denial and fail-closed unavailable identity. Actual OAuth and Scalar suspension remain unverified. Prior commit f834c37 passed hosted CI 35637451563; current increment is not yet production acceptance.
+
+## Restricted member denial execution — 2026-09-21
+
+Added product-bound suspend/remove dispatch under a dedicated restricted worker role, tenant-scoped job leases, five-attempt retry ceiling, stable provider keys, immutable completed attempts, validated receipts and superseded-revision handling. Previously authorized cleanup continues after the initiating member is suspended. The worker cannot grant access or alter identity/mapping provider state.
+
+Verified: all 69 automated tests, typecheck, lint and build; the new multi-case restricted-credential scenario also passed on hosted verification PostgreSQL. Migration 0027 then applied to development and production. Prior UI/API commit 76a6c52 passed hosted CI. No UI changed. No production worker login/scheduler, real Scalar call or provider-state projection is installed; provider-aware reconciliation, provision/resume/entitlements and real OAuth remain outstanding.

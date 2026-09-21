@@ -15,3 +15,7 @@ Migration 0017 permits scoped audit reads through the service role only with aud
 ## Authentication override
 
 The product owner's 2026-09-20 direction replaces Clerk with Convex Auth. Convex stores OAuth account/session data; PostgreSQL retains canonical users and tenant authorization. The server queries the authenticated Convex identity, including current session existence and expiry, before resolving the canonical issuer/subject mapping. A same-origin POST synchronizes that profile after sign-in; GET requests do not create users. The user migration preserves legacy mappings and canonical IDs without linking by email. See [authentication setup](authentication.md).
+
+## Member denial execution
+
+The database package now exposes a bounded server-only denial dispatcher using a distinct restricted worker role, immutable command provenance and durable attempt journals. It can execute only suspension/removal through an explicitly registered product adapter and does not depend on the initiating human remaining active. No hosted worker process or real adapter is installed. This is a verified execution boundary with fixtures, not production remote offboarding.

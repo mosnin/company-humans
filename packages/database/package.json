@@ -55,6 +55,10 @@
     "./product-memberships": {
       "types": "./dist/product-memberships.d.ts",
       "default": "./dist/product-memberships.js"
+    },
+    "./member-denial-worker": {
+      "types": "./dist/member-denial-worker.d.ts",
+      "default": "./dist/member-denial-worker.js"
     }
   },
   "scripts": {

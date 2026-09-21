@@ -77,3 +77,7 @@ Product-member offboarding is integrated with the existing membership transactio
 ## 2026-09-21 — disable without fabricating provider state
 
 An actual PostgreSQL test found the earlier product update policy allowed only pending-state rows, preventing safe disable of active products. Migrations 0025–0026 preserve applied checksums, permit desired-access denial, and make provider status immutable to general service credentials. Re-enabling a disabled instance now explicitly requires reconciliation rather than resetting status to pending against an already completed initial operation. A full restore workflow remains required by Phase 02; this restriction is not acceptance of that workflow.
+
+## 2026-09-21 — persisted denial outlives its initiating administrator
+
+A worker that requires the original administrator to remain active can strand remote offboarding. The denial dispatcher therefore uses a separate restricted credential and only processes previously authorized, immutable suspension/removal intent. Job provenance distinguishes the original human command from the executing credential. It cannot grant access or update provider projections. Provision/resume still need a separate authorization/entitlement receipt boundary. Timeouts are not cancellation; provider-specific reconciliation remains an explicit Phase 02 gate.

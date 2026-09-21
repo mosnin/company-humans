@@ -68,3 +68,9 @@ The server disable transaction requires applications.manage and tenant scope; cr
 ## Disable endpoint authorization
 
 The application-disable POST is the fourteenth browser mutation handler covered by the origin-denial suite. It checks origin before authentication, validates URL organization/instance IDs, and uses server-derived identity with the restricted database service. Permission/unavailable-object errors expose no tenant detail; other failures return a generic retryable 503. A successful response is not a provider revocation receipt.
+
+## Denial worker credential
+
+Migration 0027 adds NOLOGIN `company_human_member_worker`. Its execution login must be non-owner, non-superuser, non-RLS-bypass and not a member of the ordinary application service role. Trusted server code supplies the organization scope; RLS restricts reads/jobs/attempts to it. No public endpoint accepts a caller-provided worker scope. The credential reads persisted denial commands and writes execution journals only; it cannot insert commands, update mappings/users/memberships or grant access. Web service credentials cannot execute this worker. No production login or scheduler has been installed.
+
+Persisted denial continues after the initiating human loses membership, because it cannot increase access. Known external member IDs must match successful provider receipts; active provider status cannot satisfy suspension, and removal requires removed status. Raw provider exceptions are replaced with controlled codes. A 60-second response deadline does not cancel remote side effects: provider idempotency and later reconciliation remain required.

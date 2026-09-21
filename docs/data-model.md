@@ -53,3 +53,9 @@ Member administrators can deny mappings after changing membership status even wi
 ## Product disable boundary (0025–0026)
 
 `disableProductInstance` requires applications.manage and serializes on the instance. It sets desired enablement false, disables enabled member mappings, increments their desired revision, and appends suspendMember commands and audits atomically. Repeated requests do not duplicate commands. Observed provider state is preserved. A mapping INSERT holds a shared parent-instance lock while verifying active/enabled state, so it cannot slip past a concurrent disable sweep. A product-admin command policy permits suspension for disabled products without changing workspace membership. General service updates cannot alter provider status or re-enable disabled instances; reconciliation remains required.
+
+## Member denial execution journal (0027)
+
+`member_denial_jobs` references an immutable, tenant-bound suspendMember/removeMember command. Status is pending/running/retry_wait/succeeded/failed/superseded; leases last two minutes and attempts are capped at five. `member_denial_attempts` preserves the execution credential's role, lease, timestamps, normalized outcome/code and provider reference. The original human actor remains on the command; execution does not impersonate that human. Completed attempts cannot be updated and runtime credentials cannot delete them.
+
+Claims are serialized per organization/product, filter by the registered product, and skip mappings with another unexpired denial lease. New jobs are created only for the current denied mapping revision. Older work is superseded; its receipt cannot satisfy the newer command. The journal does not update product-membership provider projections or confer access.

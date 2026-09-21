@@ -43,3 +43,9 @@ The server boundary now disables a product and its enabled member mappings with 
 ## Applications disable control
 
 The Applications admin page now calls a same-origin POST at `/api/organizations/:organizationId/applications/:instanceId/disable`. The authenticated canonical actor comes from the server; request-body actor fields are ignored. The API acknowledges desiredEnabled=false and remoteRevocationConfirmed=false only after the database transaction commits. The UI confirms scope, explains that existing remote access may continue, supports retry after failure, and identifies the unavailable restore workflow. Remote suspension dispatch and provider receipts remain outstanding.
+
+## Denial dispatcher prerequisite
+
+`dispatchMemberDenial` executes one current suspendMember/removeMember command through a product-bound registered V1 adapter, under a dedicated restricted worker credential. It handles pending, retryable/permanent failure, normalized receipts, stable idempotency, bounded leases/retries and superseded revisions. Suspension accepts suspended/removed; removal accepts removed only. A known external member mismatch fails. Provision/resume and access grants are intentionally outside this denial credential.
+
+Only fixture adapters have been run. No real Scalar call, hosted schedule, production worker login, provider-state projection or reconciled restore is accepted. Late side effects after a timeout/expired lease require provider-aware reconciliation before restoring access; this journal alone does not prove remote revocation.
