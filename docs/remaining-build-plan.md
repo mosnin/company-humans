@@ -21,7 +21,7 @@ This is the next delivery milestone across Phases 01–03. Complete it before br
 ## Immediate bounded queue
 
 1. **Verify hosted health-page acceptance.** The display and permission tests are implemented and locally verified. Check CI and later authenticated runtime acceptance; scheduling, recovery and live Scalar observations remain outstanding. Do not rebuild the display.
-2. **Complete real identity acceptance.** Configure OAuth on the existing dedicated Convex project, establish isolated nonproduction authentication, deploy the tested revision and run two-account/two-organization invite, role, switching and suspension journeys.
+2. **Complete real identity acceptance.** Configure OAuth on the existing dedicated Convex project, use the verified isolated local backend with separate OAuth configuration, deploy the tested revision and run two-account/two-organization invite, role, switching and suspension journeys.
 3. **Resolve the audited Scalar control gaps.** Use the completed source assessment to establish the real provider contract and test organization. Required provider-side changes must be scoped and documented; another generic worker cannot supply missing Scalar enforcement.
 4. **Finish suspended-to-active orchestration.** Reuse existing workers to apply current capabilities and finite limits, verify acknowledgements, fence activation against revoked membership/policy, and reconcile ambiguous outcomes. Implement safe resume/restore.
 5. **Operate and prove the lifecycle.** Configure restricted hosted workers, scheduling, actual health collection and recovery controls. Prove create/connect, provision, suspend, resume, remove and product disable with real Scalar receipts.
@@ -220,7 +220,7 @@ Then evaluate public adapter SDK, marketplace/security review, additional payout
 | Dependency | Remaining requirement | Independent preparation |
 | --- | --- | --- |
 | OAuth | Provider application configuration and real account consent | Identity/security tests and deployment configuration |
-| Nonproduction Convex | Resolve the previously recorded deployment quota or verify a supported isolated local setup | Preserve the existing dedicated project; never share production credentials with arbitrary previews |
+| Nonproduction Convex | Local isolated backend now verified; configure separate development OAuth credentials and real consent | Preserve the existing dedicated project; never share production credentials with arbitrary previews |
 | Scalar | Verified control API, provider enforcement, credentials and test organization | Existing contract/orchestration tests and documented upstream changes |
 | Chippi | Real merchant integration environment and signed authoritative billing events | SDKs, ingestion, replay and accounting tests |
 | Payout provider | Provider selection, account and recipient onboarding, compliance and settlement access | Provider-neutral ledger and failure handling |

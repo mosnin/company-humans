@@ -36,3 +36,15 @@ References: [Convex Auth setup](https://labs.convex.dev/auth/setup), [Next.js in
 ## Local identity configuration check — 2026-09-21
 
 The local `.env.local` contains the three database variable names but no NEXT_PUBLIC_CONVEX_URL; `readProviderIdentity` therefore correctly returns unavailable before querying a session. The separate ignored production Convex environment file is not automatically loaded by Next. Do not solve this by silently connecting ordinary local development to production. Complete an isolated development deployment/local backend configuration and its provider callback setup. The GitHub browser tab still showed sign-in during this check; the owner has a pending sign-in request. No browser OAuth flow or credential configuration completed.
+
+## Isolated local backend verified — 2026-09-21
+
+A separate anonymous local Convex backend now runs for this checkout. It does not use the dedicated cloud production deployment or create an additional cloud deployment. The existing database environment entries were preserved. Ignored `apps/web/.env.local` now selects the local deployment and records API `http://127.0.0.1:3210` and HTTP actions `http://127.0.0.1:3211`. Project-local `.convex/` state and credentials are ignored; never commit them or use this development backend for production.
+
+From `apps/web`, use `CONVEX_AGENT_MODE=anonymous npx convex dev --typecheck disable --codegen disable` to run the selected local backend. Run the workspace-hoisted TypeScript check separately: `../../node_modules/.bin/tsc -p convex/tsconfig.json --noEmit`. Keep the dev process running while using its endpoints; `--once` deploys successfully but stops the backend when it exits. Existing generated bindings were preserved.
+
+Independent local RS256 keys were generated in memory and piped to the local CLI without printing private values. Local `SITE_URL` is `http://localhost:3000`. Production signing keys and configuration were not changed. Real provider credentials are still absent; configure a separate development OAuth app with callback `http://127.0.0.1:3211/api/auth/callback/github` or the corresponding Google path as supported by that provider. Do not reuse production credentials or enable an unconfigured provider.
+
+Verified against the running local backend: function/schema deployment succeeded; Convex TypeScript passed; OIDC discovery returned the local HTTP issuer; JWKS contained one RSA public key and no private key parameter; an actual anonymous HTTP query to `identity:current` returned successful null. This is local infrastructure acceptance, not OAuth consent/session or two-organization application acceptance. The initial binary download failed with ENOSPC; removing only this repository's generated `.next` output allowed the retry to succeed.
+
+References: [Convex local deployments](https://docs.convex.dev/cli/local-deployments), [agent mode](https://docs.convex.dev/cli/agent-mode).

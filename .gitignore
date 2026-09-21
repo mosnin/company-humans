@@ -14,3 +14,6 @@ test-results/
 playwright-report/
 .refs/
 dist/
+
+# Local Convex deployment state and credentials
+.convex/
