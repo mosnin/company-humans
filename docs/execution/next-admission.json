@@ -1,13 +1,13 @@
 {
   "$schema": "company-os.work-admission-receipt.v1",
-  "request_id": "provider-dispatch-20260921",
-  "task_id": "CH-15-provider-dispatch-activation",
+  "request_id": "provisioning-diagnostics-20260921",
+  "task_id": "CH-15-admin-diagnostics",
   "manager_id": "root",
   "work_class": "implementation",
   "admitted": true,
   "blockers": [],
-  "mission_state_sha256": "f6aa9588f4161d338d7cf1e60122ac31b509422b2513204cb562e2928505e19b",
-  "governor_decision_sha256": "b399e479ddfa7fdda3b31c0415726ce3b3587d2c3fab5c5b18214092428a603d",
+  "mission_state_sha256": "c01bda82a717e97f1307d6cf6cd3621e699b0c9f1ddaf92f75662d7234a177f6",
+  "governor_decision_sha256": "0f0d1e2774f33bb95b5dc54ab66d403e35d1f4187126ab09a7546e029328d99b",
   "governor_mode": "normal",
   "dominant_bottleneck": {
     "capability_id": "phase:03",
@@ -30,7 +30,7 @@
     "checkpoint"
   ],
   "replacement_orders": [],
-  "navigation_decision_sha256": "b6d3fa3c544e82d669671c2a6e74777be7f3f7ed03d934ec97e1b0c79e42f645",
+  "navigation_decision_sha256": "6246eb9707d8756fe3c8a170a8cee7ec33137fc4862d1eae8e654e03649d41eb",
   "navigation_mode": "navigate",
   "next_action": {
     "action_kind": "materialize",
@@ -38,5 +38,5 @@
     "capability_id": "phase:03",
     "instruction": "Materialize the smallest real phase:03 artifact that changes objective reality."
   },
-  "receipt_sha256": "81c2124af165027aa52b5a9468587d082a5a6a8f0edbb780f14189f22eef5107"
+  "receipt_sha256": "ab397a8eeb12c2ee89357dca57bf3c37ee09e226f94ed4cdc46f25df614f52da"
 }

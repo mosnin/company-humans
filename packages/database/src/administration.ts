@@ -75,3 +75,27 @@ export async function listAuditEvents(databaseUrl: string, actorUserId: string, 
     return { events: events.rows,total:Number(count.rows[0]!.total),page:currentPage };
   });
 }
+
+export interface ApplicationDiagnostic {
+  id: string; productName: string; instanceKey: string; mode: string; desiredEnabled: boolean; provisioningStatus: string;
+  operation: null | { status: string; attemptCount: number; failureCode: string | null; nextAttemptAt: string;
+    attempts: { number: number; startedAt: string; finishedAt: string | null; outcome: string | null; failureCode: string | null }[] };
+}
+/** Explicit projection excludes lease credentials, provider references and raw payloads. */
+export async function listApplicationDiagnostics(databaseUrl: string, actorUserId: string, organizationId: string, page = 1) {
+  const currentPage = Number.isSafeInteger(page) && page > 0 ? Math.min(page, 100000) : 1;
+  return readAdministration(databaseUrl, actorUserId, organizationId, ["applications.manage"], async client => {
+    const count = await client.query<{ total: string }>("SELECT count(*) AS total FROM public.product_instances WHERE organization_id = $1", [organizationId]);
+    const records = await client.query<ApplicationDiagnostic>(`SELECT i.id,p.display_name AS "productName",i.instance_key AS "instanceKey",
+      i.mode,i.desired_enabled AS "desiredEnabled",i.provisioning_status AS "provisioningStatus",
+      CASE WHEN o.id IS NULL THEN NULL ELSE jsonb_build_object('status',o.status,'attemptCount',o.attempt_count,
+        'failureCode',o.failure_code,'nextAttemptAt',o.next_attempt_at,'attempts',COALESCE((
+          SELECT jsonb_agg(jsonb_build_object('number',a.attempt_number,'startedAt',a.started_at,'finishedAt',a.finished_at,
+            'outcome',a.outcome,'failureCode',a.failure_code) ORDER BY a.attempt_number)
+          FROM public.provisioning_attempts a WHERE a.organization_id = i.organization_id AND a.operation_id = o.id),'[]'::jsonb)) END AS operation
+      FROM public.product_instances i JOIN public.products p ON p.id = i.product_id
+      LEFT JOIN public.provisioning_operations o ON o.organization_id = i.organization_id AND o.product_instance_id = i.id
+      WHERE i.organization_id = $1 ORDER BY p.display_name,i.instance_key,i.id LIMIT 50 OFFSET $2`, [organizationId, (currentPage - 1) * 50]);
+    return { applications: records.rows, total: Number(count.rows[0]!.total), page: currentPage };
+  });
+}

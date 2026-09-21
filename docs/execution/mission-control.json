@@ -24,12 +24,12 @@
     "first_mutation": {
       "satisfied": true,
       "miss_count": 0,
-      "satisfied_at": "2026-09-21T17:10:20.169067Z"
+      "satisfied_at": "2026-09-21T17:15:39.339151Z"
     },
     "first_runtime": {
       "satisfied": false,
-      "miss_count": 1,
-      "last_checked_at": "2026-09-21T17:10:20.169067Z"
+      "miss_count": 2,
+      "last_checked_at": "2026-09-21T17:15:39.339151Z"
     },
     "first_render": {
       "miss_count": 0,
@@ -150,6 +150,11 @@
           "kind": "product_source",
           "path": "packages/database/src/provisioning-dispatcher.ts",
           "sha256": "3e3554dbeeeeb485b1a1e2103c8df8ee9caf0e355a820120a5c5cf8408a5c045"
+        },
+        {
+          "kind": "product_source",
+          "path": "apps/web/components/administration/applications.tsx",
+          "sha256": "a5567d3a2973bf22ced1eac5c16640c5eb5722a92fab9b417d022d508b1bb9f6"
         }
       ]
     },
@@ -368,6 +373,21 @@
         "path": "packages/database/src/provisioning-dispatcher.ts",
         "sha256": "3e3554dbeeeeb485b1a1e2103c8df8ee9caf0e355a820120a5c5cf8408a5c045"
       }
+    },
+    {
+      "$schema": "company-os.mission-execution-event.v1",
+      "event_id": "provisioning-diagnostics-20260921",
+      "kind": "artifact_materialized",
+      "occurred_at": "2026-09-21T17:15:39.339151Z",
+      "event_sha256": "0d27a42805b1d9b8091a0f7cb0d9f5d1937e14bdb22e96ccec899cbf4a07a3d3",
+      "work_class": "implementation",
+      "units": 1.0,
+      "capability_id": "phase:02",
+      "evidence": {
+        "kind": "product_source",
+        "path": "apps/web/components/administration/applications.tsx",
+        "sha256": "a5567d3a2973bf22ced1eac5c16640c5eb5722a92fab9b417d022d508b1bb9f6"
+      }
     }
   ],
   "work_units": {
@@ -376,7 +396,7 @@
     "documentation": 0.0,
     "evaluation": 0.0,
     "governance": 0.0,
-    "implementation": 2.0,
+    "implementation": 3.0,
     "integration": 2.0,
     "packaging": 0.0,
     "repair": 0.0,
@@ -395,7 +415,15 @@
       "order": "Stop support work and perform the exact missing execution action."
     }
   ],
-  "replacement_orders": [],
+  "replacement_orders": [
+    {
+      "order_id": "replace-worker:current-bottleneck-worker:first_runtime",
+      "kind": "replace_worker",
+      "worker_id": "current-bottleneck-worker",
+      "reason": "second miss of first_runtime",
+      "issued_at": "2026-09-21T17:15:39.339151Z"
+    }
+  ],
   "consumed_wake_keys": [],
   "scheduler": {
     "mission_id": "company-human",
@@ -509,7 +537,7 @@
     "$schema": "company-os.outcome-executive-decision.v1",
     "objective_id": "company-human",
     "objective": "Build and independently verify the complete Company Human platform in mosnin/company-humans against the canonical Notion tree and phases 00\u201316. Preserve company-os-web. Use Convex OAuth, organization-sponsored ecosystem access with Scalar first, scoped roles and admin activity visibility, bounded usage and centralized commercial control, modular human work/CRM/context/creator workspaces, recoverable Chippi referral attribution, immutable commissions and real regulated payouts while merchant billing remains independent. Verify sales, referral and UGC configurations without forks. Use Symbolic context and Flow when connected; inspect Callix UTM tracking for reuse. Expansion remains conditional on stable first-party contracts and actual demand.",
-    "budget_fraction_consumed": 0.017178101944444444,
+    "budget_fraction_consumed": 0.020872200138888887,
     "reality_level": "R0",
     "reality_level_index": 0,
     "mode": "normal",
@@ -671,7 +699,7 @@
         "existing_implementation": null
       }
     ],
-    "decision_sha256": "dff57e27321672bf9d197265881b1697b15a59ae51076cc0bebd41268b04202a",
+    "decision_sha256": "d9d4d4a3059b6a4ef3f99ea1d00bd93e68a59606e22f201d045164f41efd06b1",
     "navigation_decision_sha256": "a40ccc5f921acddaf691e931bb0726558fe9d5bf6e7551e6c646b046a7d1c821",
     "navigation_mode": "navigate",
     "waypoint": "R3_FIRST_REALITY",
@@ -719,7 +747,7 @@
     }
   },
   "checkpoint": null,
-  "state_sha256": "8d2fb47385e4a5995b206a23e0e0762650f77e7d2a19554a3862577c652750a3",
+  "state_sha256": "e72c17cbeb847af99df246344950b8079b06bf1984284fe941dde5181405c234",
   "goal_route_sha256": "fbe18be85de19dee2838b7e5484d00de48083c72abd2c5bf57928acbf0178344",
   "root_goal_sha256": "03d30ad602d562e0245176463ef01d2c90f14d5300bfdfdecc84f825e56644a5",
   "scheduler_binding": "Active Codex thread goal; this local lease is not an installed background automation",

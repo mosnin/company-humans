@@ -53,6 +53,7 @@ test("contributor navigation excludes administrative pages", async ({ page }, te
   const nav=page.getByRole("navigation",{name:"Workspace",exact:true});
   await expect(nav.getByRole("link",{name:"Workspace",exact:true})).toBeVisible();
   await expect(nav.getByRole("link",{name:"People",exact:true})).toHaveCount(0);
+  await expect(nav.getByRole("link",{name:"Applications",exact:true})).toHaveCount(0);
   await expect(nav.getByRole("link",{name:"Teams",exact:true})).toHaveCount(0);
   await expect(nav.getByRole("link",{name:"Permissions",exact:true})).toHaveCount(0);
 });
@@ -93,4 +94,18 @@ test("sign-out waits for session revocation before leaving", async ({page}) => {
   await page.getByRole("button",{name:"Sign out",exact:true}).click();
   await expect(page.getByRole("alert")).toContainText("Sign-out failed");
   await expect(page).toHaveURL(/screen=people/);
+});
+
+test("application setup failures expose history without claiming product access", async ({ page }, testInfo) => {
+  await page.goto("/?screen=applications");
+  await expect(page.getByRole("heading", { name: "Scalar", exact: true })).toBeVisible();
+  await expect(page.getByText("Setup needs attention", { exact: true })).toBeVisible();
+  await page.getByText("Setup attempt history", { exact: true }).click();
+  await expect(page.getByText("Attempt 1 · permanent failure", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("applications.png"), fullPage: true });
+});
+test("applications explain the empty configuration", async ({ page }) => {
+  await page.goto("/?screen=empty-applications");
+  await expect(page.getByRole("heading", { name: "No applications configured" })).toBeVisible();
 });

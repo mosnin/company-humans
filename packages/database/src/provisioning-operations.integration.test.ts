@@ -5,6 +5,7 @@ import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { enableProductInstance } from "./product-instances.js";
 import { claimProvisioningOperation, finishProvisioningAttempt } from "./provisioning-operations.js";
+import { listApplicationDiagnostics } from "./administration.js";
 import { referenceProductId } from "./seed.js";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -49,6 +50,14 @@ describe.skipIf(!databaseUrl)("durable provisioning journal", () => {
         { status: "pending", providerReference: "provider-job-42" });
       expect(await claimProvisioningOperation(url, scope)).toBeNull();
       await sql.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)", [alice, org.organizationId]);
+      const diagnostics = await listApplicationDiagnostics(url, alice, org.organizationId);
+      expect(diagnostics.total).toBe(2);
+      const diagnostic = diagnostics.applications.find(item => item.id === instance)!;
+      expect(diagnostic.operation?.status).toBe("retry_wait");
+      expect(diagnostic.operation?.attempts.map(item => item.outcome)).toEqual(["lease_expired", "pending"]);
+      expect(JSON.stringify(diagnostics)).not.toContain("provider-job-42");
+      expect(JSON.stringify(diagnostics)).not.toContain(recovered.leaseToken);
+      await expect(listApplicationDiagnostics(url, bob, org.organizationId)).rejects.toThrow("administration denied");
       const partial = await sql.query("SELECT status,provider_reference FROM provisioning_operations WHERE id = $1", [first.operationId]);
       expect(partial.rows).toEqual([{ status: "retry_wait", provider_reference: "provider-job-42" }]);
       await expect(sql.query("UPDATE provisioning_attempts SET outcome = 'succeeded' WHERE operation_id = $1 AND attempt_number = 1", [first.operationId])).rejects.toThrow("immutable");
