@@ -1,6 +1,6 @@
 # Company Human — remaining phased build plan
 
-Rebased 2026-09-21 against committed application revision `2d4b5d7`, current implementation evidence, all 92 captured tracker tasks, and the previously captured canonical Notion roadmap. This is an execution plan, not a replacement PRD. Explicit owner directions apply: `mosnin/company-humans`, Convex OAuth, organization-sponsored ecosystem access, and all three beta configurations.
+Rebased 2026-09-21 against committed application revision `26b236c`, current implementation evidence, all 92 captured tracker tasks, and the previously captured canonical Notion roadmap. This is an execution plan, not a replacement PRD. Explicit owner directions apply: `mosnin/company-humans`, Convex OAuth, organization-sponsored ecosystem access, and all three beta configurations.
 
 ## Current position
 
@@ -14,6 +14,32 @@ Rebased 2026-09-21 against committed application revision `2d4b5d7`, current imp
 - Organization/member entitlement configuration, scoped reads, mutation API and administration UI are implemented. Member access requests and tenant-scoped member selection are implemented. Both return or display unconfirmed provider access; neither grants remote access.
 - Adapter V2 now requires creating a remote member suspended and validates that receipt. The restricted V2 suspended-creation worker and receipt-backed suspended identity binding are implemented with local and hosted database verification; real Scalar transport, policy/limit acknowledgement, reconciliation and final activation remain incomplete. Existing V1 organization and denial workers are preserved.
 
+## Delivery priorities — refreshed at 26b236c
+
+Latest application CI: run 35657153532 succeeded at 26b236c. The working tree was clean before this documentation refresh. Recorded counts are 176 automated tests, 68 fixture browser checks and 40 migrations; tests were not rerun for this plan. The canonical Notion roadmap and tracker schema were fetched again. Individual tracker statuses were not exhaustively re-queried; task mappings use the captured 92-task inventory and repository progress evidence.
+
+### First usable release
+
+The first delivery target is one complete, real journey: an administrator creates a workspace, invites a contributor, assigns a role, enables Scalar and sets a finite budget; the contributor signs in and uses sponsored Scalar; the administrator sees activity and measured usage; suspension and budget exhaustion stop access or spend. This spans the existing Phase 01–03 gates and is not complete today.
+
+Execute the next work in this order:
+
+1. **Finish OAuth configuration and authenticated identity acceptance.** Use the existing dedicated Convex deployment. Prove two real accounts and two organizations, invitations, switching, role enforcement and suspension. Resolve isolated nonproduction auth capacity before assigning preview credentials.
+2. **Confirm Scalar's actual provider control surface.** Inspect its real organization/member/access/limit APIs, authentication and test environment before designing another generic orchestration layer. Record each missing upstream endpoint or semantic guarantee explicitly. A CRM API key does not establish provisioning authority.
+3. **Connect the existing workers into one suspended-to-active lifecycle.** Reuse the implemented organization provisioning, suspended identity binding, capability snapshots, background refresh, capability staging/readback and finite-limit delivery. Add only missing orchestration, current-policy activation fencing, desired-versus-effective access, safe resume and reconciliation required by the real adapter.
+4. **Operate the lifecycle in a hosted environment.** Add least-privilege worker credentials, scheduling, health and failure visibility; expose authorized connect/create and recovery workflows. Verify real Scalar create/connect, provision, suspend, resume, remove and offboarding with provider receipts.
+5. **Measure and stop actual spend.** Implement ingestion, aggregation and hierarchical policy, connect Scalar usage and prove hard stops under concurrency and exhaustion. Complete sponsoring-organization commercial state and cost visibility.
+6. **Deliver the contributor workspace.** Follow Phases 04–06, then the real referral-to-payout loop and remaining canonical phases below.
+
+Independent work may proceed during an external blocker, but must identify which exit criterion it advances. New infrastructure is not a substitute for the live journey. Do not rebuild existing contracts, workers or administration screens merely because their provider acceptance is pending.
+
+### Scope and cleanup carried through every phase
+
+- Preserve the Company OS sibling design and source repository. Audit copied routes, components, assets and dependencies against actual product requirements; remove unrelated behavior after reference checks and affected-route verification.
+- Keep Scalar, Stored, Cadre, Operate, Marketer, Company OS and Tell Me in the product scope. Native access means real organization sponsorship, role-based views and access, provisioning/offboarding, usage/limits and scoped administrator activity visibility, not only launch links.
+- Keep each connected product authoritative for its domain. Company Human owns shared identity, access, commercial policy, human work/CRM, attribution, ledger and audit.
+- Every task ends with acceptance evidence, a coherent commit and synchronized implementation records. Local/CI checks, authenticated runtime proof and real-provider acceptance remain separate.
+
 ## Replanning checkpoint — 2026-09-21
 
 This refresh preserves the canonical phase numbers and does not restart completed infrastructure. The Notion roadmap and tracker schema were fetched again for this planning pass. Recorded test counts above were read from repository evidence; no application test suite was rerun for this documentation update.
@@ -24,6 +50,7 @@ Migration `0036_provisioner_receipt_retention.sql` and related provisioning code
 
 ### What has advanced since the previous baseline
 
+- Capability resolution contracts, immutable snapshots, restricted staging/readback execution, bounded background refresh and scoped delivery/freshness diagnostics are committed. They prepare desired access while the provider member remains suspended; final activation and runtime policy enforcement remain incomplete.
 - Exact usage-limit adapter contracts, immutable revision jobs, restricted apply/readback execution and administration diagnostics are committed. They have fixture-backed verification; no real provider hard stop has been demonstrated.
 - Existing-organization connection intent and dispatch are committed. Provider authorization, real Scalar transport and the user-facing connection flow still need implementation and acceptance.
 - Suspended member creation and receipt-backed identity binding exist. Effective entitlements, complete limit acknowledgement, safe activation/resume and reconciliation remain work to do.
