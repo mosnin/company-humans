@@ -1,15 +1,16 @@
 # Company Human — remaining phased build plan
 
-Rebased 2026-09-21 against application revision `b7c756a`, the implementation evidence, all 92 captured tracker tasks, and the freshly read canonical Notion roadmap. This is an execution plan, not a replacement PRD. Explicit owner directions apply: `mosnin/company-humans`, Convex OAuth, organization-sponsored ecosystem access, and all three beta configurations.
+Rebased 2026-09-21 against committed application revision `84653c1`, the implementation evidence, all 92 captured tracker tasks, and the freshly read canonical Notion roadmap. This is an execution plan, not a replacement PRD. Explicit owner directions apply: `mosnin/company-humans`, Convex OAuth, organization-sponsored ecosystem access, and all three beta configurations.
 
 ## Current position
 
 - Phase 00 is verified. Preserve the scaffold, shared contracts, IDs, migrations, seeds and CI; do not restart them.
 - Phase 01 has substantial implementation and security evidence, but real OAuth and the authenticated organization lifecycle remain unverified.
-- Phase 02 has catalog, organization provisioning machinery, diagnostics, product-member mapping and durable offboarding intent. No real Scalar provisioning or member access has been demonstrated. Persisting a command does not revoke access in a remote product.
+- Phase 02 has catalog, organization provisioning machinery, member diagnostics, product-member mapping, local product disable, and a restricted suspend/remove executor with durable receipts and service audit. No real Scalar provisioning or member access has been demonstrated. Persisting a command does not revoke access in a remote product.
 - Phases 03–15 remain unfinished; Phase 16 is conditional expansion.
 - Dedicated Convex, Neon PostgreSQL and Vercel resources exist. The stable web deployment was verified at `8d72e92`; latest code is newer. Preview READY does not prove production acceptance.
-- At the application baseline: 58 automated tests, 22 browser component checks using explicit fixtures, 24 migrations, and typecheck/lint/build evidence. [CI at b7c756a passed](https://github.com/mosnin/company-humans/actions/runs/35635987769). These checks do not prove authenticated or provider workflows.
+- At the committed application baseline: 69 automated tests, 28 browser component checks using explicit fixtures, 28 applied migrations, and typecheck/lint/build evidence. [CI at 84653c1 passed](https://github.com/mosnin/company-humans/actions/runs/35640077777). These checks do not prove authenticated or provider workflows.
+- Uncommitted entitlement contracts, revision storage migration 0029 and a server configuration boundary are work in progress. They have not been tested, applied or accepted and do not grant access.
 
 ## Execution rules
 
@@ -37,9 +38,9 @@ Audit cleanup belongs to the phase touching that code: classify copied source as
 **Tracker:** CH-13–CH-19. **Status:** Groundwork implemented; provider acceptance absent.
 
 1. Finish Applications administration: connect/create organization, enable/disable product, configure access, view health, inspect failures and request safe retry/reconciliation.
-2. Finish the member-command executor: leases, bounded retries, stable idempotency, provider receipts, stale revision rejection, ambiguous-result reconciliation and hosted worker operation under restricted credentials.
-3. Implement product disable and offboarding through the full chain. Workspace suspension/removal must deny local access immediately and durably reconcile remote access; expose pending/failed remote revocation honestly.
-4. Implement organization/team/member capability entitlements and desired-versus-effective access. Re-enable only through authorized intent; do not resurrect stale access on membership resume.
+2. Extend the verified suspend/remove executor to provisioning and resume. Retain leases, bounded retries, stable idempotency, validated receipts and stale revision rejection. Add provider-aware reconciliation for ambiguous results and hosted worker operation under restricted credentials.
+3. Complete the remote portion of product disable and offboarding; local disable, durable commands, restricted denial execution and admin progress views are implemented. Workspace suspension/removal must deny local access immediately and durably reconcile remote access; expose pending/failed remote revocation honestly.
+4. Finish and verify versioned organization defaults and member overrides, explicit deny precedence, scoped administration and desired-versus-effective access; apply role/team scope through the canonical resolver. Re-enable only through authorized intent; do not resurrect stale access on membership resume.
 5. Confirm Scalar's supported organization/member control API and authentication. Its existing account API key or CRM MCP access is not proof of a provisioning contract. Document upstream contract gaps before altering architecture.
 6. Implement Scalar connect/create, provision, suspend, resume, remove, access application, limits, health and safe launch/deep links. Bind all external identities to their canonical organization/member mapping.
 7. Prove role-aware member application visibility and sponsored access without separate contributor purchases. Capture auditable provider operation state for administrators.
@@ -205,8 +206,8 @@ Then evaluate public adapter SDK, marketplace/security review, additional payout
 
 1. Finish OAuth provider configuration and prove one real sign-in/sign-out with canonical identity.
 2. Run the real two-organization identity lifecycle and repair findings; verify the current release and close Phase 01 only with evidence.
-3. Finish product disable/offboarding and the durable member executor with stale-command and ambiguous-provider-result tests.
-4. Finish entitlement/access administration and hosted worker operation.
+3. Finish and verify the uncommitted entitlement configuration task: contract and database tests, tenant denial, revision concurrency, immutable history and audit atomicity. This remains desired policy until enforcement is proven.
+4. Add entitlement/access administration, provision/resume execution, safe restore and provider-aware reconciliation; configure restricted hosted workers. Preserve the completed local disable and suspend/remove executor.
 5. Connect real Scalar organization/member lifecycle and pass Phase 02.
 6. Connect real Scalar usage and enforce budgets before broader expensive access.
 7. Build the contributor shell, then continue the canonical remaining phases above.
