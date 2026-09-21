@@ -89,3 +89,7 @@ Canonical documents 03 and 05 require actor attribution and audit for adapter ac
 ## 2026-09-21 — explicit deny and preserved entitlement history
 
 Organization defaults and member overrides follow canonical deny precedence: any explicit deny wins; otherwise explicit allow requests access; missing/inherited settings default to deny. Inherit releases one layer's preference through a new revision without deleting its history. This configuration helper must never authorize product usage on its own. CH-18 remains unaccepted until real Scalar capability and usage-limit enforcement works.
+
+## 2026-09-21 — member bootstrap access gap identified before execution
+
+The V1 member provision contract does not express initial remote denial while entitlements and budgets are applied. Canonical provisioning orders these steps before launch, but hidden navigation cannot protect direct product access. [Control-gap assessment](member-provisioning-control-gap.md) records the required provider verification and versioning boundary before adding an allow worker. No adapter contract has been silently replaced and no provider acceptance is claimed.

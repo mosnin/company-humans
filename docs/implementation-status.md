@@ -167,3 +167,9 @@ The editor displays saved deny precedence, selected revision, unavailable capabi
 Verified: 92 automated tests, typecheck, lint, build and 40 explicit-fixture desktop/mobile browser checks. Added save/revision reuse, conflict, retry, empty catalog, disabled allow, busy state, malformed receipt and member-allow/organization-deny scenarios. Mobile screenshot inspected; no page overflow. Initial browser failures were an ambiguous text locator and an option-disabled matcher; both corrected to target the intended element/property. No migration required.
 
 The updated member-diagnostics projection also passed its restricted-role regression on hosted verification PostgreSQL. Prior scoped-read commit 8cbf692 passed CI 35641962063.
+
+## Live connection recheck and member bootstrap review — 2026-09-21
+
+Symbolic's updated endpoint now advertises OAuth (connection check 19:06:20 UTC), resolving the earlier missing-challenge failure. Native authorization launched and reached the Google account chooser; all displayed accounts were signed out. User sign-in and authenticated tool/read verification remain required. No Context Compiler or Flow execution is claimed.
+
+Reviewed canonical provisioning document 05 against the actual V1 interface and documented the initial-member-access gap before implementing remote grants. The required next proof is remote default denial until current entitlements and finite budgets are acknowledged. See [assessment](member-provisioning-control-gap.md). Existing entitlement UI is unchanged.

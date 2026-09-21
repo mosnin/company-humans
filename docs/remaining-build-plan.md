@@ -41,7 +41,7 @@ Audit cleanup belongs to the phase touching that code: classify copied source as
 2. Extend the verified suspend/remove executor to provisioning and resume. Retain leases, bounded retries, stable idempotency, validated receipts and stale revision rejection. Add provider-aware reconciliation for ambiguous results and hosted worker operation under restricted credentials.
 3. Complete the remote portion of product disable and offboarding; local disable, durable commands, restricted denial execution and admin progress views are implemented. Workspace suspension/removal must deny local access immediately and durably reconcile remote access; expose pending/failed remote revocation honestly.
 4. Finish and verify versioned organization defaults and member overrides, explicit deny precedence, scoped administration and desired-versus-effective access; apply role/team scope through the canonical resolver. Re-enable only through authorized intent; do not resurrect stale access on membership resume.
-5. Confirm Scalar's supported organization/member control API and authentication. Its existing account API key or CRM MCP access is not proof of a provisioning contract. Document upstream contract gaps before altering architecture.
+5. Resolve the [member bootstrap control gap](member-provisioning-control-gap.md): remote identity creation must not permit spend before entitlements and finite limits are applied. Confirm Scalar's supported organization/member control API and authentication. Its existing account API key or CRM MCP access is not proof of a provisioning contract. Document upstream contract gaps before altering architecture.
 6. Implement Scalar connect/create, provision, suspend, resume, remove, access application, limits, health and safe launch/deep links. Bind all external identities to their canonical organization/member mapping.
 7. Prove role-aware member application visibility and sponsored access without separate contributor purchases. Capture auditable provider operation state for administrators.
 
@@ -200,7 +200,7 @@ Then evaluate public adapter SDK, marketplace/security review, additional payout
 | Chippi | Approved integration environment, verified merchant events and real referral persistence | SDKs, ingestion, replay, attribution and ledger tests |
 | Payout provider | Provider selection, account/recipient onboarding and applicable operational/compliance requirements | Provider-neutral ledger, transport interface and failure tests |
 | Real validation participants | Chippi contributors and three external beta teams | Preparation and automated acceptance; not dogfood/pricing proof |
-| Symbolic | Repair/reconnect its live Context/Flow authorization, currently returning 401 without usable OAuth discovery | Keep the compiled goal route and repository evidence current; do not claim a Symbolic run |
+| Symbolic | OAuth discovery is now available; complete native account sign-in and verify Context/Flow tool access | Keep the compiled goal route and repository evidence current; do not claim a Symbolic run |
 
 ## Immediate bounded task queue
 
