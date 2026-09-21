@@ -1,4 +1,4 @@
-import { OrganizationIdSchema, ProductInstanceIdSchema, UserIdSchema, type Capability } from "@company-human/contracts";
+import { OrganizationIdSchema, ProductInstanceIdSchema, UserIdSchema, MembershipIdSchema, ProductCatalogMetadataV1Schema, EntitlementEffectSchema, requestedEntitlementEffect, type Capability } from "@company-human/contracts";
 import { Client } from "pg";
 import { setServiceContext } from "./service-context.js";
 
@@ -142,5 +142,47 @@ export async function listApplicationMemberDiagnostics(databaseUrl: string, acto
       LEFT JOIN public.member_denial_jobs j ON j.organization_id=c.organization_id AND j.command_id=c.id
       WHERE pm.organization_id=$1 AND pm.product_instance_id=$2 ORDER BY pm.created_at,pm.id LIMIT 50 OFFSET $3`,[organizationId,instanceId,(currentPage-1)*50]);
     return {productName:instance.rows[0].productName,members:records.rows,total:Number(count.rows[0]!.total),page:currentPage};
+  });
+}
+
+/** Desired policy settings only. Never use this projection to authorize product activity. */
+export async function readApplicationEntitlements(databaseUrl: string, actorUserId: string, organizationId: string, instanceId: string, membershipId: string | null = null) {
+  ProductInstanceIdSchema.parse(instanceId);
+  if (membershipId !== null) MembershipIdSchema.parse(membershipId);
+  return readAdministration(databaseUrl, actorUserId, organizationId, ["applications.manage"], async client => {
+    const instance = await client.query<{ productName: string; catalog_status: string; catalog_metadata: unknown }>(
+      `SELECT p.display_name AS "productName", p.catalog_status, p.catalog_metadata
+       FROM public.product_instances i JOIN public.products p ON p.id=i.product_id
+       WHERE i.organization_id=$1 AND i.id=$2`, [organizationId, instanceId]);
+    const product = instance.rows[0];
+    if (!product) throw new AdministrationDenied();
+    let memberName: string | null = null;
+    if (membershipId !== null) {
+      const member = await client.query<{ name: string }>(`SELECT COALESCE(u.display_name,'Member') AS name
+        FROM public.memberships m JOIN public.users u ON u.id=m.user_id
+        WHERE m.organization_id=$1 AND m.id=$2`, [organizationId, membershipId]);
+      if (!member.rows[0]) throw new AdministrationDenied();
+      memberName = member.rows[0].name;
+    }
+    const catalog = ProductCatalogMetadataV1Schema.safeParse(product.catalog_metadata);
+    const supported = catalog.success ? catalog.data.supportedCapabilities : [];
+    const policies = await client.query<{ capability: string; membership_id: string | null; revision: number; effect: string }>(
+      `SELECT e.capability,e.membership_id,r.revision,r.effect FROM public.entitlement_policies e
+       JOIN LATERAL (SELECT revision,effect FROM public.entitlement_policy_revisions
+         WHERE organization_id=e.organization_id AND entitlement_id=e.id ORDER BY revision DESC LIMIT 1) r ON true
+       WHERE e.organization_id=$1 AND e.product_instance_id=$2
+         AND (e.membership_id IS NULL OR e.membership_id=$3)`, [organizationId, instanceId, membershipId]);
+    const capabilities = [...new Set([...supported, ...policies.rows.map(row => row.capability)])].sort();
+    const settings = capabilities.map(capability => {
+      const organization = policies.rows.find(row => row.capability===capability && row.membership_id===null);
+      const member = membershipId===null ? undefined : policies.rows.find(row => row.capability===capability && row.membership_id===membershipId);
+      const organizationEffect = EntitlementEffectSchema.nullable().parse(organization?.effect ?? null);
+      const memberEffect = EntitlementEffectSchema.nullable().parse(member?.effect ?? null);
+      const selected = membershipId===null ? organization : member;
+      return { capability, effect: EntitlementEffectSchema.parse(selected?.effect ?? 'inherit'), revision: selected?.revision ?? 0,
+        organizationEffect, memberEffect, requestedEffect: requestedEntitlementEffect(organizationEffect, memberEffect),
+        allowAvailable: catalog.success && product.catalog_status!=='retired' && supported.includes(capability) };
+    });
+    return { productName: product.productName, membershipId, memberName, settings, providerAccessConfirmed: false as const };
   });
 }

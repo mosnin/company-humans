@@ -10,7 +10,7 @@ Rebased 2026-09-21 against committed application revision `84653c1`, the impleme
 - Phases 03–15 remain unfinished; Phase 16 is conditional expansion.
 - Dedicated Convex, Neon PostgreSQL and Vercel resources exist. The stable web deployment was verified at `8d72e92`; latest code is newer. Preview READY does not prove production acceptance.
 - At the committed application baseline: 69 automated tests, 28 browser component checks using explicit fixtures, 28 applied migrations, and typecheck/lint/build evidence. [CI at 84653c1 passed](https://github.com/mosnin/company-humans/actions/runs/35640077777). These checks do not prove authenticated or provider workflows.
-- Subsequent entitlement configuration prerequisite: contracts, migration 0029 and scoped server writes passed local and hosted verification. The suite now has 72 tests and 29 applied migrations. The authenticated mutation API is implemented; administration UI, reads and effective enforcement remain unfinished; saved settings do not grant access.
+- Subsequent entitlement configuration prerequisite: contracts, migration 0029 and scoped server writes passed local and hosted verification. The suite now has 72 tests and 29 applied migrations. The authenticated mutation API is implemented; scoped administration reads are verified; administration UI and effective enforcement remain unfinished; saved settings do not grant access.
 
 ## Execution rules
 

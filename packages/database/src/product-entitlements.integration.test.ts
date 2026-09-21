@@ -5,6 +5,7 @@ import { createCanonicalId } from "@company-human/contracts";
 import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { setProductEntitlement } from "./product-entitlements.js";
+import { readApplicationEntitlements } from "./administration.js";
 const databaseUrl = process.env.DATABASE_URL;
 describe.skipIf(!databaseUrl)("entitlement policy history", () => {
   it("serializes edits, preserves history and denies foreign tenants under restricted credentials", async () => {
@@ -32,6 +33,16 @@ describe.skipIf(!databaseUrl)("entitlement policy history", () => {
       await setProductEntitlement(url.toString(),{...input,effect:'deny',expectedRevision:1});
       const override=await setProductEntitlement(url.toString(),{...input,membershipId:org.ownerMembershipId});
       expect(override.entitlementId).not.toBe(id);
+      const view=await readApplicationEntitlements(url.toString(),alice,org.organizationId,instance,org.ownerMembershipId);
+      expect(view.providerAccessConfirmed).toBe(false);
+      expect(view.settings).toEqual([{capability:'lead-enrichment',effect:'allow',revision:1,organizationEffect:'deny',memberEffect:'allow',requestedEffect:'deny',allowAvailable:true}]);
+      const defaultView=await readApplicationEntitlements(url.toString(),alice,org.organizationId,instance);
+      expect(defaultView.settings[0]?.revision).toBe(2);
+      expect(defaultView.settings[0]?.memberEffect).toBeNull();
+      await expect(readApplicationEntitlements(url.toString(),bob,org.organizationId,instance)).rejects.toThrow();
+      await expect(readApplicationEntitlements(url.toString(),alice,org.organizationId,instance,other.ownerMembershipId)).rejects.toThrow();
+      await expect(readApplicationEntitlements(url.toString(),bob,other.organizationId,instance)).rejects.toThrow();
+
       await expect(setProductEntitlement(url.toString(),{...input,expectedRevision:1})).rejects.toThrow('Reload');
       await expect(setProductEntitlement(url.toString(),{...input,actorUserId:bob})).rejects.toThrow();
       await expect(setProductEntitlement(url.toString(),{...input,membershipId:other.ownerMembershipId})).rejects.toThrow('Membership unavailable');
@@ -54,6 +65,10 @@ describe.skipIf(!databaseUrl)("entitlement policy history", () => {
       await admin.query("UPDATE products SET catalog_status='retired' WHERE id=$1",[product]);
       await expect(setProductEntitlement(url.toString(),{...input,expectedRevision:2})).rejects.toThrow('Capability unavailable');
       await setProductEntitlement(url.toString(),{...input,effect:'inherit',expectedRevision:2});
+      const retired=await readApplicationEntitlements(url.toString(),alice,org.organizationId,instance);
+      expect(retired.settings[0]?.allowAvailable).toBe(false);
+      expect(retired.settings[0]?.revision).toBe(3);
+
       expect((await admin.query('SELECT revision,effect FROM entitlement_policy_revisions WHERE entitlement_id=$1 ORDER BY revision',[id])).rows).toEqual([{revision:1,effect:'allow'},{revision:2,effect:'deny'},{revision:3,effect:'inherit'}]);
       expect((await admin.query("SELECT count(*)::int n FROM identity_audit_events WHERE target_id=$1",[id])).rows[0].n).toBe(3);
       await runtime.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)",[bob,other.organizationId]);
