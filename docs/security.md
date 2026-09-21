@@ -158,3 +158,7 @@ Candidate provider IDs are untrusted intent. requestProductConnection requires a
 ## Provisioning receipts after authority revocation
 
 Migration 0036 permits the restricted provisioner to retain tenant-scoped in-flight receipts after the initiating human loses applications.manage. New claims still require current authority. Completion requires the running unexpired lease and original initiating user; activation retains its separate current-authorization and eligible-instance checks. Expected activation denial records a failed operation requiring reconciliation while preserving the actual provider outcome/reference in immutable attempt history. Worker events use service actor organization-provisioner with initiatingUserId context. Runtime worker checks exclude general web-service credentials. No hosted execution login is created.
+
+## Database initiating-authority enforcement
+
+Migration 0037 makes both privileged organization activation functions independently require the immutable initiating user of the current unfinished attempt, matching tenant, operation, attempt number and lease. An otherwise authorized replacement administrator cannot activate a lease claimed by a now-suspended administrator. The limited activation owner receives only scoped attempt reads; execution grants, owner isolation and existing capability/instance checks remain in place. This protects direct worker SQL calls as well as the TypeScript completion boundary.

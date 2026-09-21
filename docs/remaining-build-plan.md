@@ -9,7 +9,7 @@ Rebased 2026-09-21 against committed application revision `2d4b5d7`, current imp
 - Phase 02 has catalog, organization provisioning machinery, member diagnostics, product-member mapping, local product disable, and a restricted suspend/remove executor with durable receipts and service audit. No real Scalar provisioning or member access has been demonstrated. Persisting a command does not revoke access in a remote product.
 - Phases 03–15 remain unfinished; Phase 16 is conditional expansion.
 - Dedicated Convex, Neon PostgreSQL and Vercel resources exist. The stable web deployment was verified at `8d72e92`; latest code is newer. Preview READY does not prove production acceptance.
-- Current recorded verification: 166 automated contract/database/route/Convex tests; 36 applied migrations; typecheck/lint/build pass. The usage-limit editor has recorded 62 passing desktop/mobile fixture checks and full local checks. These are recorded results, not a fresh test run or live provider acceptance.
+- Current recorded verification: 167 automated contract/database/route/Convex tests; 37 applied migrations; typecheck/lint/build pass. The usage-limit editor has recorded 62 passing desktop/mobile fixture checks and full local checks. These are recorded results, not a fresh test run or live provider acceptance.
 - Exact finite organization/member usage limits, immutable revisions, scoped administration reads and the authenticated mutation API are committed. The usage-limit editor is implemented and locally verified. Saved limits do not yet stop remote product usage.
 - Organization/member entitlement configuration, scoped reads, mutation API and administration UI are implemented. Member access requests and tenant-scoped member selection are implemented. Both return or display unconfirmed provider access; neither grants remote access.
 - Adapter V2 now requires creating a remote member suspended and validates that receipt. The restricted V2 suspended-creation worker and receipt-backed suspended identity binding are implemented with local and hosted database verification; real Scalar transport, policy/limit acknowledgement, reconciliation and final activation remain incomplete. Existing V1 organization and denial workers are preserved.
@@ -20,7 +20,7 @@ This refresh preserves the canonical phase numbers and does not restart complete
 
 ### Completed recovery change
 
-Migration `0036_provisioner_receipt_retention.sql` and related provisioning code/tests now retain receipts after permission revocation/product disable, use service actor auditing and enforce the original initiating-user fence. Final local tests/typecheck/lint/build and both affected hosted scenarios passed; all four databases have migration 0036 and production replay made no changes. Retaining a provider receipt does not itself implement reconciliation or safe activation.
+Migration `0036_provisioner_receipt_retention.sql` and related provisioning code/tests now retain receipts after permission revocation/product disable, use service actor auditing and enforce the original initiating-user fence. Final local tests/typecheck/lint/build and both affected hosted scenarios passed; all four databases have migration 0036 and production replay made no changes. Migration 0037 additionally enforces the original initiating actor inside both privileged SQL activation functions; direct SQL actor substitution was reproduced and repaired. Retaining a provider receipt does not itself implement reconciliation or safe activation.
 
 ### What has advanced since the previous baseline
 
