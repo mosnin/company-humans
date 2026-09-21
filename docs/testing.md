@@ -349,3 +349,9 @@ Four desktop/mobile checks passed against the actual development server: local C
 This proves anonymous denial and rendered configuration/error states in a real local runtime. It does not prove OAuth consent, session establishment, tenant lifecycle or production deployment. The existing 233 automated and 80 browser fixture counts remain distinct from these four runtime checks. No application behavior or migration changed.
 
 The local production build compiled successfully but failed while writing its TypeScript/Turbopack cache with ENOSPC. Only this repository's generated `.next` output was removed afterward. This run is not a passing production build; hosted CI remains the build gate for this test-only increment.
+
+## Production-build anonymous runtime CI — in progress
+
+The quality workflow now runs scripts/verify-anonymous-runtime-ci.mjs after the fixture browser suite. The runner is restricted to GitHub Actions with a loopback company_human_test database and refuses preexisting deployment selection or .env.local. It creates separate nonsuperuser/non-BYPASSRLS database logins, starts an anonymous local Convex backend, waits for actual identity function deployment, sets independent ephemeral signing keys, builds the app with the local public URL, starts next start and runs the four real-runtime anonymous checks. No production secret or OAuth provider credential is required. Private keys/passwords are not printed or uploaded. The ordinary production build is performed inside this step so its compiled client targets the ephemeral backend.
+
+Syntax/diff checks passed locally. Full CI execution is required before accepting this workflow change; it cannot run against the existing developer checkout by design. Real OAuth and tenant lifecycle remain separate acceptance gates.
