@@ -79,3 +79,7 @@ A current successful bootstrap receipt now binds product_memberships.external_me
 ## Finite product usage limit intent (0032)
 
 product_usage_limits uses canonical ch_lim IDs, tenant-bound instance/member references, a named catalog meter, immutable unit and UTC day/week/month window. Null membership is the organization/product scope; an explicit membership adds a member constraint. Quantities append to product_usage_limit_revisions as exact decimal values, with actor, timestamp and consecutive revision. Runtime roles cannot update/delete policies or history. Unit consistency is enforced across an instance's scopes/windows. No aggregation, reservation or effective allowance is implied.
+
+## Usage-limit execution journal
+
+Migration 0033 adds usage_limit_jobs and usage_limit_attempts. Job identity is (usage_limit_id, revision), with composite organization foreign keys to immutable policy history. New revisions enqueue atomically through an invoker-rights trigger. Backfill selects the latest revision per policy. Jobs reserve bounded lease/retry state; attempts retain immutable provenance and completed apply/readback receipts. No worker currently executes these rows. No job or receipt substitutes for the complete current-policy activation gate.

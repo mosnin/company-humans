@@ -28,6 +28,7 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       expect(concurrent.filter(x => x.status === "fulfilled")).toHaveLength(1); expect(concurrent.filter(x => x.status === "rejected")).toHaveLength(4);
       const first = concurrent.find(x => x.status === "fulfilled"); if (first?.status !== "fulfilled") throw new Error("No saved revision");
       const id = first.value.usageLimitId;
+      expect((await admin.query("SELECT revision,status,attempt_count FROM usage_limit_jobs WHERE usage_limit_id=$1", [id])).rows).toEqual([{ revision: 1, status: 'pending', attempt_count: 0 }]);
       expect(first.value.maximumQuantity).toBe("999999999999.999999");
       expect((await admin.query("SELECT maximum_quantity FROM product_usage_limit_revisions WHERE usage_limit_id=$1", [id])).rows[0].maximum_quantity).toBe("999999999999.999999");
       const firstRead = await readApplicationUsageLimits(url.toString(), alice, org.organizationId, instance);
@@ -36,6 +37,7 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       expect(firstRead.settings.find(row => row.window === "utc_day")).toEqual({ meterKey: "enriched-leads", unit: "lead", window: "utc_day", revision: 0, maximumQuantity: null, organizationMaximumQuantity: null, memberMaximumQuantity: null, nonzeroAvailable: true });
       const stopped = await setProductUsageLimit(url.toString(), { ...input, maximumQuantity: "0.000000", expectedRevision: 1 });
       expect(stopped.maximumQuantity).toBe("0");
+      expect((await admin.query("SELECT revision,status FROM usage_limit_jobs WHERE usage_limit_id=$1 ORDER BY revision", [id])).rows).toEqual([{ revision: 1, status: 'pending' }, { revision: 2, status: 'pending' }]);
       const member = await setProductUsageLimit(url.toString(), { ...input, membershipId: org.ownerMembershipId, maximumQuantity: "2.5" });
       expect(member.usageLimitId).not.toBe(id);
       const memberRead = await readApplicationUsageLimits(url.toString(), alice, org.organizationId, instance, org.ownerMembershipId);
@@ -68,6 +70,7 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       try {
         await expect(setProductUsageLimit(url.toString(), { ...input, maximumQuantity: "1", expectedRevision: 2 })).rejects.toThrow("fixture audit failure");
         expect((await admin.query("SELECT max(revision) n FROM product_usage_limit_revisions WHERE usage_limit_id=$1", [id])).rows[0].n).toBe(2);
+        expect((await admin.query("SELECT max(revision) n FROM usage_limit_jobs WHERE usage_limit_id=$1", [id])).rows[0].n).toBe(2);
       } finally { await admin.query(`DROP TRIGGER ${guard} ON identity_audit_events`); await admin.query(`DROP FUNCTION public.${guard}()`); }
       await admin.query("UPDATE products SET catalog_status='retired' WHERE id=$1", [product]);
       await expect(setProductUsageLimit(url.toString(), { ...input, expectedRevision: 2 })).rejects.toThrow("Meter unavailable");
@@ -80,13 +83,29 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       await runtime.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)", [bob, other.organizationId]);
       expect((await runtime.query("SELECT * FROM product_usage_limits WHERE id=$1", [id])).rowCount).toBe(0);
       expect((await runtime.query("SELECT * FROM product_usage_limit_revisions WHERE usage_limit_id=$1", [id])).rowCount).toBe(0);
+      expect((await runtime.query("SELECT * FROM usage_limit_jobs WHERE usage_limit_id=$1", [id])).rowCount).toBe(0);
+      expect((await runtime.query("SELECT * FROM usage_limit_attempts WHERE usage_limit_id=$1", [id])).rowCount).toBe(0);
+      await expect(runtime.query("INSERT INTO usage_limit_jobs(organization_id,usage_limit_id,revision) VALUES($1,$2,3)", [org.organizationId,id])).rejects.toThrow();
+      await expect(admin.query("INSERT INTO usage_limit_jobs(organization_id,usage_limit_id,revision) VALUES($1,$2,4)", [other.organizationId,id])).rejects.toThrow();
       await expect(runtime.query("INSERT INTO product_usage_limit_revisions VALUES($1,$2,4,1,$3,now())", [org.organizationId, id, bob])).rejects.toThrow();
       await runtime.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)", [alice, org.organizationId]);
+      expect((await runtime.query("SELECT * FROM usage_limit_jobs WHERE usage_limit_id=$1", [id])).rowCount).toBe(3);
+      await expect(runtime.query("UPDATE usage_limit_jobs SET status='succeeded' WHERE usage_limit_id=$1", [id])).rejects.toThrow();
+      await expect(runtime.query("DELETE FROM usage_limit_jobs WHERE usage_limit_id=$1", [id])).rejects.toThrow();
+      await expect(runtime.query("INSERT INTO usage_limit_jobs(organization_id,usage_limit_id,revision,status) VALUES($1,$2,4,'succeeded')", [org.organizationId,id])).rejects.toThrow();
+      await expect(runtime.query("INSERT INTO usage_limit_attempts(organization_id,usage_limit_id,revision,attempt_number,lease_token) VALUES($1,$2,3,1,gen_random_uuid())", [org.organizationId,id])).rejects.toThrow();
       await expect(runtime.query("INSERT INTO product_usage_limit_revisions VALUES($1,$2,5,1,$3,now())", [org.organizationId, id, alice])).rejects.toThrow("must follow");
       for (const invalid of ["-1", "NaN", "Infinity", "0.0000001", "1000000000000"]) await expect(runtime.query("INSERT INTO product_usage_limit_revisions VALUES($1,$2,4,$3,$4,now())", [org.organizationId, id, invalid, alice])).rejects.toThrow();
       await expect(runtime.query("UPDATE product_usage_limit_revisions SET maximum_quantity=100 WHERE usage_limit_id=$1", [id])).rejects.toThrow();
       await expect(runtime.query("DELETE FROM product_usage_limit_revisions WHERE usage_limit_id=$1", [id])).rejects.toThrow();
       await expect(admin.query("INSERT INTO product_usage_limits(id,organization_id,product_instance_id,membership_id,meter_key,unit,window_key,created_by_user_id) VALUES($1,$2,$3,$4,'other','lead','utc_day',$5)", [createCanonicalId("usageLimit"), org.organizationId, instance, other.ownerMembershipId, alice])).rejects.toThrow();
+      // Future workers may complete an attempt once; provenance and completed receipts cannot change.
+      await admin.query("INSERT INTO usage_limit_attempts(organization_id,usage_limit_id,revision,attempt_number,lease_token) VALUES($1,$2,3,1,gen_random_uuid())", [org.organizationId,id]);
+      await expect(admin.query("UPDATE usage_limit_attempts SET worker_role='forged' WHERE usage_limit_id=$1", [id])).rejects.toThrow("history is immutable");
+      await expect(admin.query("UPDATE usage_limit_attempts SET revision=2 WHERE usage_limit_id=$1", [id])).rejects.toThrow("history is immutable");
+      await admin.query("UPDATE usage_limit_attempts SET finished_at=now(),outcome='permanent_failure',failure_code='fixture_only' WHERE usage_limit_id=$1", [id]);
+      await expect(admin.query("UPDATE usage_limit_attempts SET readback_receipt='{}'::jsonb WHERE usage_limit_id=$1", [id])).rejects.toThrow("history is immutable");
+      await expect(runtime.query("UPDATE usage_limit_attempts SET outcome='succeeded' WHERE usage_limit_id=$1", [id])).rejects.toThrow();
       // An organization member without budgets.manage cannot edit or read policy history.
       const bobMembership = createCanonicalId("membership");
       await admin.query("INSERT INTO memberships(id,organization_id,user_id,status,role_key) VALUES($1,$2,$3,'active','contributor')", [bobMembership, org.organizationId, bob]);
@@ -96,7 +115,7 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       expect((await runtime.query("SELECT * FROM product_usage_limits WHERE id=$1", [id])).rowCount).toBe(0);
     } finally {
       await runtime.end();
-      for (const table of ["product_usage_limit_revisions", "product_usage_limits", "identity_audit_events", "product_instances", "memberships", "roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`, [orgs]);
+      for (const table of ["usage_limit_attempts", "usage_limit_jobs", "product_usage_limit_revisions", "product_usage_limits", "identity_audit_events", "product_instances", "memberships", "roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`, [orgs]);
       await admin.query("DELETE FROM organizations WHERE id=ANY($1)", [orgs]); await admin.query("DELETE FROM users WHERE id=ANY($1)", [[alice, bob]]);
       await admin.query("DELETE FROM products WHERE id=$1", [product]); await admin.query(`DROP ROLE ${role}`); await admin.end();
     }

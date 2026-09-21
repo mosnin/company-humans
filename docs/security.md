@@ -140,3 +140,7 @@ All 157 automated tests (17 contracts, 19 database, 121 web), typecheck, lint an
 readApplicationUsageLimits requires budgets.manage and validates tenant instance/member identity. It returns current exact quantities/revisions for the selected scope, separate organization/member caps, immutable unit metadata, explicit UTC windows and catalog availability. Null is unconfigured, not unlimited. Historical settings remain visible after catalog retirement or metadata loss; nonzero configuration is then unavailable. No effective allowance, remaining balance or provider enforcement is inferred.
 
 All 157 automated tests, typecheck, lint and production build pass. The expanded restricted-role scenario covers current revision selection, exact decimal preservation, unconfigured versus zero, organization/member separation, historical settings, foreign actor/instance/member denial and missing-budget-permission denial. No migration or UI changed. Actual OAuth, provider application, usage aggregation and Scalar enforcement remain outstanding.
+
+## Usage-limit journal boundary
+
+The web service has only scoped SELECT and column-specific INSERT of organization/limit/revision into usage_limit_jobs. Default state is pending. It cannot UPDATE/DELETE jobs, INSERT attempts, or fabricate execution status. Both tables enforce RLS and composite tenant references. The enqueue trigger uses invoker rights. Attempt updates cannot alter provenance and cannot modify completed history. Restricted worker grants and execution are not yet installed.

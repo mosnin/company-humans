@@ -91,3 +91,5 @@ Finite product/member meter policies are now persisted as configuration intent. 
 ## Exact usage limit adapter extension
 
 ProductUsageLimitAdapterV1 extends V2 with usageLimitContractVersion=1, applyUsageLimit and getUsageLimitState. Requests/receipts identify exact persisted policy revisions and verified external targets. Organization caps cover aggregate usage; revision updates preserve counters and suspension. Strict schemas and readback matching are implemented; provider semantics still need live verification. Legacy applyLimits dictionaries remain available only for existing callers, and cannot satisfy this extension. See [semantics and compatibility](usage-limit-semantics.md). No executor or provider implementation is registered yet.
+
+Saved usage-limit revisions now enqueue durable jobs atomically. The journal supports future leases, bounded attempts and immutable apply/readback receipts. No transport or scheduler consumes it yet; queued configuration must not be displayed as applied or enforced. Superseded revisions must be rejected by the future executor before provider calls and at completion.

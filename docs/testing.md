@@ -18,7 +18,7 @@ Migration, seed and database tests require `DATABASE_URL`. Without it, integrati
 
 ## Latest recorded evidence
 
-164 automated tests (24 contracts, 19 database, 121 web), typecheck, lint and production build pass for the exact usage-limit adapter extension. The 56 fixture-backed desktop/mobile browser checks remain recorded from the preceding UI increment. All four configured databases have 32 migrations. See chronological evidence below for scope and limitations.
+164 automated tests (24 contracts, 19 database, 121 web), typecheck, lint and production build pass for the exact usage-limit adapter extension. The 56 fixture-backed desktop/mobile browser checks remain recorded from the preceding UI increment. All four configured databases have 33 migrations. See chronological evidence below for scope and limitations.
 
 ## Historical foundation evidence
 
@@ -193,3 +193,13 @@ Verified for this increment: 157 automated tests (17 contracts, 19 database, 121
 Added a separately versioned V2 adapter extension for applying and reading back complete finite limit revisions. Strict schemas include canonical scope/revision, bound external organization/member, exact quantity/unit/window, aggregate organization scope, hard-stop mode and preserved accumulated usage. Registration rejects incompatible adapters without invoking them. The readback matcher rejects any changed policy or provider identity; legacy numeric dictionaries cannot satisfy it. Existing V1/V2 operations remain unchanged. Compatibility and migration prerequisites were documented before implementation.
 
 All 164 automated tests (24 contracts, 19 database, 121 web), typecheck, lint and production build pass. Seven new contract tests cover exact values, scope mismatches, idempotency, incompatibility, stale/foreign/reinterpreted readback, counter-reset/weaker-mode denial and normalized failures. No UI or database migration changed; the 56 browser checks remain recorded from 2c2c94c, whose hosted CI 35648547352 passed. No actual adapter transport, durable policy executor, effective resolver, activation or Scalar enforcement is introduced. CH-18 and Phase 02 remain incomplete.
+
+## Durable usage-limit dispatch journal — 2026-09-21
+
+Migration 0033 adds tenant-bound jobs keyed by immutable limit revision, bounded attempt/lease fields and protected attempt provenance/receipts. An invoker-rights trigger queues new revisions atomically with configuration and audit; existing policies enqueue only their latest revision. Web service credentials can enqueue default-pending intent and read authorized records, but cannot claim jobs, change status, fabricate receipts or delete history. No worker login, executor, schedule or provider enforcement is installed.
+
+All 164 automated tests, typecheck, lint and production build pass. The expanded restricted-role scenario proves concurrent saves produce one job, audit failure rolls back queued intent, cross-tenant reads/writes fail, web credentials cannot complete jobs or insert receipts, and completed attempt provenance/receipts cannot change. It also passed on hosted verification PostgreSQL (18.82 seconds). No UI changed; browser results remain the 56 recorded fixture checks. Prior exact-contract commit 09bb893 passed hosted CI 35648942497. Real OAuth, Scalar transport, dispatch/readback and activation remain unfinished; CH-18 is not complete.
+
+The initial write/check attempt failed because the disk was full, before migration creation. Only this repository's generated Next build output was removed; the migration and all checks then succeeded.
+
+Migration 0033 then applied to local development and hosted production; production replay applied no changes. All four databases have 33 migrations. No production fixture records or worker credentials were created.
