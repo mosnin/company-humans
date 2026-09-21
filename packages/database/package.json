@@ -51,6 +51,10 @@
     "./provisioning-dispatcher": {
       "types": "./dist/provisioning-dispatcher.d.ts",
       "default": "./dist/provisioning-dispatcher.js"
+    },
+    "./product-memberships": {
+      "types": "./dist/product-memberships.d.ts",
+      "default": "./dist/product-memberships.js"
     }
   },
   "scripts": {

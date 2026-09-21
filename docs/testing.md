@@ -19,7 +19,7 @@ Migration, seed and database tests require `DATABASE_URL`. Without it, integrati
 ## Current evidence
 
 - 9 shared-contract tests: canonical IDs, versioned envelopes, signatures/tampering, role policy definitions, product metadata and adapter interface shape.
-- 12 database integration scenarios: migration/seed idempotency, user synchronization/tombstones, organization identity, RLS, role/team scope, invitation lifecycle, product intent, durable provisioning attempts, restricted dispatcher activation, and restricted write credentials.
+- 13 database integration scenarios: migration/seed idempotency, user synchronization/tombstones, organization identity, RLS, role/team scope, invitation lifecycle, product intent, durable provisioning attempts, restricted dispatcher activation, and restricted write credentials.
 - 35 web/backend tests: configuration/authentication boundaries, provider issuer/subject mapping, same-origin profile synchronization, verified-email ownership, session revocation/expiry/owner mismatch, account-linking denial, organization creation, invitation denial, and audited role-policy conflict/actor binding.
 - The restricted-role scenario uses actual non-owner database logins. It exercises creation, invitation, teams, grant changes, audit reads, suspension, removal, reinvitation, cross-tenant denial and direct privilege-escalation attempts. It also proves the Phase 00 user/organization/membership/signed-event scenario.
 - Twenty-two Playwright component tests exercise desktop and 390px mobile interaction. They cover invite links, removal confirmation/denial, team assignment, stale permission edits, role-aware navigation invitation persistence through a simulated sign-in return, OAuth start failures and sign-out failures.
@@ -63,3 +63,7 @@ The production build was started on loopback port 3215 and all twelve handlers w
 ## Invitation revocation
 
 The restricted-login integration scenario proves contributor/cross-tenant denial, token-free listing projection, duplicate revocation with one audit event, revoked-token rejection, accepted-invitation immutability and a concurrent accept/revoke race with exactly one winner. It passes both locally and on the dedicated hosted verification branch. The new DELETE route is covered by the origin-denial suite. Desktop/mobile component tests prove confirmation, error recovery, and immediate status update after revocation; OAuth/API responses remain mocked there. Full 56 automated tests, 22 browser component checks, typecheck, lint and production build pass.
+
+## Product membership mapping
+
+57 automated tests pass. The new restricted-login scenario verifies six concurrent mapping requests yield one canonical ID/audit record, inactive-instance denial, cross-tenant actor/foreign-key denial, read isolation, denial of forged provider fields and activation, denied deletion, and denial of automatic re-enable after disablement. It passes on both local and hosted verification PostgreSQL. The connected product instance is an explicit test fixture; no Scalar member was created. Migration 0022 was then applied to production. Typecheck, lint and build pass.

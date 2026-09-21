@@ -25,3 +25,9 @@ The server-only `dispatchProvisioningOperation` executes one due operation for a
 A confirmed active external organization binds its ID and activates the instance atomically with the attempt receipt and audit. Disabled, suspended, expired or retired state refuses activation. No scheduler, production worker credential or real adapter is installed. The actor/tenant scope must come from trusted server identity/job provenance; this function is not a public API. Reconciliation of external success after local revocation/timeouts, connect-existing, membership operations, entitlements and manual retry generations remain separate work.
 
 The Applications admin page exposes setup diagnostics, normalized failures and attempt history. It distinguishes organization connection from member entitlement and live health, and offers a status refresh without initiating provider calls. Manual retry and connection configuration UI are not implemented yet. Enable responses return the instance ID only; status is read from persisted state rather than always reporting pending.
+
+## Member mapping prerequisite — 2026-09-21
+
+The kernel now persists tenant-bound product-membership intent with provider-neutral IDs and restricted provider-result fields. Requesting the mapping does not call Scalar or grant sponsored access. Adapter member dispatch, validated receipts, entitlement/limit application, suspension and offboarding synchronization remain incomplete.
+
+Scalar connection-doctor confirmed an OAuth-capable MCP endpoint at https://www.tryscalar.xyz/api/mcp/mcp?profile=codex on 2026-09-21. Native login reached Scalar's sign-in page but expired without a callback; the stale authorization page was closed. Authenticated tools and account reads are not verified. The source main revision remains f773ee94e32406c93b6d51dd408aa40e51938975. MCP discovery alone does not prove the organization/member control API.

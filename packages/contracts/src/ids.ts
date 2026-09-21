@@ -12,6 +12,7 @@ export const TeamIdSchema = z.string().regex(new RegExp(`^ch_team_${UUID_HEX}$`)
 export const RoleIdSchema = z.string().regex(new RegExp(`^ch_role_${UUID_HEX}$`)).brand<"RoleId">();
 export const ProductIdSchema = z.string().regex(new RegExp(`^ch_prod_${UUID_HEX}$`)).brand<"ProductId">();
 export const ProductInstanceIdSchema = z.string().regex(new RegExp(`^ch_inst_${UUID_HEX}$`)).brand<"ProductInstanceId">();
+export const ProductMembershipIdSchema = z.string().regex(new RegExp(`^ch_pmem_${UUID_HEX}$`)).brand<"ProductMembershipId">();
 export const ProvisioningOperationIdSchema = z.string().regex(new RegExp(`^ch_op_${UUID_HEX}$`)).brand<"ProvisioningOperationId">();
 export const EventIdSchema = z.string().regex(new RegExp(`^ch_evt_${UUID_HEX}$`)).brand<"EventId">();
 export const AuditIdSchema = z.string().regex(new RegExp(`^ch_aud_${UUID_HEX}$`)).brand<"AuditId">();
@@ -24,6 +25,7 @@ export type TeamId = z.infer<typeof TeamIdSchema>;
 export type RoleId = z.infer<typeof RoleIdSchema>;
 export type ProductId = z.infer<typeof ProductIdSchema>;
 export type ProductInstanceId = z.infer<typeof ProductInstanceIdSchema>;
+export type ProductMembershipId = z.infer<typeof ProductMembershipIdSchema>;
 export type ProvisioningOperationId = z.infer<typeof ProvisioningOperationIdSchema>;
 export type EventId = z.infer<typeof EventIdSchema>;
 export type AuditId = z.infer<typeof AuditIdSchema>;
@@ -37,6 +39,7 @@ const schemas = {
   role: RoleIdSchema,
   product: ProductIdSchema,
   productInstance: ProductInstanceIdSchema,
+  productMembership: ProductMembershipIdSchema,
   provisioningOperation: ProvisioningOperationIdSchema,
   event: EventIdSchema,
   audit: AuditIdSchema,
@@ -51,6 +54,7 @@ const prefixes = {
   role: "role",
   product: "prod",
   productInstance: "inst",
+  productMembership: "pmem",
   provisioningOperation: "op",
   event: "evt",
   audit: "aud",
@@ -74,6 +78,7 @@ export const CanonicalIdReferenceV1Schema = z.discriminatedUnion("kind", [
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("role"), id: RoleIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("product"), id: ProductIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("productInstance"), id: ProductInstanceIdSchema }),
+  z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("productMembership"), id: ProductMembershipIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("provisioningOperation"), id: ProvisioningOperationIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("event"), id: EventIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("audit"), id: AuditIdSchema }),

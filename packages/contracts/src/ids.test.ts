@@ -12,6 +12,9 @@ describe("canonical IDs v1", () => {
   });
 
   it("rejects wrong kinds and unsupported schema versions at the boundary", () => {
+    const mapping = createCanonicalId("productMembership");
+    expect(CanonicalIdReferenceV1Schema.parse({ schemaVersion: 1, kind: "productMembership", id: mapping }).id).toBe(mapping);
+    expect(MembershipIdSchema.safeParse(mapping).success).toBe(false);
     const organization = createCanonicalId("organization");
     expect(CanonicalIdReferenceV1Schema.parse({ schemaVersion: ID_SCHEMA_VERSION, kind: "organization", id: organization }).id).toBe(organization);
     expect(CanonicalIdReferenceV1Schema.safeParse({ schemaVersion: 2, kind: "organization", id: organization }).success).toBe(false);
