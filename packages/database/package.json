@@ -59,6 +59,10 @@
     "./member-denial-worker": {
       "types": "./dist/member-denial-worker.d.ts",
       "default": "./dist/member-denial-worker.js"
+    },
+    "./product-entitlements": {
+      "types": "./dist/product-entitlements.d.ts",
+      "default": "./dist/product-entitlements.js"
     }
   },
   "scripts": {

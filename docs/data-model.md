@@ -63,3 +63,7 @@ Claims are serialized per organization/product, filter by the registered product
 ## Service execution audit (0028)
 
 Audit rows now distinguish human and service actors. Human events retain actor_user_id; service events use actor_service_id and cannot carry a user or membership identity. Database constraints require the actor in the versioned envelope to agree with the row. Existing human events remain unchanged. Member-denial claim/receipt/exhaustion/supersession events are inserted in the job transaction and link to the immutable command containing the initiating human. No lease or provider reference appears in these audit payloads.
+
+## Versioned entitlement intent (0029)
+
+Entitlement policies have canonical ch_ent IDs and tenant-bound instance/member references. A null member identifies an organization default; a member ID identifies an override. Partial unique indexes prevent duplicate policies at either scope. Revisions append allow/deny/inherit with actor and timestamp; the database enforces consecutive revisions. Runtime credentials cannot update or delete policy/history. The server uses optimistic expectedRevision and serializes concurrent changes, recording the revision and human audit in one transaction.

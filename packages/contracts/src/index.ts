@@ -5,3 +5,4 @@ export * from "./permissions.js";
 export * from "./app-catalog.js";
 export * from "./product-adapter.js";
 export * from "./envelopes.js";
+export * from "./entitlements.js";

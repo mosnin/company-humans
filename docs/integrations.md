@@ -61,3 +61,7 @@ Fresh connection checks on 2026-09-21 using updated Scalar/Symbolic plugin packa
 The denial dispatch journal is now accompanied by central audit events attributed to the member lifecycle service, distinct from the human who requested the command. Claims and normalized receipts are recorded atomically with job transitions; audit-write failure leaves completion uncommitted. The Audit page displays actor type and service identity instead of attributing background work to an unknown or suspended human. Real adapter execution remains unverified.
 
 The native Scalar OAuth attempt opened during the connector refresh expired without a callback. Its stale tab was closed. No grant or authenticated read was obtained; a fresh consent flow is required when the account owner is available.
+
+## Entitlement preparation
+
+Organization defaults and member overrides now have versioned desired-policy storage. No Scalar transport applies these settings yet; no provider receipt, member grant or usage limit is implied. Administration UI/API, effective resolution and adapter enforcement remain outstanding.

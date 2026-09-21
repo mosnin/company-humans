@@ -12,8 +12,8 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 69 contract/database/route/Convex tests pass. Twenty-eight desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
-- Local development/verification and hosted verification/production databases have 28 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
+- 72 contract/database/route/Convex tests pass. Twenty-eight desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
+- Local development/verification and hosted verification/production databases have 29 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
 
@@ -139,3 +139,9 @@ Verified: all 69 automated tests, typecheck, lint and build; the extended securi
 ## Remaining-plan refresh — 2026-09-21
 
 Rechecked the canonical Notion roadmap, current git state and successful CI at 84653c1. Updated the remaining plan to credit completed disable/denial execution and diagnostics while preserving live OAuth and Scalar gates. Entitlement contracts, migration 0029 and configuration code remain uncommitted and unverified; they are excluded from completion counts. No phase or Notion task was marked complete.
+
+## Versioned entitlement configuration — 2026-09-21
+
+Implemented organization defaults/member overrides, canonical entitlement IDs, explicit deny precedence, optimistic revision conflicts, append-only history and atomic human audit. Migration 0029 enforces tenant references, RLS and consecutive revision numbers. This is configuration intent only; no UI/API, effective resolver, provider grant or usage enforcement is claimed.
+
+Verified: 72 automated tests (11 contracts, 17 database, 44 web), typecheck, lint and production build. The restricted-role scenario also passes on hosted verification PostgreSQL, including concurrent edits, foreign tenant denial, immutable history, retired/invalid/unknown capability rejection and rollback on audit failure. Migration 0029 then applied to production and local development. No UI changed. CH-18 and Phase 02 remain incomplete pending actual Scalar enforcement; Phase 01 OAuth acceptance remains outstanding.

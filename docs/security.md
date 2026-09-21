@@ -82,3 +82,7 @@ The server page and database read both require applications.manage. Instance IDs
 ## Service audit attribution
 
 The denial worker may append only its named service actor, approved member-denial actions and a tenant-bound suspension/removal command target. It cannot masquerade as a human or another service. Existing service write policies still require human actor identity for human mutations. Completed audit history remains append-only to runtime roles. Audit insertion failure rolls back the worker job and receipt transaction.
+
+## Entitlement configuration boundary
+
+setProductEntitlement requires applications.manage and validates tenant instance/member identity. RLS and composite references protect both policy and revision tables. Unsupported or retired capabilities cannot receive allow through this boundary; deny/inherit remain available. Runtime mutation permissions are append-only. These are desired settings, not usable access: product state, membership, roles/team scope, budgets, health and compliance still need the effective resolver and provider enforcement.

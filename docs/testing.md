@@ -95,3 +95,7 @@ Real local Next production-server requests reject missing/foreign origins with 4
 ## Service actor audit
 
 All 69 automated tests, typecheck, lint and production build pass. The extended denial-worker scenario also passes on hosted verification PostgreSQL. It verifies one audit claim across concurrent claimers, service envelope/row agreement, visible service attribution, denial of forged human/other-service actors, no audit deletion, and transaction rollback when a deliberately injected audit failure interrupts receipt completion. The fixture trigger is removed in a finally block. Audit payloads exclude lease tokens. This is database execution evidence, not real OAuth or provider acceptance.
+
+## Entitlement intent verification — 2026-09-21
+
+All 72 automated tests, typecheck, lint and build pass. Entitlement tests exercise every allow/deny/inherit/default combination, typed revision boundaries, five concurrent writes with one winner, stale expected revision, organization/member scoping, foreign tenant reads/writes, composite foreign keys, unsupported/retired/missing metadata, consecutive revisions, UPDATE/DELETE denial and transaction rollback on injected audit failure. The database scenario also passed on isolated hosted verification PostgreSQL. Test catalog entries are unique fixtures, not live Scalar capabilities; the reference-seed test now checks the seven deterministic reference products without assuming the extensible catalog contains only those rows.

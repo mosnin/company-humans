@@ -19,3 +19,7 @@ The product owner's 2026-09-20 direction replaces Clerk with Convex Auth. Convex
 ## Member denial execution
 
 The database package now exposes a bounded server-only denial dispatcher using a distinct restricted worker role, immutable command provenance and durable attempt journals. It can execute only suspension/removal through an explicitly registered product adapter and does not depend on the initiating human remaining active. No hosted worker process or real adapter is installed. This is a verified execution boundary with fixtures, not production remote offboarding.
+
+## Entitlement intent prerequisite
+
+Versioned organization/member capability configuration is stored in PostgreSQL and exposed through a scoped server boundary. Policy intent is separate from the future effective authorization resolver and remote adapter application. No route, worker or product launcher treats a saved allow as access.

@@ -85,3 +85,7 @@ A worker that requires the original administrator to remain active can strand re
 ## 2026-09-21 — audit background execution as a service
 
 Canonical documents 03 and 05 require actor attribution and audit for adapter activity. Attempt logs alone were not visible in central audit history. Migration 0028 adds service actor identity while preserving existing human events. The denial worker records its own execution and links to the original human command; it does not impersonate the initiating administrator. This prerequisite was completed before beginning entitlement grants.
+
+## 2026-09-21 — explicit deny and preserved entitlement history
+
+Organization defaults and member overrides follow canonical deny precedence: any explicit deny wins; otherwise explicit allow requests access; missing/inherited settings default to deny. Inherit releases one layer's preference through a new revision without deleting its history. This configuration helper must never authorize product usage on its own. CH-18 remains unaccepted until real Scalar capability and usage-limit enforcement works.
