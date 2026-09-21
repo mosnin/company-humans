@@ -2,7 +2,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { LimitQuantitySchema, ProductCapabilityKeySchema, UsageLimitRevisionV1Schema } from "@company-human/contracts";
-import type { readApplicationUsageLimits } from "@company-human/database/administration";
+import type { readApplicationUsageLimits, UsageLimitDelivery } from "@company-human/database/administration";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, Input } from "./controls";
@@ -10,9 +10,11 @@ type Data = Awaited<ReturnType<typeof readApplicationUsageLimits>>;
 type Setting = Data["settings"][number];
 const windows = { utc_day: "Daily", utc_week: "Weekly", utc_month: "Monthly" };
 export function UsageLimitEditor({ data, organizationId, instanceId }: { data: Data; organizationId: string; instanceId: string }) {
+  const router = useRouter();
   const [units, setUnits] = useState<Record<string, string>>({});
   return <div className="space-y-4"><p className="t-body text-ink-2">{data.membershipId ? `Limits for ${data.memberName}. Organization limits still apply.` : "Limits for this organization’s application usage."} Zero requests a stop. An unconfigured limit does not authorize unlimited usage. Saving does not confirm enforcement in the application.</p>
     <p className="t-caption text-ink-3">Windows use UTC: calendar days, weeks starting Monday, and calendar months.</p>
+    <Button type="button" variant="secondary" onClick={() => router.refresh()}>Refresh delivery status</Button>
     {!data.settings.length && <Card><CardContent><h2 className="t-title-3">No usage meters available</h2><p className="t-body text-ink-2">This application has not published configurable usage meters yet.</p></CardContent></Card>}
     {data.settings.map(setting => <LimitForm key={`${data.membershipId}:${setting.meterKey}:${setting.window}:${setting.revision}`} setting={setting}
       organizationId={organizationId} instanceId={instanceId} membershipId={data.membershipId} knownUnit={setting.unit ?? units[setting.meterKey] ?? null}
@@ -51,6 +53,8 @@ function LimitForm({ setting, organizationId, instanceId, membershipId, knownUni
   const title = `${setting.meterKey} · ${windows[setting.window]}`;
   return <Card><CardContent><h2 className="t-title-3 break-all">{title}</h2>
     <p className="mt-2 t-body text-ink-2">Saved limit: {savedQuantity === null ? "Not configured" : `${savedQuantity} ${selectedUnit}`} · Revision {revision}</p>
+    <LimitDelivery delivery={revision===setting.revision?setting.delivery:null} configured={revision>0} label="Delivery" />
+    {membershipId && <LimitDelivery delivery={setting.organizationDelivery} configured={setting.organizationMaximumQuantity!==null} label="Organization delivery" />}
     {membershipId && <p className="t-caption text-ink-3">Organization limit: {setting.organizationMaximumQuantity === null ? "Not configured" : `${setting.organizationMaximumQuantity} ${selectedUnit}`}</p>}
     {!setting.nonzeroAvailable && <p className="mt-2 t-body text-ink-2">This meter is unavailable. An existing limit can only be set to zero.</p>}
     <form onSubmit={submit} className="mt-4 space-y-4"><div className="grid max-w-xl gap-4 sm:grid-cols-2">
@@ -65,3 +69,25 @@ function LimitForm({ setting, organizationId, instanceId, membershipId, knownUni
     {saved && <p role="status" className="t-body">Limit saved. Enforcement is not confirmed.</p>}
     </form></CardContent></Card>;
 }
+
+const deliveryLabels: Record<UsageLimitDelivery['status'],string> = {
+  pending:'Awaiting delivery',running:'Delivery in progress',retry_wait:'Waiting to retry',succeeded:'Provider readback received',failed:'Needs attention',superseded:'Request no longer current',
+};
+function LimitDelivery({delivery,configured,label}:{delivery:UsageLimitDelivery|null;configured:boolean;label:string}) {
+  if (!configured) return null;
+  return <div className="mt-3 space-y-2 t-caption text-ink-2" aria-label={label}>
+    <p>{label}: {delivery?deliveryLabels[delivery.status]:'Awaiting status update'}</p>
+    {delivery && <><p>{delivery.attemptCount} of 5 attempts used</p>
+      {delivery.status==='succeeded' && <p>This records a past check of this limit. It does not confirm current product access or every applicable limit.</p>}
+      {delivery.failureCode && <p className="break-all">Delivery issue: {delivery.failureCode.replaceAll('_',' ')}</p>}
+      {delivery.nextAttemptAt && <p>Next retry after <UtcTime value={delivery.nextAttemptAt} /></p>}
+      <p>Status recorded <UtcTime value={delivery.updatedAt} /></p>
+      {delivery.attempts.length>0 && <details><summary className="cursor-pointer">Delivery attempts</summary><ol className="mt-2 space-y-2">{delivery.attempts.map(attempt=><li key={attempt.number}>
+        <p>Attempt {attempt.number}: {(attempt.outcome??'in progress').replaceAll('_',' ')}</p><UtcTime value={attempt.startedAt} />
+        {attempt.finishedAt && <p>Finished <UtcTime value={attempt.finishedAt} /></p>}
+        {attempt.failureCode && <p>{attempt.failureCode.replaceAll('_',' ')}</p>}
+      </li>)}</ol></details>}
+    </>}
+  </div>;
+}
+function UtcTime({value}:{value:string}) {return <time dateTime={value}>{new Date(value).toISOString().replace('T',' ').slice(0,19)} UTC</time>;}

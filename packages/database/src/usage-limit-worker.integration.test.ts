@@ -3,6 +3,7 @@ import { Client } from 'pg';
 import { describe, expect, it } from 'vitest';
 import { createCanonicalId, PRODUCT_ADAPTER_METHODS, assertProductUsageLimitAdapterV1, AuditEnvelopeV1Schema, type ProductUsageLimitAdapterV1 } from '@company-human/contracts';
 import { syncAuthUser } from './auth-users.js';
+import { readApplicationUsageLimits } from './administration.js';
 import { createOrganization } from './organizations.js';
 import { appendServiceAudit } from './identity-audit.js';
 import { setProductUsageLimit } from './product-usage-limits.js';
@@ -54,7 +55,15 @@ describe.skipIf(!databaseUrl)('restricted exact usage-limit dispatch',()=>{
       finally {await admin.query(`DROP TRIGGER ${guard} ON identity_audit_events`);await admin.query(`DROP FUNCTION public.${guard}()`);}
       await finishUsageLimit(worker.toString(),org.organizationId,lease,receipt,receipt);expect((await status(id,1)).status).toBe('succeeded');
       await expect(finishUsageLimit(worker.toString(),org.organizationId,lease,receipt,receipt)).rejects.toThrow('Stale');
-      await save(1);let readCalled=false;
+      const observed=await readApplicationUsageLimits(service.toString(),owner,org.organizationId,instance);
+      const delivered=observed.settings.find(row=>row.window==='utc_month')!;
+      expect(delivered.delivery).toEqual(expect.objectContaining({status:'succeeded',attemptCount:1,attempts:[expect.objectContaining({number:1,outcome:'succeeded'})]}));
+      expect(JSON.stringify(observed)).not.toContain('fixture-org');expect(JSON.stringify(observed)).not.toContain(lease.leaseToken);
+      expect(JSON.stringify(observed)).not.toContain('apply_receipt');expect(JSON.stringify(observed)).not.toContain('readback_receipt');
+      await save(1);
+      const queued=await readApplicationUsageLimits(service.toString(),owner,org.organizationId,instance);
+      expect(queued.settings.find(row=>row.window==='utc_month')?.delivery).toEqual(expect.objectContaining({status:'pending',attemptCount:0,attempts:[]}));
+      let readCalled=false;
       await dispatch(adapter(async({idempotencyKey:_key,...state})=>({status:'succeeded',value:{...state,limit:{...state.limit,maximumQuantity:'11'}}}),async state=>{readCalled=true;return {status:'succeeded',value:state};}));
       expect(readCalled).toBe(false);expect((await status(id,2)).failure_code).toBe('provider_limit_mismatch');
       await save(2);await dispatch(adapter(good().applyUsageLimit,async state=>({status:'succeeded',value:{...state,target:{...state.target,externalOrganizationId:'foreign'}}})));
@@ -80,6 +89,9 @@ describe.skipIf(!databaseUrl)('restricted exact usage-limit dispatch',()=>{
       const mapping=createCanonicalId('productMembership');
       await admin.query("INSERT INTO product_memberships(id,organization_id,product_instance_id,membership_id,external_member_id,provisioning_status,created_by_user_id) VALUES($1,$2,$3,$4,'fixture-member','suspended',$5)",[mapping,org.organizationId,instance,org.ownerMembershipId,owner]);
       await dispatch();expect((await status(member.usageLimitId,1)).status).toBe('succeeded');
+      const memberView=await readApplicationUsageLimits(service.toString(),owner,org.organizationId,instance,org.ownerMembershipId);
+      expect(memberView.settings.find(row=>row.window==='utc_month')?.delivery?.status).toBe('succeeded');
+      expect(memberView.settings.find(row=>row.window==='utc_month')?.organizationDelivery?.status).toBe('failed');
       expect((await admin.query('SELECT provisioning_status FROM product_memberships WHERE id=$1',[mapping])).rows[0].provisioning_status).toBe('suspended');
       // Target revocation during a call makes its otherwise valid receipt historical.
       await save(6);const revoked=(await claim())!;await admin.query("UPDATE product_instances SET desired_enabled=false WHERE id=$1",[instance]);

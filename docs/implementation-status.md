@@ -12,7 +12,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 165 contract/database/route/Convex tests pass. Fifty-six desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
+- 165 contract/database/route/Convex tests pass. Sixty-two desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
 - Local development/verification and hosted verification/production databases have 34 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
@@ -265,3 +265,13 @@ The dispatcher validates exact apply receipts, then separately reads provider st
 All 165 automated tests (24 contracts, 20 database, 121 web), typecheck, lint and production build pass. The new restricted-role scenario covers concurrent claims, wrong tenant/product, privilege denial, audit rollback, apply/readback mismatch, pending/invalid responses, retry/lease exhaustion, policy supersession, suspended member binding and zero cleanup after disable. Provider calls use explicit fixture adapters. No UI changed; browser evidence remains 56 checks at 2c2c94c. Previous journal commit 9baaa7b passed hosted CI 35649558789. Real Scalar transport, hosted execution credentials/scheduling, full entitlement application/resolution, activation and real OAuth remain unfinished.
 
 The restricted worker scenario also passed on hosted verification PostgreSQL (42.13 seconds). Migration 0034 then applied to local development and hosted production; production replay made no changes. All four databases have 34 migrations. No production fixture records, worker login or scheduler were created.
+
+## Usage-limit delivery diagnostics — 2026-09-21
+
+The budgets.manage read projection now includes current-revision delivery status, bounded attempt history, normalized failures, retry time and recorded timestamps. Organization and member delivery remain separate. Explicit projections exclude provider identities, leases, raw receipts and worker credentials. A newly saved revision cannot inherit an older revision's success.
+
+The existing limit editor shows queued/running/retry/failed/superseded/readback states, a refresh action and expandable attempt history. Readback is described as a past check of one limit, not current access or complete policy enforcement. Saving a new revision clears its previous success display while awaiting refreshed state; failed organization delivery remains visible on member settings.
+
+Verified: all 165 automated tests, typecheck, lint, production build and 62 fixture-backed desktop/mobile browser tests pass. Six new browser cases cover status/history, stale success after save, refresh preserving unsaved input and independent parent/member state. Desktop and mobile screenshots were inspected. Database scenarios verify revision selection, payload exclusion and parent/member separation under restricted credentials. No migration changed; real OAuth/provider acceptance remains incomplete. Prior worker commit 187cb1b passed hosted CI 35650458374.
+
+Both expanded restricted-role scenarios also passed on hosted verification PostgreSQL (62.43 seconds combined test execution). No database migration or production provider call was required.

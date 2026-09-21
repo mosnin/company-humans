@@ -319,3 +319,32 @@ test('member limit shows the organization cap without claiming capacity',async({
 test('usage limit empty catalog is explicit',async({page})=>{
   await page.goto('/?screen=empty-usage-limits');await expect(page.getByRole('heading',{name:'No usage meters available'})).toBeVisible();await expect(page.getByRole('button',{name:'Save limit',exact:true})).toHaveCount(0);
 });
+
+test('limit delivery reports operational states and historical readback without granting access',async({page},testInfo)=>{
+  for(const [state,label] of [['pending','Awaiting delivery'],['running','Delivery in progress'],['retry_wait','Waiting to retry'],['failed','Needs attention'],['superseded','Request no longer current'],['succeeded','Provider readback received']]){
+    await page.goto(`/?screen=usage-limit-delivery&delivery=${state}`);
+    await expect(page.getByText(`Delivery: ${label}`,{exact:true})).toBeVisible();
+    if(state==='retry_wait')await expect(page.getByText('Next retry after',{exact:false})).toBeVisible();
+    if(state==='failed')await expect(page.getByText('Delivery issue: provider limit mismatch')).toBeVisible();
+  }
+  await expect(page.getByText('It does not confirm current product access',{exact:false})).toBeVisible();
+  await page.getByText('Delivery attempts',{exact:true}).click();await expect(page.getByText('Attempt 2: succeeded')).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath('usage-limit-delivery.png'),fullPage:true});
+});
+test('saving a new limit clears prior delivery status and refresh preserves unsaved input',async({page})=>{
+  await page.route('**/api/organizations/*/applications/*/usage-limits',async route=>{
+    const body=route.request().postDataJSON();await route.fulfill({json:{providerEnforcementConfirmed:false,revision:{schemaVersion:1,usageLimitId:`ch_lim_${'a'.repeat(32)}`,organizationId:`ch_org_${'a'.repeat(32)}`,productInstanceId:`ch_inst_${'a'.repeat(32)}`,membershipId:null,meterKey:body.meterKey,unit:body.unit,window:body.window,revision:4,maximumQuantity:body.maximumQuantity}}});
+  });
+  await page.goto('/?screen=usage-limit-delivery');const input=page.getByLabel('Maximum for enriched-leads · Monthly');await input.fill('12');
+  await page.evaluate(()=>{window.addEventListener('test:refresh',()=>{document.body.dataset.refreshed='true';});});
+  await page.getByRole('button',{name:'Refresh delivery status'}).click();await expect(input).toHaveValue('12');
+  expect(await page.evaluate(()=>document.body.dataset.refreshed)).toBe('true');
+  await page.getByRole('button',{name:'Save limit',exact:true}).click();await expect(page.getByRole('status')).toContainText('Enforcement is not confirmed');
+  await expect(page.getByText('Delivery: Awaiting status update',{exact:true})).toBeVisible();await expect(page.getByText('Delivery: Provider readback received',{exact:true})).toHaveCount(0);
+});
+test('member delivery does not hide failed organization delivery',async({page})=>{
+  await page.goto('/?screen=member-limit-delivery');await expect(page.getByText('Delivery: Provider readback received',{exact:true})).toBeVisible();
+  await expect(page.getByText('Organization delivery: Needs attention',{exact:true})).toBeVisible();await expect(page.getByText('Organization limit: 0 lead')).toBeVisible();
+  await expect(page.getByText('Delivery issue: retry exhausted')).toBeVisible();
+});

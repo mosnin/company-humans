@@ -210,6 +210,14 @@ export async function listApplicationMemberCandidates(databaseUrl:string,actorUs
   });
 }
 
+export interface UsageLimitDelivery {
+  status: 'pending' | 'running' | 'retry_wait' | 'succeeded' | 'failed' | 'superseded';
+  attemptCount: number;
+  failureCode: string | null;
+  updatedAt: string;
+  nextAttemptAt: string | null;
+  attempts: { number: number; startedAt: string; finishedAt: string | null; outcome: string | null; failureCode: string | null }[];
+}
 /** Desired quantities only. Null means unconfigured, never unlimited or authorized spend. */
 export async function readApplicationUsageLimits(databaseUrl: string, actorUserId: string, organizationId: string, instanceId: string, membershipId: string | null = null) {
   ProductInstanceIdSchema.parse(instanceId);
@@ -231,11 +239,30 @@ export async function readApplicationUsageLimits(databaseUrl: string, actorUserI
     // Return unit metadata without other members' quantities or identity.
     const units = await client.query<{ meter_key: string; unit: string }>(
       "SELECT DISTINCT meter_key,unit FROM public.product_usage_limits WHERE organization_id=$1 AND product_instance_id=$2", [organizationId, instanceId]);
-    const policies = await client.query<{ meter_key: string; window_key: string; membership_id: string | null; revision: number; maximum_quantity: string }>(
-      `SELECT l.meter_key,l.window_key,l.membership_id,r.revision,r.maximum_quantity FROM public.product_usage_limits l
+    const policies = await client.query<{ id: string; meter_key: string; window_key: string; membership_id: string | null; revision: number; maximum_quantity: string }>(
+      `SELECT l.id,l.meter_key,l.window_key,l.membership_id,r.revision,r.maximum_quantity FROM public.product_usage_limits l
        JOIN LATERAL (SELECT revision,maximum_quantity FROM public.product_usage_limit_revisions
          WHERE organization_id=l.organization_id AND usage_limit_id=l.id ORDER BY revision DESC LIMIT 1) r ON true
        WHERE l.organization_id=$1 AND l.product_instance_id=$2 AND (l.membership_id IS NULL OR l.membership_id=$3)`, [organizationId, instanceId, membershipId]);
+    const jobs = await client.query<{ usage_limit_id: string; revision: number; status: UsageLimitDelivery['status']; attempt_count: number; failure_code: string | null; updated_at: Date; next_attempt_at: Date }>(
+      `SELECT j.usage_limit_id,j.revision,j.status,j.attempt_count,j.failure_code,j.updated_at,j.next_attempt_at
+       FROM public.usage_limit_jobs j JOIN public.product_usage_limits l ON l.organization_id=j.organization_id AND l.id=j.usage_limit_id
+       WHERE l.organization_id=$1 AND l.product_instance_id=$2 AND (l.membership_id IS NULL OR l.membership_id=$3)
+         AND j.revision=(SELECT max(r.revision) FROM public.product_usage_limit_revisions r WHERE r.organization_id=l.organization_id AND r.usage_limit_id=l.id)`, [organizationId,instanceId,membershipId]);
+    const attempts = await client.query<{ usage_limit_id: string; revision: number; attempt_number: number; started_at: Date; finished_at: Date | null; outcome: string | null; failure_code: string | null }>(
+      `SELECT a.usage_limit_id,a.revision,a.attempt_number,a.started_at,a.finished_at,a.outcome,a.failure_code
+       FROM public.usage_limit_attempts a JOIN public.product_usage_limits l ON l.organization_id=a.organization_id AND l.id=a.usage_limit_id
+       WHERE l.organization_id=$1 AND l.product_instance_id=$2 AND (l.membership_id IS NULL OR l.membership_id=$3)
+         AND a.revision=(SELECT max(r.revision) FROM public.product_usage_limit_revisions r WHERE r.organization_id=l.organization_id AND r.usage_limit_id=l.id)
+       ORDER BY a.attempt_number`, [organizationId,instanceId,membershipId]);
+    const delivery = (policy: typeof policies.rows[number] | undefined): UsageLimitDelivery | null => {
+      const job = policy && jobs.rows.find(row => row.usage_limit_id===policy.id && row.revision===policy.revision);
+      if (!job) return null;
+      return { status:job.status,attemptCount:job.attempt_count,failureCode:job.failure_code,updatedAt:job.updated_at.toISOString(),
+        nextAttemptAt:job.status==='retry_wait'?job.next_attempt_at.toISOString():null,
+        attempts:attempts.rows.filter(row=>row.usage_limit_id===job.usage_limit_id&&row.revision===job.revision).map(row=>({
+          number:row.attempt_number,startedAt:row.started_at.toISOString(),finishedAt:row.finished_at?.toISOString()??null,outcome:row.outcome,failureCode:row.failure_code })) };
+    };
     const meters = [...new Set([...supported, ...policies.rows.map(row => row.meter_key)])].sort();
     const settings = meters.flatMap(meterKey => LimitWindowSchema.options.map(window => {
       const organization = policies.rows.find(row => row.meter_key === meterKey && row.window_key === window && row.membership_id === null);
@@ -245,6 +272,7 @@ export async function readApplicationUsageLimits(databaseUrl: string, actorUserI
         revision: selected?.revision ?? 0, maximumQuantity: selected ? LimitQuantitySchema.parse(selected.maximum_quantity) : null,
         organizationMaximumQuantity: organization ? LimitQuantitySchema.parse(organization.maximum_quantity) : null,
         memberMaximumQuantity: member ? LimitQuantitySchema.parse(member.maximum_quantity) : null,
+        delivery: delivery(selected), organizationDelivery: delivery(organization),
         nonzeroAvailable: catalog.success && product.catalog_status !== 'retired' && supported.includes(meterKey) };
     }));
     return { productName: product.productName, membershipId, memberName, settings, providerEnforcementConfirmed: false as const };

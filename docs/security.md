@@ -148,3 +148,5 @@ The web service has only scoped SELECT and column-specific INSERT of organizatio
 ## Usage-limit worker isolation
 
 Migration 0034 grants company_human_limit_worker journal-only mutations, tenant/product-scoped policy and mapping reads, minimal identity columns and service-attributed audit inserts. Runtime checks reject superusers, RLS-bypass roles, table owners and general web service credentials. RLS constrains job, attempt, policy and product-instance visibility through both organization and product scope. The role cannot edit identity, limits, product access or audit history. It is NOLOGIN; no production execution credential has been issued. A successful single-limit receipt cannot authorize activation.
+
+Usage-limit administration diagnostics require budgets.manage and return only current-revision job status plus bounded attempt timestamps/outcomes. The projection excludes external identities, lease tokens, worker roles and raw apply/readback receipts. Parent and selected member data are projected separately; no other member's delivery is returned. Existing cross-tenant and missing-capability denial remains enforced by server and database.

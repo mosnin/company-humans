@@ -34,7 +34,7 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       const firstRead = await readApplicationUsageLimits(url.toString(), alice, org.organizationId, instance);
       expect(firstRead.providerEnforcementConfirmed).toBe(false);
       expect(firstRead.settings.find(row => row.window === "utc_month")?.maximumQuantity).toBe("999999999999.999999");
-      expect(firstRead.settings.find(row => row.window === "utc_day")).toEqual({ meterKey: "enriched-leads", unit: "lead", window: "utc_day", revision: 0, maximumQuantity: null, organizationMaximumQuantity: null, memberMaximumQuantity: null, nonzeroAvailable: true });
+      expect(firstRead.settings.find(row => row.window === "utc_day")).toEqual({ meterKey: "enriched-leads", unit: "lead", window: "utc_day", revision: 0, maximumQuantity: null, organizationMaximumQuantity: null, memberMaximumQuantity: null, delivery: null, organizationDelivery: null, nonzeroAvailable: true });
       const stopped = await setProductUsageLimit(url.toString(), { ...input, maximumQuantity: "0.000000", expectedRevision: 1 });
       expect(stopped.maximumQuantity).toBe("0");
       expect((await admin.query("SELECT revision,status FROM usage_limit_jobs WHERE usage_limit_id=$1 ORDER BY revision", [id])).rows).toEqual([{ revision: 1, status: 'pending' }, { revision: 2, status: 'pending' }]);
@@ -42,7 +42,7 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       expect(member.usageLimitId).not.toBe(id);
       const memberRead = await readApplicationUsageLimits(url.toString(), alice, org.organizationId, instance, org.ownerMembershipId);
       expect(memberRead.memberName).toBe("Alice");
-      expect(memberRead.settings.find(row => row.window === "utc_month")).toEqual({ meterKey: "enriched-leads", unit: "lead", window: "utc_month", revision: 1, maximumQuantity: "2.5", organizationMaximumQuantity: "0", memberMaximumQuantity: "2.5", nonzeroAvailable: true });
+      expect(memberRead.settings.find(row => row.window === "utc_month")).toEqual({ meterKey: "enriched-leads", unit: "lead", window: "utc_month", revision: 1, maximumQuantity: "2.5", organizationMaximumQuantity: "0", memberMaximumQuantity: "2.5", delivery: expect.objectContaining({status:'pending',attemptCount:0,attempts:[]}), organizationDelivery: expect.objectContaining({status:'pending',attemptCount:0,attempts:[]}), nonzeroAvailable: true });
       const defaultRead = await readApplicationUsageLimits(url.toString(), alice, org.organizationId, instance);
       expect(defaultRead.settings.find(row => row.window === "utc_month")?.revision).toBe(2);
       expect(defaultRead.settings.every(row => row.memberMaximumQuantity === null)).toBe(true);
