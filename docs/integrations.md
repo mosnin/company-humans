@@ -131,3 +131,7 @@ A scheduler must exhaust the returned cursor, then repeat from null so new or pr
 ## Scalar control contract audit — 2026-09-21
 
 Read-only review of Scalar main at f773ee94e32406c93b6d51dd408aa40e51938975 found concrete missing sponsored-control guarantees: suspended membership state, verified Convex-to-Scalar identity/launch, revisioned capability and hierarchical-limit enforcement, pre-cost reservations and durable actor-attributed usage. See [source evidence and required provider work](scalar-control-assessment.md). Current pooled credits and Clerk membership mirrors do not satisfy these guarantees. No provider mutation or live acceptance was performed; Phase 02/03 remain open. The next independent application task is the authorized connect-existing intent UI, without claiming ownership or access from an external ID.
+
+## Connected intent administration — 2026-09-21
+
+The pending connected-instance form and authenticated POST connection endpoint now expose requestProductConnection. Submission records intent and reports providerConnectionConfirmed=false; product authorization, ownership verification and actual transport remain required. See the current [implementation evidence](implementation-status.md).

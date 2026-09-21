@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { mutate } from "./controls";
+import { Field, Input, mutate } from "./controls";
 import type { ApplicationDiagnostic } from "@company-human/database/administration";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -46,6 +46,7 @@ export function ApplicationDiagnostics({ applications, organizationId }: { appli
         {attempt.failureCode && <p className="mt-1 t-caption text-ink-2 break-all">{attempt.failureCode.replaceAll("_", " ")}</p>}
       </li>)}</ol></details>}
     </>}
+    {application.desiredEnabled && application.mode === "connected" && application.provisioningStatus === "pending" && !application.operation && <ConnectApplication application={application} organizationId={organizationId} />}
     <Link className="inline-block t-link" href={`/workspace/applications/${application.id}/members`}>View member access</Link>
     <Link className="ml-4 inline-block t-link" href={`/workspace/applications/${application.id}/entitlements`}>Access settings</Link>
     <Link className="ml-4 inline-block t-link" href={`/workspace/applications/${application.id}/usage-limits`}>Usage limits</Link>
@@ -73,4 +74,29 @@ function DisableApplication({ application, organizationId, onDisabled }: { appli
   </> : <Button variant="secondary" onClick={() => setConfirming(true)}>Disable application</Button>}
     {error && <p role="alert" className="t-body text-critical-text">{error}</p>}
   </div>;
+}
+
+function ConnectApplication({ application, organizationId }: { application: ApplicationDiagnostic; organizationId: string }) {
+  const router = useRouter();
+  const [target, setTarget] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  async function connect(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy || submitted || !target.trim()) return;
+    setBusy(true); setError("");
+    try {
+      await mutate(`/api/organizations/${organizationId}/applications/${application.id}/connect`, "POST", { externalOrganizationId: target.trim() });
+      setSubmitted(true); router.refresh();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not request connection. Please retry."); }
+    finally { setBusy(false); }
+  }
+  return <form onSubmit={event => void connect(event)} className="my-4 space-y-3" aria-label={`Connect existing ${application.productName} organization`}>
+    <p className="t-body text-ink-2">Enter the organization ID from {application.productName}. Connection requires authorization and ownership verification with the product before access can be enabled.</p>
+    <Field label={`${application.productName} organization ID`}><Input value={target} onChange={event => setTarget(event.target.value)} required maxLength={256} disabled={busy || submitted} autoComplete="off" spellCheck={false} /></Field>
+    <p className="t-caption text-ink-3">Use an organization ID, never an API key or password. The target cannot be changed after this request.</p>
+    {submitted ? <p role="status" className="t-body">Connection requested. Provider verification is pending; product access has not been confirmed.</p> : <Button type="submit" disabled={busy || !target.trim()}>{busy ? "Requesting connection…" : "Request connection"}</Button>}
+    {error && <p role="alert" className="t-body text-critical-text">{error}</p>}
+  </form>;
 }

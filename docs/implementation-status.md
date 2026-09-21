@@ -12,7 +12,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 176 contract/database/route/Convex tests pass. Sixty-eight desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Latest application CI at 26b236c passed in run 35657153532.
+- 195 contract/database/route/Convex tests pass. Seventy-two desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Latest application CI at 26b236c passed in run 35657153532.
 - Local development/verification and hosted verification/production databases have 40 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
@@ -333,3 +333,13 @@ All 176 automated tests, typecheck, lint and build pass. Both affected preparati
 ## Scalar provider source audit — 2026-09-21
 
 Read-only review of Scalar main at f773ee94e32406c93b6d51dd408aa40e51938975 found concrete missing sponsored-control guarantees: suspended membership state, verified Convex-to-Scalar identity/launch, revisioned capability and hierarchical-limit enforcement, pre-cost reservations and durable actor-attributed usage. See [source evidence and required provider work](scalar-control-assessment.md). Current pooled credits and Clerk membership mirrors do not satisfy these guarantees. No provider mutation or live acceptance was performed; Phase 02/03 remain open. The next independent application task is the authorized connect-existing intent UI, without claiming ownership or access from an external ID.
+
+## Existing organization connection request — 2026-09-21
+
+Applications administration now exposes the existing connected-instance intent service for enabled, pending connected instances without an operation. The form records an external organization ID, explains required provider authorization/ownership verification, locks the submitted target, preserves input on errors and reports provider verification as pending. It does not create a provider connection, verify ownership or grant product access.
+
+The new POST connection endpoint derives actor identity from authentication, enforces same origin, validates canonical URL scope and a strict bounded request body, uses the existing applications.manage/RLS service, returns 202 with providerConnectionConfirmed=false and no-store, and normalizes denial/conflict/infrastructure errors without private details. Existing service idempotency and immutable target semantics remain unchanged.
+
+Verified: 195 automated tests (30 contracts, 25 database, 140 web), typecheck, lint and production build; 72 desktop/mobile browser fixture checks, including pending connection and conflict handling. Both rendered screenshots were inspected. The initial combined database/browser run timed out one existing 5-second database scenario; the full suite rerun without competing browser load passed, without weakening test timeouts. Built-server HTTP checks rejected missing/foreign origin with 403; same-origin reached the identity boundary and returned 503 Identity unavailable in local configuration. The anticipated anonymous 401 was not obtained, so authenticated runtime acceptance remains unverified. No migration or provider change was needed.
+
+Remaining: catalog/create-or-connect entry flow, actual product authorization, Scalar control transport, hosted workers and real connected lifecycle acceptance. This increment starts from an already requested connected instance; it is not the complete provisioning flow. No task is marked Done.

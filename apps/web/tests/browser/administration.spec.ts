@@ -377,3 +377,31 @@ test('saving capability preferences clears stale success until refreshed data ar
   await expect(page.getByText('Settings changed. Awaiting updated delivery status.',{exact:true})).toBeVisible();
   await expect(page.getByText('Capability delivery: Provider readback received',{exact:true})).toHaveCount(0);
 });
+
+
+test("existing organization connection stays pending and locks the submitted target", async ({ page }, testInfo) => {
+  let body: unknown;
+  await page.route("**/api/organizations/*/applications/*/connect", async route => {
+    body = route.request().postDataJSON();
+    await route.fulfill({status:202,json:{operationId:"fixture-operation",providerConnectionConfirmed:false}});
+  });
+  await page.goto("/?screen=connect-application");
+  await expect(page.getByRole("button",{name:"Request connection",exact:true})).toBeDisabled();
+  await page.getByLabel("Scalar organization ID",{exact:true}).fill("  scalar-workspace  ");
+  await page.getByRole("button",{name:"Request connection",exact:true}).click();
+  expect(body).toEqual({externalOrganizationId:"scalar-workspace"});
+  await expect(page.getByText("Connection requested. Provider verification is pending; product access has not been confirmed.")).toBeVisible();
+  await expect(page.getByLabel("Scalar organization ID",{exact:true})).toBeDisabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath("application-connection.png"),fullPage:true});
+});
+
+test("connection conflict preserves the organization ID and reports the server error", async ({ page }) => {
+  await page.route("**/api/organizations/*/applications/*/connect",route=>route.fulfill({status:409,json:{error:"A different organization was already requested. Refresh to review connection progress."}}));
+  await page.goto("/?screen=connect-application");
+  await page.getByLabel("Scalar organization ID",{exact:true}).fill("scalar-workspace");
+  await page.getByRole("button",{name:"Request connection",exact:true}).click();
+  await expect(page.getByRole("alert")).toContainText("A different organization was already requested");
+  await expect(page.getByLabel("Scalar organization ID",{exact:true})).toHaveValue("scalar-workspace");
+  await expect(page.getByRole("button",{name:"Request connection",exact:true})).toBeEnabled();
+});

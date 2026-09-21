@@ -37,6 +37,7 @@ createRoot(document.getElementById("root")!).render(<WorkspaceShell organization
   {screen === "empty-application-members" && <ApplicationMembers members={[]} />}
   {screen === "invitations" && <InvitationsTable organizationId={org} owner invitations={[{id:`ch_inv_${"b".repeat(32)}`,email:"pending@example.test",roleKey:"contributor",status:"pending",expiresAt:"2026-10-01T12:00:00Z"}]} />}
   {screen === "applications" && <ApplicationDiagnostics organizationId={org} applications={[{ id: "fixture-app", productName: "Scalar", instanceKey: "primary", mode: "provisioned", desiredEnabled: true, provisioningStatus: "pending", operation: { status: "failed", attemptCount: 1, failureCode: "authentication_required", nextAttemptAt: "2026-09-21T12:00:00Z", attempts: [{ number: 1, startedAt: "2026-09-21T12:00:00Z", finishedAt: "2026-09-21T12:00:01Z", outcome: "permanent_failure", failureCode: "authentication_required" }] } }]} />}
+  {screen === "connect-application" && <ApplicationDiagnostics organizationId={org} applications={[{id:`ch_inst_${"a".repeat(32)}`,productName:"Scalar",instanceKey:"primary",mode:"connected",desiredEnabled:true,provisioningStatus:"pending",operation:null}]} />}
   {screen === "empty-applications" && <ApplicationDiagnostics organizationId={org} applications={[]} />}
   {screen === "oauth" && <OAuthSignIn returnToInvite providers={["google", "github"]} />}
   {screen === "invite" && <AcceptInvitationPage />}
