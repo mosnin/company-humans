@@ -35,3 +35,7 @@ Scalar connection-doctor confirmed an OAuth-capable MCP endpoint at https://www.
 ## Durable member lifecycle intent
 
 Provisioning requests now persist an initial member command. Workspace suspension/removal atomically denies mapped product access intent and records a revisioned suspension/removal command, including for members.manage actors without application configuration authority. Actual external state is preserved until an adapter receipt confirms a change. Provider dispatch must reconcile the latest desired revision and avoid executing superseded provision commands. A worker, leases/retries, receipt validation, entitlement enforcement and actual Scalar calls are still required. This command log is not completed external offboarding.
+
+## Product disable intent
+
+The server boundary now disables a product and its enabled member mappings with durable suspension commands and audit in one transaction. Actual provider status remains unchanged until a receipt confirms revocation. New mappings are blocked by the disabled instance, including concurrent insertion. Automatic re-enable is denied pending a reconciled restore path. Applications UI/API wiring, member command dispatch and actual Scalar suspension remain incomplete.

@@ -73,3 +73,7 @@ A dedicated free-plan Neon project and isolated verification branch were created
 ## 2026-09-21 — Serialize membership denial before provisioning insertion
 
 Product-member offboarding is integrated with the existing membership transaction. Commands preserve desired intent and provider state separately. An initial FOR SHARE row lock hit the existing policy protecting owner memberships; migration 0024 uses a shared advisory lock without weakening that policy or rewriting applied migration 0023. Broader concurrency testing then reproduced a lock-order deadlock between membership FOR UPDATE and a mapping foreign-key check. The service now acquires the transition advisory lock before its explicit membership row lock. Provider execution remains a separate, unverified boundary.
+
+## 2026-09-21 — disable without fabricating provider state
+
+An actual PostgreSQL test found the earlier product update policy allowed only pending-state rows, preventing safe disable of active products. Migrations 0025–0026 preserve applied checksums, permit desired-access denial, and make provider status immutable to general service credentials. Re-enabling a disabled instance now explicitly requires reconciliation rather than resetting status to pending against an already completed initial operation. A full restore workflow remains required by Phase 02; this restriction is not acceptance of that workflow.

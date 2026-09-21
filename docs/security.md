@@ -60,3 +60,7 @@ Invitation history requires members.manage, tenant-scoped database context and e
 ## Product mapping offboarding
 
 Membership suspension/removal disables product mapping intent, records a durable provider command, and appends audit in one transaction. Provider state is not rewritten to imply remote success. Transaction locks prevent new mapping inserts from racing beyond parent suspension; they preserve existing owner-protection policies. Command insertion failure rolls back membership and mapping updates. Workspace reactivation and reinvitation do not restore product mappings. External token/session revocation remains an adapter acceptance requirement.
+
+## Application disable and insertion fencing
+
+The server disable transaction requires applications.manage and tenant scope; cross-organization identifiers are unavailable. Product-member insertion locks and checks its instance before inserting, preventing enabled child intent after a concurrent product disable. Migration 0026 allows denial of active instances while preserving provider status and forbids general-service provider-state mutation or re-enablement. Existing activation receipt checks still reject disabled instances. No public disable endpoint or remote revocation proof is introduced by this increment.

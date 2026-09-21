@@ -12,8 +12,8 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 58 contract/database/route/Convex tests pass. Twenty-two desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at b7c756a passed in run 35635987769.
-- Local development/verification and hosted verification/production databases have 24 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
+- 59 contract/database/route/Convex tests pass. Twenty-two desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at b7c756a passed in run 35635987769.
+- Local development/verification and hosted verification/production databases have 26 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
 
@@ -105,3 +105,9 @@ Verified for this increment: all 57 automated tests, typecheck, lint and product
 Added immutable, revisioned product-member commands. New mapping intent records provisionMember; workspace suspension/removal disables mappings and records suspendMember/removeMember with audit in one transaction. Member admins do not need application configuration privileges to deny access. Reactivation/reinvitation does not resurrect old mappings. A shared transaction lock closes the insert-versus-suspension race without broadening owner mutation privileges.
 
 Verified: 58 automated tests, typecheck, lint and build. Both mapping/offboarding security scenarios pass on hosted verification PostgreSQL; migrations 0023–0024 then applied to development and production. No UI changed. Commands await an actual dispatcher and provider receipt; real Scalar suspension/removal and OAuth acceptance remain unverified.
+
+## Application disable prerequisite — 2026-09-21
+
+Implemented the server/database boundary for idempotent product disable, atomic member suspension commands and audit, and mapping-insert fencing against concurrent disable. Provider status is unchanged; runtime credentials cannot fabricate it or automatically re-enable disabled instances. The original pending-only update policy failed the first active-instance test and was repaired through a new migration.
+
+Verified: 59 automated tests, typecheck, lint, build and the new hosted verification PostgreSQL scenario pass. Migrations 0025–0026 then applied to development and production. Hosted sign-in still reports unavailable providers. No public disable UI/API or remote suspension was added; member dispatch, reconciled restore and real Scalar acceptance remain outstanding. Phase 01 and Phase 02 gates remain incomplete.

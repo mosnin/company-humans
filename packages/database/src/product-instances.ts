@@ -50,16 +50,7 @@ export async function enableProductInstance(databaseUrl: string, input: z.input<
       if (existing.rows[0].mode !== parsed.mode) throw new Error("Instance mode cannot change during enable");
       instanceId = ProductInstanceIdSchema.parse(existing.rows[0].id);
       if (!existing.rows[0].desired_enabled) {
-        await client.query(
-          `UPDATE public.product_instances SET desired_enabled = true, provisioning_status = 'pending', updated_at = now()
-           WHERE id = $1`, [instanceId],
-        );
-        await appendIdentityAudit(client, {
-          organizationId: parsed.organizationId, actorUserId: parsed.actorUserId,
-          actorMembershipId: MembershipIdSchema.parse(actor.rows[0]!.id),
-          action: "product.instance.enabled", targetType: "product_instance", targetId: instanceId,
-          beforeState: { desiredEnabled: false }, afterState: { desiredEnabled: true, provisioningStatus: "pending" },
-        });
+        throw new Error("Disabled instance requires reconciliation before re-enabling");
       }
     } else {
       instanceId = createCanonicalId("productInstance");
@@ -145,4 +136,46 @@ export async function listProductInstances(databaseUrl: string, userId: UserId, 
   } finally {
     await client.end();
   }
+}
+
+/** Deny new local access and durably request remote member suspension. Provider state is unchanged. */
+export async function disableProductInstance(databaseUrl: string, input: {
+  actorUserId: string; organizationId: string; productInstanceId: string;
+}): Promise<void> {
+  const actorUserId = UserIdSchema.parse(input.actorUserId);
+  const organizationId = OrganizationIdSchema.parse(input.organizationId);
+  const instanceId = ProductInstanceIdSchema.parse(input.productInstanceId);
+  const client = new Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    await client.query("BEGIN");
+    await setServiceContext(client, actorUserId, organizationId);
+    const actor = await client.query<{ id: string }>(`SELECT id FROM public.memberships
+      WHERE organization_id=$1 AND user_id=$2 AND company_human_private.has_capability($1,'applications.manage')`,
+    [organizationId,actorUserId]);
+    if (actor.rowCount !== 1) throw new Error("Application administration denied");
+    // Mapping INSERT takes a shared lock on this parent before its active-state check.
+    const instance = await client.query<{ desired_enabled: boolean }>(`SELECT desired_enabled FROM public.product_instances
+      WHERE organization_id=$1 AND id=$2 FOR UPDATE`,[organizationId,instanceId]);
+    if (!instance.rows[0]) throw new Error("Product instance unavailable");
+    if (instance.rows[0].desired_enabled) {
+      await client.query("UPDATE public.product_instances SET desired_enabled=false,updated_at=now() WHERE organization_id=$1 AND id=$2",[organizationId,instanceId]);
+      const mappings = await client.query<{ id: string; desired_revision: number }>(`UPDATE public.product_memberships
+        SET desired_enabled=false,desired_revision=desired_revision+1,updated_at=now()
+        WHERE organization_id=$1 AND product_instance_id=$2 AND desired_enabled RETURNING id,desired_revision`,[organizationId,instanceId]);
+      for (const mapping of mappings.rows) {
+        await client.query(`INSERT INTO public.product_membership_commands
+          (id,organization_id,product_membership_id,desired_revision,operation,idempotency_key,actor_user_id)
+          VALUES ($1,$2,$3,$4,'suspendMember',$5,$6)`,[createCanonicalId("provisioningOperation"),organizationId,
+          mapping.id,mapping.desired_revision,`${mapping.id}:member:${mapping.desired_revision}`,actorUserId]);
+        await appendIdentityAudit(client,{organizationId,actorUserId,actorMembershipId:MembershipIdSchema.parse(actor.rows[0]!.id),
+          action:"product.membership.access_denied",targetType:"product_membership",targetId:mapping.id,
+          afterState:{desiredEnabled:false,desiredRevision:mapping.desired_revision,reason:"product_disabled",requestedOperation:"suspendMember"}});
+      }
+      await appendIdentityAudit(client,{organizationId,actorUserId,actorMembershipId:MembershipIdSchema.parse(actor.rows[0]!.id),
+        action:"product.instance.disabled",targetType:"product_instance",targetId:instanceId,
+        beforeState:{desiredEnabled:true},afterState:{desiredEnabled:false}});
+    }
+    await client.query("COMMIT");
+  } catch(error) {await client.query("ROLLBACK");throw error;} finally {await client.end();}
 }
