@@ -1,70 +1,41 @@
 # Company Human — remaining phased build plan
 
-Rebased 2026-09-21 against committed application revision `26b236c`, current implementation evidence, all 92 captured tracker tasks, and the previously captured canonical Notion roadmap. This is an execution plan, not a replacement PRD. Explicit owner directions apply: `mosnin/company-humans`, Convex OAuth, organization-sponsored ecosystem access, and all three beta configurations.
+Updated 2026-09-21 against application commit `3ee0e1a`, the current working tree, recorded verification and the canonical Notion roadmap fetched for this review. This plan replaces the previous execution-plan snapshot; it preserves the product specification and phase numbering. Destination: `mosnin/company-humans`. Source `company-os-web` remains untouched.
 
-## Current position
+## Current position and evidence
 
-- Phase 00 is verified. Preserve the scaffold, shared contracts, IDs, migrations, seeds and CI; do not restart them.
-- Phase 01 has substantial implementation and security evidence, but real OAuth and the authenticated organization lifecycle remain unverified.
-- Phase 02 has catalog, organization provisioning machinery, member diagnostics, product-member mapping, local product disable, and a restricted suspend/remove executor with durable receipts and service audit. No real Scalar provisioning or member access has been demonstrated. Persisting a command does not revoke access in a remote product.
-- Phases 03–15 remain unfinished; Phase 16 is conditional expansion.
-- Dedicated Convex, Neon PostgreSQL and Vercel resources exist. The stable web deployment was verified at `8d72e92`; latest code is newer. Preview READY does not prove production acceptance.
-- Current recorded verification: 199 automated contract/database/route/Convex tests; 40 applied migrations; typecheck/lint/build pass. The usage-limit editor has recorded 76 passing desktop/mobile fixture checks and full local checks. These are recorded results, not a fresh test run or live provider acceptance.
-- Exact finite organization/member usage limits, immutable revisions, scoped administration reads and the authenticated mutation API are committed. The usage-limit editor is implemented and locally verified. Saved limits do not yet stop remote product usage.
-- Organization/member entitlement configuration, scoped reads, mutation API and administration UI are implemented. Member access requests and tenant-scoped member selection are implemented. Both return or display unconfirmed provider access; neither grants remote access.
-- Adapter V2 now requires creating a remote member suspended and validates that receipt. The restricted V2 suspended-creation worker and receipt-backed suspended identity binding are implemented with local and hosted database verification; real Scalar transport, policy/limit acknowledgement, reconciliation and final activation remain incomplete. Existing V1 organization and denial workers are preserved.
+- **Phase 00: verified.** Reuse the scaffold, contracts, canonical IDs, migrations, seeds and CI.
+- **Phase 01: in progress.** Identity, membership, permissions and tenant protections exist; real Convex OAuth and authenticated two-organization acceptance remain open.
+- **Phase 02: in progress.** Catalog/setup intent, provisioning journals, suspended member binding, capability and limit delivery machinery, diagnostics and durable health collection exist. Real Scalar access, final activation, reconciliation and hosted worker operation remain incomplete.
+- **Phases 03–15: unfinished.** Phase 16 is conditional expansion.
+- Dedicated Convex, PostgreSQL and Vercel resources already exist. Do not create replacement projects. The last recorded production web baseline is `8d72e92`; current branch code is newer and still needs deployment acceptance.
+- Freshly checked CI: **35660233183 succeeded at 3ee0e1a**. Committed evidence: 228 automated checks and 42 migrations. The current uncommitted health page has recorded verification totaling 233 automated checks and 80 browser fixture checks, with typecheck/lint passing. Its runtime code passed the production build before five additional page tests were added. These suites were not rerun for this planning update.
+- Browser fixtures and adapter test doubles do not establish live OAuth, native product access, hard stops or payouts. No phase is closed by this plan.
 
-## Delivery priorities — refreshed at 26b236c
+## First usable release
 
-Latest application CI: run 35657153532 succeeded at 26b236c. The working tree was clean before this documentation refresh. Recorded counts are 176 automated tests, 68 fixture browser checks and 40 migrations; tests were not rerun for this plan. The canonical Notion roadmap and tracker schema were fetched again. Individual tracker statuses were not exhaustively re-queried; task mappings use the captured 92-task inventory and repository progress evidence.
+A real administrator creates a workspace, invites a contributor, assigns a team and role, enables Scalar and sets a finite budget. The contributor signs in and uses sponsored Scalar without buying another plan. The administrator sees attributed activity and actual usage. Suspension and budget exhaustion stop access or new spend.
 
-### First usable release
+This is the next delivery milestone across Phases 01–03. Complete it before broadening expensive product access.
 
-The first delivery target is one complete, real journey: an administrator creates a workspace, invites a contributor, assigns a role, enables Scalar and sets a finite budget; the contributor signs in and uses sponsored Scalar; the administrator sees activity and measured usage; suspension and budget exhaustion stop access or spend. This spans the existing Phase 01–03 gates and is not complete today.
+## Immediate bounded queue
 
-Execute the next work in this order:
+1. **Close the current health-page increment.** Record its existing test evidence, commit it, run CI and update CH-19 without marking live health acceptance complete. The working tree contains this implementation; do not rebuild it.
+2. **Complete real identity acceptance.** Configure OAuth on the existing dedicated Convex project, establish isolated nonproduction authentication, deploy the tested revision and run two-account/two-organization invite, role, switching and suspension journeys.
+3. **Resolve the audited Scalar control gaps.** Use the completed source assessment to establish the real provider contract and test organization. Required provider-side changes must be scoped and documented; another generic worker cannot supply missing Scalar enforcement.
+4. **Finish suspended-to-active orchestration.** Reuse existing workers to apply current capabilities and finite limits, verify acknowledgements, fence activation against revoked membership/policy, and reconcile ambiguous outcomes. Implement safe resume/restore.
+5. **Operate and prove the lifecycle.** Configure restricted hosted workers, scheduling, actual health collection and recovery controls. Prove create/connect, provision, suspend, resume, remove and product disable with real Scalar receipts.
+6. **Implement measured usage and actual hard stops.** Add the Phase 03 event, budget, reservation and commercial flows; test concurrent spend and exhaustion before broader access.
+7. **Continue Phases 04–15 in order.** Deliver the human workspace, CRM/context, real attribution-to-payout loop, remaining products and production acceptance. Phase 16 remains conditional.
 
-1. **Finish OAuth configuration and authenticated identity acceptance.** Use the existing dedicated Convex deployment. Prove two real accounts and two organizations, invitations, switching, role enforcement and suspension. Resolve isolated nonproduction auth capacity before assigning preview credentials.
-2. **Confirm Scalar's actual provider control surface.** Inspect its real organization/member/access/limit APIs, authentication and test environment before designing another generic orchestration layer. Record each missing upstream endpoint or semantic guarantee explicitly. A CRM API key does not establish provisioning authority.
-3. **Connect the existing workers into one suspended-to-active lifecycle.** Reuse the implemented organization provisioning, suspended identity binding, capability snapshots, background refresh, capability staging/readback and finite-limit delivery. Add only missing orchestration, current-policy activation fencing, desired-versus-effective access, safe resume and reconciliation required by the real adapter.
-4. **Operate the lifecycle in a hosted environment.** Add least-privilege worker credentials, scheduling, health and failure visibility; expose authorized connect/create and recovery workflows. Verify real Scalar create/connect, provision, suspend, resume, remove and offboarding with provider receipts.
-5. **Measure and stop actual spend.** Implement ingestion, aggregation and hierarchical policy, connect Scalar usage and prove hard stops under concurrency and exhaustion. Complete sponsoring-organization commercial state and cost visibility.
-6. **Deliver the contributor workspace.** Follow Phases 04–06, then the real referral-to-payout loop and remaining canonical phases below.
+If credentials prevent an acceptance step, document the precise blocker and continue only independent tasks. Keep the blocked gate open. Symbolic sign-in/evaluation access remains a separate tooling dependency and is not a substitute for product acceptance.
 
-Independent work may proceed during an external blocker, but must identify which exit criterion it advances. New infrastructure is not a substitute for the live journey. Do not rebuild existing contracts, workers or administration screens merely because their provider acceptance is pending.
+## Cleanup and design work throughout the plan
 
-### Scope and cleanup carried through every phase
-
-- Preserve the Company OS sibling design and source repository. Audit copied routes, components, assets and dependencies against actual product requirements; remove unrelated behavior after reference checks and affected-route verification.
-- Keep Scalar, Stored, Cadre, Operate, Marketer, Company OS and Tell Me in the product scope. Native access means real organization sponsorship, role-based views and access, provisioning/offboarding, usage/limits and scoped administrator activity visibility, not only launch links.
-- Keep each connected product authoritative for its domain. Company Human owns shared identity, access, commercial policy, human work/CRM, attribution, ledger and audit.
-- Every task ends with acceptance evidence, a coherent commit and synchronized implementation records. Local/CI checks, authenticated runtime proof and real-provider acceptance remain separate.
-
-## Replanning checkpoint — 2026-09-21
-
-This refresh preserves the canonical phase numbers and does not restart completed infrastructure. The Notion roadmap and tracker schema were fetched again for this planning pass. Recorded test counts above were read from repository evidence; no application test suite was rerun for this documentation update.
-
-### Completed recovery change
-
-Migration `0036_provisioner_receipt_retention.sql` and related provisioning code/tests now retain receipts after permission revocation/product disable, use service actor auditing and enforce the original initiating-user fence. Final local tests/typecheck/lint/build and both affected hosted scenarios passed; all four databases have migration 0036 and production replay made no changes. Migration 0037 additionally enforces the original initiating actor inside both privileged SQL activation functions; direct SQL actor substitution was reproduced and repaired. Retaining a provider receipt does not itself implement reconciliation or safe activation.
-
-### What has advanced since the previous baseline
-
-- Capability resolution contracts, immutable snapshots, restricted staging/readback execution, bounded background refresh and scoped delivery/freshness diagnostics are committed. They prepare desired access while the provider member remains suspended; final activation and runtime policy enforcement remain incomplete.
-- Exact usage-limit adapter contracts, immutable revision jobs, restricted apply/readback execution and administration diagnostics are committed. They have fixture-backed verification; no real provider hard stop has been demonstrated.
-- Existing-organization connection intent and dispatch are committed. Provider authorization, real Scalar transport and the user-facing connection flow still need implementation and acceptance.
-- Suspended member creation and receipt-backed identity binding exist. Effective entitlements, complete limit acknowledgement, safe activation/resume and reconciliation remain work to do.
-
-### Delivery checkpoints
-
-1. **Usable identity:** real OAuth plus a two-organization membership/permission lifecycle (Phase 01).
-2. **Usable sponsored Scalar:** real organization/member lifecycle, finite usage enforcement and administrator visibility (Phases 02–03).
-3. **Usable human workspace:** contributor work, CRM, scoped context and manager workflows (Phases 04–06).
-4. **Real commercial loop:** recoverable merchant attribution, commissions and reconciled payouts (Phases 07–08).
-5. **Configurable ecosystem:** remaining products, creator workflows and enterprise configuration (Phases 09–11).
-6. **Production acceptance:** resilience, Chippi dogfood, telemetry-based pricing and three beta configurations (Phases 12–15).
-
-Security, isolation, audit and design verification accompany every checkpoint. Phase 12 is the integrated resilience gate, not a reason to defer those protections.
+- Audit every remaining copied route, component, asset and dependency against the product requirements. Classify reuse, generalize, replace, remove or investigate; remove unrelated code only after checking references and affected routes.
+- Preserve Company OS typography, spacing, layout, responsive behavior and useful primitives. Verify loading, empty, error, permission and disabled states.
+- Native workspace access includes Scalar, Stored, Cadre, Operate, Marketer, Company OS and Tell Me: real sponsorship, role-based access/views, revocation, usage control and scoped admin activity visibility. Product launch links alone do not satisfy this requirement.
+- Keep specialized product data in its owning system. Company Human owns the shared kernel, human workspace/CRM and centralized commercial state.
 
 ## Execution rules
 
@@ -91,11 +62,11 @@ Audit cleanup belongs to the phase touching that code: classify copied source as
 
 **Tracker:** CH-13–CH-19. **Status:** Groundwork implemented; provider acceptance absent.
 
-1. Finish Applications administration: expose the implemented generic connection intent/dispatch boundary through an authorized provider connection flow; finish connect/create organization, enable/disable product, configure access, view health, inspect failures and request safe retry/reconciliation.
+1. Finish Applications administration: expose the implemented generic connection intent/dispatch boundary through an authorized provider connection flow; complete provider-authorized create/connect, remote enable/disable, access acknowledgement and safe retry/reconciliation. Catalog/setup intent and access configuration UI already exist. The new health page is locally verified but uncommitted; finish its delivery, then add actual health scheduling and recovery actions.
 2. Extend the implemented restricted durable V2 suspended-member bootstrap and identity binding: apply current access and finite limits, verify provider state, revalidate membership/policy and only then resume access. Reject incompatible adapters without falling back to V1 member creation. Implement authorized resume and safe restore. Retain leases, bounded retries, stable idempotency, validated receipts and stale revision rejection. Add provider-aware reconciliation for ambiguous results and hosted worker operation under restricted credentials.
 3. Complete the remote portion of product disable and offboarding; local disable, durable commands, restricted denial execution and admin progress views are implemented. Workspace suspension/removal must deny local access immediately and durably reconcile remote access; expose pending/failed remote revocation honestly.
 4. Verify the implemented versioned organization defaults/member overrides and scoped administration with real identity. Implement desired-versus-effective access, provider acknowledgement and role/team scope through the canonical resolver. Re-enable only through authorized intent; do not resurrect stale access on membership resume.
-5. Resolve the [member bootstrap control gap](member-provisioning-control-gap.md): remote identity creation must not permit spend before entitlements and finite limits are applied. Confirm Scalar's supported organization/member control API and authentication. Its existing account API key or CRM MCP access is not proof of a provisioning contract. Document upstream contract gaps before altering architecture.
+5. Resolve the [member bootstrap control gap](member-provisioning-control-gap.md): remote identity creation must not permit spend before entitlements and finite limits are applied. Resolve the concrete upstream gaps recorded in scalar-control-assessment.md: suspended membership enforcement, verified Convex-to-Scalar identity/launch, revisioned capability/limit controls, pre-cost reservations and durable actor-attributed usage. The source audit is complete; these capabilities have not been demonstrated in the provider.
 6. Implement Scalar connect/create, provision, suspend, resume, remove, access application, limits, health and safe launch/deep links. Bind all external identities to their canonical organization/member mapping.
 7. Prove role-aware member application visibility and sponsored access without separate contributor purchases. Capture auditable provider operation state for administrators.
 
@@ -244,42 +215,31 @@ Onboard and validate all three configurations requested by the owner: sales, aff
 
 Then evaluate public adapter SDK, marketplace/security review, additional payout providers, advanced organization hierarchy, analytics and enterprise capabilities. These remain conditional investments, not prerequisites to first usable Company Human.
 
-## External dependencies to resolve without faking success
+## External acceptance dependencies
 
-| Dependency | What is still needed | Work that can proceed independently |
+| Dependency | Remaining requirement | Independent preparation |
 | --- | --- | --- |
-| OAuth provider | Provider application configuration and real account consent; current GitHub browser requires login | Local identity/security tests and deployment preparation |
-| Convex nonproduction capacity | Resolve 40-deployment quota or supported isolated local setup | Existing dedicated production deployment remains available; no recreation needed |
-| Scalar | Authenticated control contract, organization/member/usage/limit credentials and test organization | Executor, entitlement and adapter contract tests; no claimed remote success |
-| Chippi | Approved integration environment, verified merchant events and real referral persistence | SDKs, ingestion, replay, attribution and ledger tests |
-| Payout provider | Provider selection, account/recipient onboarding and applicable operational/compliance requirements | Provider-neutral ledger, transport interface and failure tests |
-| Real validation participants | Chippi contributors and three external beta teams | Preparation and automated acceptance; not dogfood/pricing proof |
-| Symbolic | OAuth discovery is now available; complete native account sign-in and verify access to existing runs; the installed connection does not execute new evaluations | Keep the compiled goal route and repository evidence current; do not claim a Symbolic run |
+| OAuth | Provider application configuration and real account consent | Identity/security tests and deployment configuration |
+| Nonproduction Convex | Resolve the previously recorded deployment quota or verify a supported isolated local setup | Preserve the existing dedicated project; never share production credentials with arbitrary previews |
+| Scalar | Verified control API, provider enforcement, credentials and test organization | Existing contract/orchestration tests and documented upstream changes |
+| Chippi | Real merchant integration environment and signed authoritative billing events | SDKs, ingestion, replay and accounting tests |
+| Payout provider | Provider selection, account and recipient onboarding, compliance and settlement access | Provider-neutral ledger and failure handling |
+| Participants | Real Chippi contributors and three external beta configurations | Automated acceptance and onboarding preparation |
 
-## Immediate bounded task queue
+These are recorded dependencies, not freshly rechecked provider account states. No calendar estimate or percentage complete is asserted without verified provider contracts and acceptance environments.
 
-1. Configure the dedicated Convex OAuth provider and prove real sign-in/sign-out with canonical identity. Complete native Symbolic sign-in separately to inspect existing runs; do not claim new evaluation execution through a read-only connection.
-2. Run the real two-organization create/invite/accept/assign/switch/suspend lifecycle; repair findings and verify the exact deployed revision before closing Phase 01.
-3. Integrate the implemented durable capability snapshots and restricted staging/readback worker into complete policy/limit orchestration. Deploy the implemented bounded background snapshot refresher and finish provider reconciliation; scoped capability delivery diagnostics are implemented; these receipts do not replace runtime gates. Use the implemented restricted usage-limit apply/readback worker and exact adapter extension (application/readback schemas and revision/target matching) to build the next orchestration stage on the implemented restricted V2 suspended-creation worker: apply current policy/finite limits to the now-bound suspended provider identity, read back state and fence activation against revoked intent. Existing request API, selection UI, V2 schema and bootstrap journal do not need rebuilding.
-4. Establish Scalar's real control API and test organization. Implement its V2 adapter; prove initial denial, current entitlement/finite-limit acknowledgement, state readback and authorized activation. If upstream contracts are missing, document the concrete gap rather than simulating success.
-5. Finish provider reconciliation, safe resume/restore, health, administrator retry/diagnostics and least-privilege hosted worker deployment. Verify existing access configuration and member request screens with real authentication.
-6. Pass the full real Scalar organization/member lifecycle; then implement measured usage and hierarchical budgets, proving hard stops before broader expensive access.
-7. Build the contributor workspace and continue Phases 05–15 in the canonical dependency order. Phase 16 remains conditional.
+## Delivery discipline and completion record
 
-If OAuth or provider credentials remain externally blocked, record the blocker and complete independent implementation without closing the blocked acceptance gate. No calendar estimate or completion percentage is asserted without confirmed provider contracts and acceptance environments.
+For each bounded task, record its canonical tracker ID, dependencies, implementation revision, automated checks, runtime/provider evidence and remaining acceptance. Use Not started, In progress, Blocked, Implemented and Verified distinctly. Commit verified tasks coherently and synchronize implementation documentation and Notion. Do not mark a tracker task Done because code exists.
+
+Security and tenant isolation apply in every phase, including database, server/API, jobs, adapters, exports, search, analytics and cache. Phase 12 is the integrated hardening gate, not permission to defer earlier security controls.
 
 ## Authority and evidence
 
 - [Canonical Notion roadmap](https://app.notion.com/p/3e1a0db630cf819585ccd74a6968af50)
 - [Canonical build tracker](https://app.notion.com/p/c1495ea132d6423989674f763497bae7)
-- [Captured task and goal route](execution/README.md)
-- [Living implementation status](implementation-status.md)
+- [Captured tasks and goal route](execution/README.md)
+- [Implementation status](implementation-status.md)
+- [Scalar source assessment](scalar-control-assessment.md)
+- [Callix tracking assessment](callix-tracking-assessment.md)
 - [Architecture](architecture.md), [data model](data-model.md), [integrations](integrations.md), [security](security.md), [billing](billing.md), [attribution](attribution.md), [payouts](payouts.md), [testing](testing.md), [decisions](decisions.md)
-
-## Connection request checkpoint
-
-Pending connected instances now have an administration form and authenticated request endpoint. Catalog selection, initial create/connect choice and provider authorization remain unfinished; the form alone does not prove a connection or ownership. See implementation status for 195 automated checks, 72 browser fixtures and runtime limitations.
-
-## Catalog entry checkpoint
-
-Registered-product catalog and ready-registration create/connect intent UI/API are implemented. Provider authorization, complete data-use/cost disclosures and real lifecycle acceptance remain open. Current evidence: 199 automated tests, 76 browser fixture checks and hosted restricted-login catalog/setup verification.
