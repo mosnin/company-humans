@@ -83,6 +83,10 @@
     "./member-capability-snapshots": {
       "types": "./dist/member-capability-snapshots.d.ts",
       "default": "./dist/member-capability-snapshots.js"
+    },
+    "./capability-worker": {
+      "types": "./dist/capability-worker.d.ts",
+      "default": "./dist/capability-worker.js"
     }
   },
   "scripts": {

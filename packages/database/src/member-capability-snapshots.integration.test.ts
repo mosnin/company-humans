@@ -55,7 +55,7 @@ describe.skipIf(!databaseUrl)('durable member capability snapshots',()=>{
    await expect(prepareMemberCapabilitySnapshot(url.toString(),input)).rejects.toThrow();
    expect((await admin.query('SELECT provisioning_status FROM product_memberships WHERE id=$1',[mapping])).rows[0].provisioning_status).toBe('suspended');
   }finally{
-   await sql.end();for(const table of ['member_capability_snapshots','entitlement_policy_revisions','entitlement_policies','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
+   await sql.end();for(const table of ['capability_attempts','capability_jobs','member_capability_snapshots','entitlement_policy_revisions','entitlement_policies','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
    await admin.query('DELETE FROM organizations WHERE id=ANY($1)',[orgs]);await admin.query('DELETE FROM users WHERE id=ANY($1)',[users]);await admin.query('DELETE FROM products WHERE id=$1',[product]);await admin.query(`DROP ROLE ${role}`);await admin.end();
   }
  });

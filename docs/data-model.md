@@ -95,3 +95,7 @@ Migration 0037 adds no domain tables. Both organization activation functions now
 ## Durable requested capability snapshots
 
 Migration 0038 adds member_capability_snapshots keyed by product membership and monotonically increasing policy revision, with a composite tenant reference. Each row retains the complete staged payload, source entitlement revisions, supported catalog capabilities, desired member revision, external target identities, initiating actor and timestamp. Runtime credentials have scoped SELECT/INSERT only; the database checks sequence and canonical target identity. These rows describe requested configuration, not provider receipts or effective grants.
+
+## Capability execution journal
+
+Migration 0039 adds capability_jobs and capability_attempts keyed by product membership and snapshot revision, with composite tenant references. Every new snapshot enqueues atomically; backfill schedules only the latest snapshot. Jobs retain leases, retry times and bounded status; completed attempts retain immutable worker provenance and apply/readback receipts. The capability worker can update journal state but cannot change snapshot configuration or product-member access.

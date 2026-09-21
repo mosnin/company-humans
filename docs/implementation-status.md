@@ -12,8 +12,8 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 174 contract/database/route/Convex tests pass. Sixty-two desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
-- Local development/verification and hosted verification/production databases have 38 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
+- 175 contract/database/route/Convex tests pass. Sixty-two desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at 84653c1 passed in run 35640077777.
+- Local development/verification and hosted verification/production databases have 39 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
 
@@ -311,3 +311,9 @@ All 173 automated tests, typecheck, lint and build pass. This is a shared contra
 Added server-only preparation of complete requested capability snapshots for bound suspended members. Per-member revision issuance is serialized; unchanged sources reuse a revision; changed source policies/catalog create immutable history with target, desired revision, actor and atomic audit provenance. Tenant RLS, composite references, direct revision-sequence checks and runtime mutation denial protect storage.
 
 All 174 automated tests, typecheck, lint and build pass; the restricted-service scenario passed hosted verification (11.60 seconds). Migration 0038 is applied to all four databases with production replay unchanged. Provider calls are absent. Worker dispatch, automatic freshness/reconciliation, full effective runtime policy and actual Scalar enforcement remain incomplete. Snapshot preparation does not enable access.
+
+## CH-18 restricted capability staging execution — 2026-09-21
+
+Migration 0039 atomically enqueues snapshots and adds durable job/attempt history plus a separate restricted capability worker role. The dispatcher applies the complete set and independently reads back suspended capability state, using stable retries, bounded deadlines and atomic service audit. It recomputes current canonical source configuration at claim/completion and supersedes stale work, preserving historical receipts. It cannot resume a member or change preferences.
+
+All 175 automated tests, typecheck, lint and build pass. Both affected scenarios passed hosted verification (55.31 seconds combined). All four databases have migration 0039; production replay made no changes. Real Scalar transport, hosted execution, automatic snapshot refresh/reconciliation, administration diagnostics and final effective-policy activation remain incomplete. Fixture readback is not provider acceptance.
