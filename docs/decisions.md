@@ -93,3 +93,7 @@ Organization defaults and member overrides follow canonical deny precedence: any
 ## 2026-09-21 — member bootstrap access gap identified before execution
 
 The V1 member provision contract does not express initial remote denial while entitlements and budgets are applied. Canonical provisioning orders these steps before launch, but hidden navigation cannot protect direct product access. [Control-gap assessment](member-provisioning-control-gap.md) records the required provider verification and versioning boundary before adding an allow worker. No adapter contract has been silently replaced and no provider acceptance is claimed.
+
+## Finite product limit representation — 2026-09-21
+
+CH-18 needs finite product/member limits before sponsored operations can be enabled. Store meter quantities as exact decimal strings/SQL numeric (up to twelve integer and six fractional digits), including zero and excluding unlimited sentinels. Meter unit and explicit UTC calendar window are immutable policy identity; changed maxima append audited revisions. This is quantity intent, not money or allocated capacity. Unit agreement across scopes is enforced, but actual product meter/unit/window semantics still require verification. See usage-limit-semantics.md for the existing adapter contract gap and unfinished full budget hierarchy.

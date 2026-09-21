@@ -75,3 +75,7 @@ member_bootstrap_jobs and member_bootstrap_attempts reference immutable tenant-b
 ## Suspended provider identity binding (0031)
 
 A current successful bootstrap receipt now binds product_memberships.external_member_id and sets provisioning_status to suspended. provider_receipt_reference identifies the immutable command/attempt, and provisioned_at records the receipt time. The suspended mapping remains unusable until later policy, finite-limit, readback and activation gates. A superseded receipt stays in the journal without changing the mapping. A conflicting external identity is rejected with provider_binding_rejected while its receipt remains available for reconciliation.
+
+## Finite product usage limit intent (0032)
+
+product_usage_limits uses canonical ch_lim IDs, tenant-bound instance/member references, a named catalog meter, immutable unit and UTC day/week/month window. Null membership is the organization/product scope; an explicit membership adds a member constraint. Quantities append to product_usage_limit_revisions as exact decimal values, with actor, timestamp and consecutive revision. Runtime roles cannot update/delete policies or history. Unit consistency is enforced across an instance's scopes/windows. No aggregation, reservation or effective allowance is implied.

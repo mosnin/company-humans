@@ -83,3 +83,7 @@ dispatchMemberBootstrap now executes a single provisionMember command through a 
 ## Suspended identity projection — 2026-09-21
 
 The bootstrap completion transaction now projects a valid current suspended receipt into the canonical product membership through a narrowly privileged function. It records an immutable attempt reference and a service audit event. Conflicts retain the receipt and fail the job for reconciliation. Superseded work cannot overwrite the mapping. This makes the external identity available to later policy and denial handling; effective policy, limits, readback, resume and real Scalar transport remain outstanding.
+
+## Finite usage limit preparation
+
+Finite product/member meter policies are now persisted as configuration intent. Existing adapter limit dictionaries do not establish unit, window, revision or readback semantics. That gap is documented in usage-limit-semantics.md; no guessed Scalar conversion or provider acknowledgement is introduced. Actual adapter application and usage enforcement remain outstanding.

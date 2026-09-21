@@ -67,6 +67,10 @@
     "./member-bootstrap-worker": {
       "types": "./dist/member-bootstrap-worker.d.ts",
       "default": "./dist/member-bootstrap-worker.js"
+    },
+    "./product-usage-limits": {
+      "types": "./dist/product-usage-limits.d.ts",
+      "default": "./dist/product-usage-limits.js"
     }
   },
   "scripts": {
