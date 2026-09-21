@@ -79,6 +79,10 @@
     "./product-connections": {
       "types": "./dist/product-connections.d.ts",
       "default": "./dist/product-connections.js"
+    },
+    "./member-capability-snapshots": {
+      "types": "./dist/member-capability-snapshots.d.ts",
+      "default": "./dist/member-capability-snapshots.js"
     }
   },
   "scripts": {

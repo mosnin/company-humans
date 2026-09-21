@@ -162,3 +162,9 @@ Migration 0036 permits the restricted provisioner to retain tenant-scoped in-fli
 ## Database initiating-authority enforcement
 
 Migration 0037 makes both privileged organization activation functions independently require the immutable initiating user of the current unfinished attempt, matching tenant, operation, attempt number and lease. An otherwise authorized replacement administrator cannot activate a lease claimed by a now-suspended administrator. The limited activation owner receives only scoped attempt reads; execution grants, owner isolation and existing capability/instance checks remain in place. This protects direct worker SQL calls as well as the TypeScript completion boundary.
+
+## Capability snapshot preparation
+
+prepareMemberCapabilitySnapshot requires applications.manage under the restricted service context. It accepts a canonical product-membership ID, derives tenant/member/instance/provider identities from scoped database rows, and only prepares a bound suspended membership with active organization/user/member and enabled active instance. One SQL statement reads eligibility, catalog and latest preferences consistently after serialized issuance. Identical source state reuses the previous revision. History insertion and human audit are atomic.
+
+Snapshot tables enforce tenant RLS, composite references, actor attribution, monotonic revisions and no runtime UPDATE/DELETE privileges. Snapshots are admin-controlled desired intent; they cannot authorize product usage. The future execution/activation path must independently re-read and compare current source state and all runtime gates. Captured eligibility can change after preparation, and a snapshot is not a reservation or provider acknowledgement.

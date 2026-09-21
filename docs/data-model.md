@@ -91,3 +91,7 @@ Migration 0035 adds immutable requested_external_organization_id to provisioning
 Migration 0036 adds tenant-scoped restricted provisioner receipt policies and replaces human-attributed worker audit insertion with constrained service audit. No domain tables or activation privileges are added. An operation can be failed for activation denial while its immutable attempt truthfully records the provider's succeeded outcome; the retained provider reference supports future reconciliation.
 
 Migration 0037 adds no domain tables. Both organization activation functions now validate the immutable initiating actor on the matching unfinished provisioning_attempts row. The limited function owner receives SELECT with capability-scoped RLS on attempts; completed attempt provenance is unchanged.
+
+## Durable requested capability snapshots
+
+Migration 0038 adds member_capability_snapshots keyed by product membership and monotonically increasing policy revision, with a composite tenant reference. Each row retains the complete staged payload, source entitlement revisions, supported catalog capabilities, desired member revision, external target identities, initiating actor and timestamp. Runtime credentials have scoped SELECT/INSERT only; the database checks sequence and canonical target identity. These rows describe requested configuration, not provider receipts or effective grants.
