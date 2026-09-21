@@ -1,6 +1,6 @@
 # Company Human — remaining phased build plan
 
-Rebased 2026-09-21 against committed application revision `2175f4c`, current implementation evidence, all 92 captured tracker tasks, and the previously captured canonical Notion roadmap. This is an execution plan, not a replacement PRD. Explicit owner directions apply: `mosnin/company-humans`, Convex OAuth, organization-sponsored ecosystem access, and all three beta configurations.
+Rebased 2026-09-21 against committed application revision `b043665`, current implementation evidence, all 92 captured tracker tasks, and the previously captured canonical Notion roadmap. This is an execution plan, not a replacement PRD. Explicit owner directions apply: `mosnin/company-humans`, Convex OAuth, organization-sponsored ecosystem access, and all three beta configurations.
 
 ## Current position
 
@@ -9,9 +9,10 @@ Rebased 2026-09-21 against committed application revision `2175f4c`, current imp
 - Phase 02 has catalog, organization provisioning machinery, member diagnostics, product-member mapping, local product disable, and a restricted suspend/remove executor with durable receipts and service audit. No real Scalar provisioning or member access has been demonstrated. Persisting a command does not revoke access in a remote product.
 - Phases 03–15 remain unfinished; Phase 16 is conditional expansion.
 - Dedicated Convex, Neon PostgreSQL and Vercel resources exist. The stable web deployment was verified at `8d72e92`; latest code is newer. Preview READY does not prove production acceptance.
-- Current recorded verification: 113 automated contract/database/route/Convex tests; 44 browser component checks using explicit fixtures; 29 applied migrations; typecheck/lint/build pass. Browser checks were recorded at `2832918`; the additive adapter contract at `2175f4c` changed no UI. These are recorded task results, not a fresh test run or live provider acceptance.
+- Current recorded verification: 157 automated contract/database/route/Convex tests; 32 applied migrations; typecheck/lint/build pass. The committed baseline has 44 browser component checks; the pending usage-limit editor has recorded 56 passing desktop/mobile fixture checks and full local checks, but is not yet committed. These are recorded results, not a fresh test run or live provider acceptance.
+- Exact finite organization/member usage limits, immutable revisions, scoped administration reads and the authenticated mutation API are committed. The usage-limit editor is pending documentation and commit. Saved limits do not yet stop remote product usage.
 - Organization/member entitlement configuration, scoped reads, mutation API and administration UI are implemented. Member access requests and tenant-scoped member selection are implemented. Both return or display unconfirmed provider access; neither grants remote access.
-- Adapter V2 now requires creating a remote member suspended and validates that receipt. The restricted V2 suspended-creation worker is implemented with local verification; real Scalar transport, policy/limit acknowledgement, reconciliation and final activation remain incomplete. Existing V1 organization and denial workers are preserved.
+- Adapter V2 now requires creating a remote member suspended and validates that receipt. The restricted V2 suspended-creation worker and receipt-backed suspended identity binding are implemented with local and hosted database verification; real Scalar transport, policy/limit acknowledgement, reconciliation and final activation remain incomplete. Existing V1 organization and denial workers are preserved.
 
 ## Execution rules
 
@@ -39,7 +40,7 @@ Audit cleanup belongs to the phase touching that code: classify copied source as
 **Tracker:** CH-13–CH-19. **Status:** Groundwork implemented; provider acceptance absent.
 
 1. Finish Applications administration: connect/create organization, enable/disable product, configure access, view health, inspect failures and request safe retry/reconciliation.
-2. Implement a restricted durable V2 member bootstrap worker that creates members suspended, then applies current access and finite limits, verifies provider state, revalidates membership/policy and only then resumes access. Reject incompatible adapters without falling back to V1 member creation. Implement authorized resume and safe restore. Retain leases, bounded retries, stable idempotency, validated receipts and stale revision rejection. Add provider-aware reconciliation for ambiguous results and hosted worker operation under restricted credentials.
+2. Extend the implemented restricted durable V2 suspended-member bootstrap and identity binding: apply current access and finite limits, verify provider state, revalidate membership/policy and only then resume access. Reject incompatible adapters without falling back to V1 member creation. Implement authorized resume and safe restore. Retain leases, bounded retries, stable idempotency, validated receipts and stale revision rejection. Add provider-aware reconciliation for ambiguous results and hosted worker operation under restricted credentials.
 3. Complete the remote portion of product disable and offboarding; local disable, durable commands, restricted denial execution and admin progress views are implemented. Workspace suspension/removal must deny local access immediately and durably reconcile remote access; expose pending/failed remote revocation honestly.
 4. Verify the implemented versioned organization defaults/member overrides and scoped administration with real identity. Implement desired-versus-effective access, provider acknowledgement and role/team scope through the canonical resolver. Re-enable only through authorized intent; do not resurrect stale access on membership resume.
 5. Resolve the [member bootstrap control gap](member-provisioning-control-gap.md): remote identity creation must not permit spend before entitlements and finite limits are applied. Confirm Scalar's supported organization/member control API and authentication. Its existing account API key or CRM MCP access is not proof of a provisioning contract. Document upstream contract gaps before altering architecture.
@@ -50,7 +51,7 @@ Audit cleanup belongs to the phase touching that code: classify copied source as
 
 ## Phase 03 — usage governance and centralized billing
 
-**Tracker:** CH-20–CH-26. **Status:** Not started.
+**Tracker:** CH-20–CH-26. **Status:** Metering and commercial enforcement not started; finite-limit configuration prerequisites implemented.
 
 1. Build versioned meters, authenticated usage ingestion, organization ownership, idempotent event storage and deterministic aggregation; handle duplicates, delays, corrections and out-of-order delivery.
 2. Implement organization/product/team/member/capability budgets, warning thresholds, soft stops and hard stops with explicit precedence and auditable changes.
@@ -201,11 +202,12 @@ Then evaluate public adapter SDK, marketplace/security review, additional payout
 | Chippi | Approved integration environment, verified merchant events and real referral persistence | SDKs, ingestion, replay, attribution and ledger tests |
 | Payout provider | Provider selection, account/recipient onboarding and applicable operational/compliance requirements | Provider-neutral ledger, transport interface and failure tests |
 | Real validation participants | Chippi contributors and three external beta teams | Preparation and automated acceptance; not dogfood/pricing proof |
-| Symbolic | OAuth discovery is now available; complete native account sign-in and verify Context/Flow tool access | Keep the compiled goal route and repository evidence current; do not claim a Symbolic run |
+| Symbolic | OAuth discovery is now available; complete native account sign-in and verify access to existing runs; the installed connection does not execute new evaluations | Keep the compiled goal route and repository evidence current; do not claim a Symbolic run |
 
 ## Immediate bounded task queue
 
-1. Configure the dedicated Convex OAuth provider and prove real sign-in/sign-out with canonical identity. Complete native Symbolic sign-in separately before claiming any Context/Flow execution.
+0. Finish the pending usage-limit editor task: record its existing verification, review the final diff, commit it and update CH-18 progress without claiming provider enforcement.
+1. Configure the dedicated Convex OAuth provider and prove real sign-in/sign-out with canonical identity. Complete native Symbolic sign-in separately to inspect existing runs; do not claim new evaluation execution through a read-only connection.
 2. Run the real two-organization create/invite/accept/assign/switch/suspend lifecycle; repair findings and verify the exact deployed revision before closing Phase 01.
 3. Build the next orchestration stage on the implemented restricted V2 suspended-creation worker: apply current policy/finite limits to the now-bound suspended provider identity, read back state and fence activation against revoked intent. Existing request API, selection UI, V2 schema and bootstrap journal do not need rebuilding.
 4. Establish Scalar's real control API and test organization. Implement its V2 adapter; prove initial denial, current entitlement/finite-limit acknowledgement, state readback and authorized activation. If upstream contracts are missing, document the concrete gap rather than simulating success.
