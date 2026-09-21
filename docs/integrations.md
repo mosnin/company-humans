@@ -87,3 +87,7 @@ The bootstrap completion transaction now projects a valid current suspended rece
 ## Finite usage limit preparation
 
 Finite product/member meter policies are now persisted as configuration intent. Existing adapter limit dictionaries do not establish unit, window, revision or readback semantics. That gap is documented in usage-limit-semantics.md; no guessed Scalar conversion or provider acknowledgement is introduced. Actual adapter application and usage enforcement remain outstanding.
+
+## Exact usage limit adapter extension
+
+ProductUsageLimitAdapterV1 extends V2 with usageLimitContractVersion=1, applyUsageLimit and getUsageLimitState. Requests/receipts identify exact persisted policy revisions and verified external targets. Organization caps cover aggregate usage; revision updates preserve counters and suspension. Strict schemas and readback matching are implemented; provider semantics still need live verification. Legacy applyLimits dictionaries remain available only for existing callers, and cannot satisfy this extension. See [semantics and compatibility](usage-limit-semantics.md). No executor or provider implementation is registered yet.

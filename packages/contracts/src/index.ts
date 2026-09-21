@@ -9,3 +9,4 @@ export * from "./entitlements.js";
 export * from "./product-adapter-v2.js";
 
 export * from "./usage-limits.js";
+export * from "./usage-limit-adapter.js";

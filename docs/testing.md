@@ -18,7 +18,7 @@ Migration, seed and database tests require `DATABASE_URL`. Without it, integrati
 
 ## Latest recorded evidence
 
-157 automated tests (17 contracts, 19 database, 121 web), 56 fixture-backed desktop/mobile browser checks, typecheck, lint and production build pass for the usage-limit UI increment. All four configured databases have 32 migrations. See chronological evidence below for scope and limitations.
+164 automated tests (24 contracts, 19 database, 121 web), typecheck, lint and production build pass for the exact usage-limit adapter extension. The 56 fixture-backed desktop/mobile browser checks remain recorded from the preceding UI increment. All four configured databases have 32 migrations. See chronological evidence below for scope and limitations.
 
 ## Historical foundation evidence
 
@@ -187,3 +187,9 @@ The extended usage-limit read/write scenario also passed on hosted verification 
 Added a dedicated budgets.manage page for organization and member limits, linked from Applications and member access. It reuses inherited cards/forms, preserves exact decimal input, locks units after first save, displays organization caps separately, and retains historical unavailable meters for zero-only changes. Failed edits remain available for retry; stale or unverified save responses require reload. Empty, restricted and unavailable states are explicit. Saved settings do not confirm provider enforcement.
 
 Verified for this increment: 157 automated tests (17 contracts, 19 database, 121 web), typecheck, lint, production build and 56 desktop/mobile browser component tests. Twelve new browser cases cover exact/zero values, repeat revisions, invalid inputs, immutable units, failures/conflicts, unavailable meters, duplicate submission, malformed receipts, member scope and empty settings. Desktop and mobile screenshots were inspected. Authentication/API browser fixtures remain explicit; real OAuth and Scalar enforcement are still unverified. No migration changed. CH-18 and Phase 02 remain incomplete.
+
+## Exact usage limit adapter extension — 2026-09-21
+
+Added a separately versioned V2 adapter extension for applying and reading back complete finite limit revisions. Strict schemas include canonical scope/revision, bound external organization/member, exact quantity/unit/window, aggregate organization scope, hard-stop mode and preserved accumulated usage. Registration rejects incompatible adapters without invoking them. The readback matcher rejects any changed policy or provider identity; legacy numeric dictionaries cannot satisfy it. Existing V1/V2 operations remain unchanged. Compatibility and migration prerequisites were documented before implementation.
+
+All 164 automated tests (24 contracts, 19 database, 121 web), typecheck, lint and production build pass. Seven new contract tests cover exact values, scope mismatches, idempotency, incompatibility, stale/foreign/reinterpreted readback, counter-reset/weaker-mode denial and normalized failures. No UI or database migration changed; the 56 browser checks remain recorded from 2c2c94c, whose hosted CI 35648547352 passed. No actual adapter transport, durable policy executor, effective resolver, activation or Scalar enforcement is introduced. CH-18 and Phase 02 remain incomplete.
