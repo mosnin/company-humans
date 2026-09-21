@@ -1,3 +1,4 @@
+import { appendServiceAudit } from "./identity-audit.js";
 import { randomUUID } from "node:crypto";
 import { Client } from "pg";
 import { z } from "zod";
@@ -60,11 +61,16 @@ export async function claimMemberDenial(url:string,organizationId:OrganizationId
     if(!row.current_revision || row.attempt_count>=5) {
       await client.query(`UPDATE public.member_denial_jobs SET status=$2,failure_code=$3,lease_token=NULL,lease_expires_at=NULL,updated_at=now() WHERE command_id=$1`,
         [row.command_id,row.current_revision?'failed':'superseded',row.current_revision?'retry_exhausted':'superseded_revision']);
+      await appendServiceAudit(client,{organizationId,serviceId:"member-denial-worker",
+        action:row.current_revision?"product.member_denial.exhausted":"product.member_denial.superseded",
+        targetType:"product_membership_command",targetId:row.command_id,afterState:{attemptNumber:row.attempt_count}});
       return null;
     }
     const leaseToken=randomUUID(),attemptNumber=row.attempt_count+1;
     await client.query(`UPDATE public.member_denial_jobs SET status='running',attempt_count=$2,lease_token=$3,lease_expires_at=now()+interval '2 minutes',updated_at=now() WHERE command_id=$1`,[row.command_id,attemptNumber,leaseToken]);
     await client.query(`INSERT INTO public.member_denial_attempts (organization_id,command_id,attempt_number,lease_token) VALUES ($1,$2,$3,$4)`,[organizationId,row.command_id,attemptNumber,leaseToken]);
+    await appendServiceAudit(client,{organizationId,serviceId:"member-denial-worker",action:"product.member_denial.claimed",
+      targetType:"product_membership_command",targetId:row.command_id,afterState:{attemptNumber}});
     return {commandId:row.command_id,productInstanceId:row.product_instance_id,membershipId:row.membership_id,operation:row.operation,
       idempotencyKey:row.idempotency_key,leaseToken,attemptNumber};
   });
@@ -91,6 +97,8 @@ export async function finishMemberDenial(url:string,organizationId:OrganizationI
       WHERE command_id=$1 AND attempt_number=$2`,[row.command_id,row.attempt_count,normalized.status,'code' in normalized?normalized.code:null,reference]);
     await client.query(`UPDATE public.member_denial_jobs SET status=$2,failure_code=$3,provider_reference=coalesce($4,provider_reference),
       lease_token=NULL,lease_expires_at=NULL,next_attempt_at=now()+($5*interval '1 second'),updated_at=now() WHERE command_id=$1`,[row.command_id,status,code,reference,delay]);
+    await appendServiceAudit(client,{organizationId,serviceId:"member-denial-worker",action:"product.member_denial.received",
+      targetType:"product_membership_command",targetId:row.command_id,afterState:{status,outcome:normalized.status,code,attemptNumber:row.attempt_count}});
   });
 }
 /** Denial only: provisioning/resume must wait for their entitlement and activation boundary. */

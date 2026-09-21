@@ -55,3 +55,9 @@ Only fixture adapters have been run. No real Scalar call, hosted schedule, produ
 Applications now link to a dedicated paginated member-access page. It displays desired access and the latest revision's denial request: queued, running, waiting, failed, superseded or provider-reported success, with bounded attempt history. No older success is substituted for a newer command. The projection excludes provider references, lease tokens and execution-role details. Missing jobs are shown as awaiting worker; no optimistic remote success is invented.
 
 Fresh connection checks on 2026-09-21 using updated Scalar/Symbolic plugin packages still found Scalar OAuth login available but no authenticated read, and Symbolic HTTP 401 without OAuth discovery. A fresh native Scalar consent flow was opened; account sign-in is pending. No product connection acceptance is inferred.
+
+## Adapter execution audit
+
+The denial dispatch journal is now accompanied by central audit events attributed to the member lifecycle service, distinct from the human who requested the command. Claims and normalized receipts are recorded atomically with job transitions; audit-write failure leaves completion uncommitted. The Audit page displays actor type and service identity instead of attributing background work to an unknown or suspended human. Real adapter execution remains unverified.
+
+The native Scalar OAuth attempt opened during the connector refresh expired without a callback. Its stale tab was closed. No grant or authenticated read was obtained; a fresh consent flow is required when the account owner is available.

@@ -81,3 +81,7 @@ An actual PostgreSQL test found the earlier product update policy allowed only p
 ## 2026-09-21 — persisted denial outlives its initiating administrator
 
 A worker that requires the original administrator to remain active can strand remote offboarding. The denial dispatcher therefore uses a separate restricted credential and only processes previously authorized, immutable suspension/removal intent. Job provenance distinguishes the original human command from the executing credential. It cannot grant access or update provider projections. Provision/resume still need a separate authorization/entitlement receipt boundary. Timeouts are not cancellation; provider-specific reconciliation remains an explicit Phase 02 gate.
+
+## 2026-09-21 — audit background execution as a service
+
+Canonical documents 03 and 05 require actor attribution and audit for adapter activity. Attempt logs alone were not visible in central audit history. Migration 0028 adds service actor identity while preserving existing human events. The denial worker records its own execution and links to the original human command; it does not impersonate the initiating administrator. This prerequisite was completed before beginning entitlement grants.

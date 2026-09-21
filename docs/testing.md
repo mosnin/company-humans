@@ -91,3 +91,7 @@ Real local Next production-server requests reject missing/foreign origins with 4
 ## Application member diagnostics
 
 69 automated tests, typecheck, lint and build pass; 28 desktop/mobile component checks pass. The existing denial integration scenario now verifies queued/provider-reported states, capability denial after membership suspension, foreign-instance denial, pagination and absence of lease/provider/worker identifiers in the projection. It also passes on hosted verification PostgreSQL. Browser fixtures verify queued, failed, completed and empty states, expandable attempts and bounded mobile table scrolling. Mobile screenshot inspected. Authentication and provider responses remain fixtures in browser checks.
+
+## Service actor audit
+
+All 69 automated tests, typecheck, lint and production build pass. The extended denial-worker scenario also passes on hosted verification PostgreSQL. It verifies one audit claim across concurrent claimers, service envelope/row agreement, visible service attribution, denial of forged human/other-service actors, no audit deletion, and transaction rollback when a deliberately injected audit failure interrupts receipt completion. The fixture trigger is removed in a finally block. Audit payloads exclude lease tokens. This is database execution evidence, not real OAuth or provider acceptance.

@@ -6,7 +6,8 @@ import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { requestProductMembership } from "./product-memberships.js";
 import { disableProductInstance } from "./product-instances.js";
-import { listApplicationMemberDiagnostics } from "./administration.js";
+import { appendIdentityAudit, appendServiceAudit } from "./identity-audit.js";
+import { listAuditEvents, listApplicationMemberDiagnostics } from "./administration.js";
 import { referenceProductId } from "./seed.js";
 import { claimMemberDenial,finishMemberDenial,dispatchMemberDenial } from "./member-denial-worker.js";
 const databaseUrl=process.env.DATABASE_URL;
@@ -52,6 +53,19 @@ describe.skipIf(!databaseUrl)('durable member denial worker',()=>{
       const claims=await Promise.all(Array.from({length:6},()=>claimMemberDenial(worker.toString(),org.organizationId,scalar)));
       expect(claims.filter(Boolean)).toHaveLength(1);const lease=claims.find(Boolean)!;
       expect(lease.operation).toBe('suspendMember');expect(lease.idempotencyKey).toBe(`${first.mapping}:member:2`);
+      const claimAudit=(await admin.query("SELECT actor_type,actor_user_id,actor_service_id,envelope FROM identity_audit_events WHERE target_id=$1 AND action='product.member_denial.claimed'",[lease.commandId])).rows;
+      expect(claimAudit).toHaveLength(1);expect(claimAudit[0].actor_type).toBe('service');expect(claimAudit[0].actor_user_id).toBeNull();
+      expect(claimAudit[0].envelope.actor).toEqual({type:'service',id:'member-denial-worker'});
+      // An audit failure must roll back the provider receipt and job completion.
+      const guard=`deny_audit_failure_${suffix}`;
+      await admin.query(`CREATE FUNCTION public.${guard}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+        IF NEW.target_id='${lease.commandId}' AND NEW.action='product.member_denial.received' THEN RAISE EXCEPTION 'fixture audit failure'; END IF; RETURN NEW; END; $$`);
+      await admin.query(`CREATE TRIGGER ${guard} BEFORE INSERT ON identity_audit_events FOR EACH ROW EXECUTE FUNCTION public.${guard}()`);
+      try {
+        await expect(finishMemberDenial(worker.toString(),org.organizationId,lease,{status:'pending',operationId:'fixture-operation'})).rejects.toThrow('fixture audit failure');
+        expect((await admin.query('SELECT status FROM member_denial_jobs WHERE command_id=$1',[lease.commandId])).rows[0].status).toBe('running');
+        expect((await admin.query('SELECT finished_at FROM member_denial_attempts WHERE command_id=$1',[lease.commandId])).rows[0].finished_at).toBeNull();
+      } finally {await admin.query(`DROP TRIGGER ${guard} ON identity_audit_events`);await admin.query(`DROP FUNCTION public.${guard}()`);}
       await finishMemberDenial(worker.toString(),org.organizationId,lease,{status:'pending',operationId:'fixture-operation'});
       expect(await claimMemberDenial(worker.toString(),org.organizationId,scalar)).toBeNull();
       await admin.query("UPDATE member_denial_jobs SET next_attempt_at=now()-interval '1 second' WHERE command_id=$1",[lease.commandId]);
@@ -69,6 +83,15 @@ describe.skipIf(!databaseUrl)('durable member denial worker',()=>{
       const projection=JSON.stringify(confirmed);
       for(const secret of [lease.leaseToken,retried.leaseToken,'fixture-operation','fixture-member','provider_reference','worker_role'])expect(projection).not.toContain(secret);
       await sql.query("SELECT set_config('company_human.organization_id',$1,false)",[org.organizationId]);
+      await expect(appendIdentityAudit(sql,{organizationId:org.organizationId,actorUserId:owner,action:'product.member_denial.claimed',targetType:'product_membership_command',targetId:lease.commandId})).rejects.toThrow();
+      await expect(appendServiceAudit(sql,{organizationId:org.organizationId,serviceId:'forged-service',action:'product.member_denial.claimed',targetType:'product_membership_command',targetId:lease.commandId,afterState:{}})).rejects.toThrow();
+      await expect(sql.query('DELETE FROM identity_audit_events WHERE target_id=$1',[lease.commandId])).rejects.toThrow('permission denied');
+      const history=await listAuditEvents(service.toString(),owner,org.organizationId);
+      const serviceEvents=history.events.filter(event=>event.targetId===lease.commandId);
+      expect(serviceEvents).toHaveLength(4);
+      expect(serviceEvents.every(event=>event.actorType==='service'&&event.actorUserId===null&&event.actorServiceId==='member-denial-worker')).toBe(true);
+      expect(JSON.stringify(serviceEvents)).not.toContain(lease.leaseToken);
+
       await expect(sql.query("UPDATE product_memberships SET provisioning_status='active' WHERE id=$1",[first.mapping])).rejects.toThrow('permission denied');
       await expect(sql.query("DELETE FROM member_denial_attempts WHERE command_id=$1",[lease.commandId])).rejects.toThrow('permission denied');
       await expect(sql.query("UPDATE member_denial_attempts SET outcome='permanent_failure' WHERE command_id=$1",[lease.commandId])).rejects.toThrow('immutable');

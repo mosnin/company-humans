@@ -59,3 +59,7 @@ Member administrators can deny mappings after changing membership status even wi
 `member_denial_jobs` references an immutable, tenant-bound suspendMember/removeMember command. Status is pending/running/retry_wait/succeeded/failed/superseded; leases last two minutes and attempts are capped at five. `member_denial_attempts` preserves the execution credential's role, lease, timestamps, normalized outcome/code and provider reference. The original human actor remains on the command; execution does not impersonate that human. Completed attempts cannot be updated and runtime credentials cannot delete them.
 
 Claims are serialized per organization/product, filter by the registered product, and skip mappings with another unexpired denial lease. New jobs are created only for the current denied mapping revision. Older work is superseded; its receipt cannot satisfy the newer command. The journal does not update product-membership provider projections or confer access.
+
+## Service execution audit (0028)
+
+Audit rows now distinguish human and service actors. Human events retain actor_user_id; service events use actor_service_id and cannot carry a user or membership identity. Database constraints require the actor in the versioned envelope to agree with the row. Existing human events remain unchanged. Member-denial claim/receipt/exhaustion/supersession events are inserted in the job transaction and link to the immutable command containing the initiating human. No lease or provider reference appears in these audit payloads.

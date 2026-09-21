@@ -60,14 +60,15 @@ export async function listRolePolicies(databaseUrl: string, actorUserId: string,
 }
 
 export interface AuditSummary {
-  id: string; action: string; actorName: string; actorUserId: string; targetType: string; targetId: string;
+  id: string; action: string; actorName: string; actorUserId: string | null; actorServiceId: string | null; actorType: "human" | "service"; targetType: string; targetId: string;
   occurredAt: Date; beforeState: Record<string,unknown> | null; afterState: Record<string,unknown> | null;
 }
 export async function listAuditEvents(databaseUrl: string, actorUserId: string, organizationId: string, page = 1) {
   const currentPage = Number.isSafeInteger(page) && page > 0 ? Math.min(page, 100000) : 1;
   return readAdministration(databaseUrl, actorUserId, organizationId, ["audit.read.all"], async client => {
     const count = await client.query<{ total: string }>("SELECT count(*) AS total FROM public.identity_audit_events WHERE organization_id = $1", [organizationId]);
-    const events = await client.query<AuditSummary>(`SELECT a.id,a.action,COALESCE(u.display_name,'Unknown actor') AS "actorName",
+    const events = await client.query<AuditSummary>(`SELECT a.id,a.action,CASE WHEN a.actor_type='service' THEN CASE WHEN a.actor_service_id='member-denial-worker' THEN 'Member lifecycle worker' ELSE a.actor_service_id END ELSE COALESCE(u.display_name,'Unknown actor') END AS "actorName",
+      a.actor_type AS "actorType",a.actor_service_id AS "actorServiceId",
       a.actor_user_id AS "actorUserId",a.target_type AS "targetType",a.target_id AS "targetId",a.occurred_at AS "occurredAt",
       a.before_state AS "beforeState",a.after_state AS "afterState"
       FROM public.identity_audit_events a LEFT JOIN public.users u ON u.id = a.actor_user_id

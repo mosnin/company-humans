@@ -43,3 +43,18 @@ export async function appendIdentityAudit(client: Client, change: IdentityAuditC
     ],
   );
 }
+
+/** A service records its own execution, retaining the initiating human on the linked command. */
+export async function appendServiceAudit(client: Client, change: {
+  organizationId: OrganizationId; serviceId: string; action: string; targetType: string; targetId: string;
+  afterState: Record<string, unknown>;
+}): Promise<void> {
+  const auditId=createCanonicalId("audit");
+  const envelope=AuditEnvelopeV1Schema.parse({schemaVersion:1,auditId,organizationId:change.organizationId,
+    actor:{type:"service",id:change.serviceId},action:change.action,target:{type:change.targetType,id:change.targetId},
+    afterRef:`${auditId}:after`,requestId:randomUUID(),occurredAt:new Date().toISOString()});
+  await client.query(`INSERT INTO public.identity_audit_events
+    (id,organization_id,actor_type,actor_service_id,action,target_type,target_id,request_id,after_state,envelope,occurred_at)
+    VALUES ($1,$2,'service',$3,$4,$5,$6,$7,$8,$9,$10)`,[auditId,change.organizationId,change.serviceId,change.action,
+    change.targetType,change.targetId,envelope.requestId,JSON.stringify(change.afterState),JSON.stringify(envelope),envelope.occurredAt]);
+}

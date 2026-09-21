@@ -78,3 +78,7 @@ Persisted denial continues after the initiating human loses membership, because 
 ## Application member diagnostics
 
 The server page and database read both require applications.manage. Instance IDs are canonical and bound to the selected organization; cross-organization instances are denied even when the same user owns both organizations. Current command revision and tenant identities are included in every join. The explicit projection omits lease tokens, external member/operation references and worker roles; revoked administrators cannot read it.
+
+## Service audit attribution
+
+The denial worker may append only its named service actor, approved member-denial actions and a tenant-bound suspension/removal command target. It cannot masquerade as a human or another service. Existing service write policies still require human actor identity for human mutations. Completed audit history remains append-only to runtime roles. Audit insertion failure rolls back the worker job and receipt transaction.
