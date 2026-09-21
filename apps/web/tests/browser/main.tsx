@@ -1,3 +1,4 @@
+import { EntitlementEditor } from "@/components/administration/entitlements";
 import { ApplicationMembers } from "@/components/administration/application-members";
 import { InvitationsTable } from "@/components/administration/invitations";
 import { ApplicationDiagnostics } from "@/components/administration/applications";
@@ -18,10 +19,12 @@ const screen = new URLSearchParams(location.search).get("screen") ?? "people";
 const restricted = new URLSearchParams(location.search).get("role") === "contributor";
 createRoot(document.getElementById("root")!).render(<WorkspaceShell organizationName="Test organization" capabilities={ROLE_CAPABILITIES[restricted ? "contributor" : "owner"]}>
   <PageHeader title={screen.charAt(0).toUpperCase()+screen.slice(1)} description="Local component test fixture. Authentication and API responses are mocked." />
+  {(screen === "entitlements" || screen === "empty-entitlements") && <EntitlementEditor organizationId={org} instanceId={`ch_inst_${"a".repeat(32)}`} data={{productName:"Scalar",membershipId:null,memberName:null,providerAccessConfirmed:false,settings:screen==='empty-entitlements'?[]:[{capability:'lead-enrichment',effect:'inherit',revision:0,organizationEffect:null,memberEffect:null,requestedEffect:'deny',allowAvailable:true},{capability:'retired-capability',effect:'deny',revision:2,organizationEffect:'deny',memberEffect:null,requestedEffect:'deny',allowAvailable:false}]}} />}
+  {screen === "member-entitlements" && <EntitlementEditor organizationId={org} instanceId={`ch_inst_${"a".repeat(32)}`} data={{productName:"Scalar",membershipId:member.id,memberName:member.name,providerAccessConfirmed:false,settings:[{capability:'lead-enrichment',effect:'inherit',revision:0,organizationEffect:'deny',memberEffect:null,requestedEffect:'deny',allowAvailable:true}]}} />}
   {screen === "application-members" && <ApplicationMembers members={[
-    {id:"queued",memberName:"Queued Contributor",membershipStatus:"suspended",desiredEnabled:false,denial:{operation:"suspendMember",status:"queued",attemptCount:0,failureCode:null,attempts:[]}},
-    {id:"failed",memberName:"Retry Contributor",membershipStatus:"active",desiredEnabled:false,denial:{operation:"suspendMember",status:"failed",attemptCount:5,failureCode:"retry_exhausted",attempts:[{number:5,startedAt:"2026-09-21T12:00:00Z",finishedAt:"2026-09-21T12:00:01Z",outcome:"retryable_failure",failureCode:"adapter_transport_failure"}]}},
-    {id:"done",memberName:"Removed Contributor",membershipStatus:"removed",desiredEnabled:false,denial:{operation:"removeMember",status:"succeeded",attemptCount:1,failureCode:null,attempts:[]}},
+    {id:"queued",membershipId:member.id,memberName:"Queued Contributor",membershipStatus:"suspended",desiredEnabled:false,denial:{operation:"suspendMember",status:"queued",attemptCount:0,failureCode:null,attempts:[]}},
+    {id:"failed",membershipId:member.id,memberName:"Retry Contributor",membershipStatus:"active",desiredEnabled:false,denial:{operation:"suspendMember",status:"failed",attemptCount:5,failureCode:"retry_exhausted",attempts:[{number:5,startedAt:"2026-09-21T12:00:00Z",finishedAt:"2026-09-21T12:00:01Z",outcome:"retryable_failure",failureCode:"adapter_transport_failure"}]}},
+    {id:"done",membershipId:member.id,memberName:"Removed Contributor",membershipStatus:"removed",desiredEnabled:false,denial:{operation:"removeMember",status:"succeeded",attemptCount:1,failureCode:null,attempts:[]}},
   ]} />}
   {screen === "empty-application-members" && <ApplicationMembers members={[]} />}
   {screen === "invitations" && <InvitationsTable organizationId={org} owner invitations={[{id:`ch_inv_${"b".repeat(32)}`,email:"pending@example.test",roleKey:"contributor",status:"pending",expiresAt:"2026-10-01T12:00:00Z"}]} />}

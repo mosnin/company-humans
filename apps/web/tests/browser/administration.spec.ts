@@ -173,3 +173,74 @@ test("application member list explains an empty mapping",async({page})=>{
   await page.goto('/?screen=empty-application-members');
   await expect(page.getByRole('cell',{name:'No members mapped to this application.'})).toBeVisible();
 });
+
+test('entitlement settings save versioned intent and keep provider access unconfirmed',async({page},testInfo)=>{
+  let calls=0;
+  await page.route('**/api/organizations/*/applications/*/entitlements',async route=>{
+    calls++;const body=route.request().postDataJSON();
+    expect(body).toEqual({membershipId:null,capability:'lead-enrichment',effect:calls===1?'allow':'deny',expectedRevision:calls-1});
+    await route.fulfill({status:200,json:{providerAccessConfirmed:false,revision:{schemaVersion:1,entitlementId:`ch_ent_${'a'.repeat(32)}`,organizationId:`ch_org_${'a'.repeat(32)}`,productInstanceId:`ch_inst_${'a'.repeat(32)}`,...body,revision:calls,expectedRevision:undefined}}});
+  });
+  await page.goto('/?screen=entitlements');
+  const select=page.getByLabel('Setting for lead-enrichment');
+  await select.selectOption('allow');await page.getByRole('button',{name:'Save setting',exact:true}).first().click();
+  await expect(page.getByRole('status')).toHaveText('Setting saved. Product access is not confirmed.');
+  await expect(page.getByText('Saved request: Allow · Revision 1')).toBeVisible();
+  await select.selectOption('deny');await page.getByRole('button',{name:'Save setting',exact:true}).first().click();
+  await expect(page.getByText('Saved request: Deny · Revision 2').first()).toBeVisible();
+  expect(calls).toBe(2);
+  await expect(page.getByLabel('Setting for retired-capability').locator('option[value="allow"]')).toHaveJSProperty('disabled',true);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath('entitlement-settings.png'),fullPage:true});
+});
+test('entitlement conflict blocks retry until reload',async({page})=>{
+  await page.route('**/api/organizations/*/applications/*/entitlements',route=>route.fulfill({status:409,json:{error:'Settings changed. Reload before saving.'}}));
+  await page.goto('/?screen=entitlements');
+  await page.getByLabel('Setting for lead-enrichment').selectOption('allow');
+  await page.getByRole('button',{name:'Save setting',exact:true}).first().click();
+  await expect(page.getByRole('alert')).toHaveText('Settings changed. Reload before saving.');
+  await expect(page.getByRole('button',{name:'Save setting',exact:true}).first()).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Reload settings'})).toBeVisible();
+  await expect(page.getByRole('status')).toHaveCount(0);
+});
+test('entitlement failure retains edits and allows retry',async({page})=>{
+  await page.route('**/api/organizations/*/applications/*/entitlements',route=>route.fulfill({status:503,json:{error:'Please retry.'}}));
+  await page.goto('/?screen=entitlements');await page.getByLabel('Setting for lead-enrichment').selectOption('allow');
+  await page.getByRole('button',{name:'Save setting',exact:true}).first().click();
+  await expect(page.getByRole('alert')).toHaveText('Please retry.');
+  await expect(page.getByLabel('Setting for lead-enrichment')).toHaveValue('allow');
+  await expect(page.getByRole('button',{name:'Save setting',exact:true}).first()).toBeEnabled();
+  await expect(page.getByRole('status')).toHaveCount(0);
+});
+test('entitlement empty catalog is explicit',async({page})=>{
+  await page.goto('/?screen=empty-entitlements');
+  await expect(page.getByRole('heading',{name:'No capabilities available'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Save setting',exact:true})).toHaveCount(0);
+});
+test('entitlement saving prevents duplicate requests and rejects malformed receipts',async({page})=>{
+  let finish:(()=>void)|undefined;
+  await page.route('**/api/organizations/*/applications/*/entitlements',async route=>{
+    await new Promise<void>(resolve=>{finish=resolve;});
+    await route.fulfill({status:200,json:{revision:{effect:'allow'},providerAccessConfirmed:true}});
+  });
+  await page.goto('/?screen=entitlements');await page.getByLabel('Setting for lead-enrichment').selectOption('allow');
+  await page.getByRole('button',{name:'Save setting',exact:true}).first().click();
+  await expect(page.getByRole('button',{name:'Saving…'})).toBeDisabled();
+  await expect(page.getByLabel('Setting for lead-enrichment')).toBeDisabled();
+  await expect.poll(()=>Boolean(finish)).toBe(true);finish!();
+  await expect(page.getByRole('alert')).toHaveText('Save could not be confirmed. Reload settings.');
+  await expect(page.getByRole('status')).toHaveCount(0);
+});
+test('member allow preserves organization denial and sends the selected member',async({page})=>{
+  await page.route('**/api/organizations/*/applications/*/entitlements',async route=>{
+    const body=route.request().postDataJSON();
+    expect(body.membershipId).toBe(`ch_mem_${'b'.repeat(32)}`);
+    await route.fulfill({status:200,json:{providerAccessConfirmed:false,revision:{schemaVersion:1,entitlementId:`ch_ent_${'a'.repeat(32)}`,organizationId:`ch_org_${'a'.repeat(32)}`,productInstanceId:`ch_inst_${'a'.repeat(32)}`,membershipId:body.membershipId,capability:body.capability,effect:body.effect,revision:1}}});
+  });
+  await page.goto('/?screen=member-entitlements');
+  await expect(page.getByText('Organization default: deny')).toBeVisible();
+  await page.getByLabel('Setting for lead-enrichment').selectOption('allow');
+  await page.getByRole('button',{name:'Save setting',exact:true}).click();
+  await expect(page.getByRole('status')).toHaveText('Setting saved. Product access is not confirmed.');
+  await expect(page.getByText('Saved request: Deny · Revision 1')).toBeVisible();
+});

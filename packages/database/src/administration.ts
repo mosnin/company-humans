@@ -116,7 +116,7 @@ export async function listInvitations(databaseUrl: string, actorUserId: string, 
 }
 
 export interface ApplicationMemberDiagnostic {
-  id: string; memberName: string; membershipStatus: string; desiredEnabled: boolean;
+  id: string; membershipId: string; memberName: string; membershipStatus: string; desiredEnabled: boolean;
   denial: null | { operation: string; status: string; attemptCount: number; failureCode: string | null;
     attempts: { number: number; startedAt: string; finishedAt: string | null; outcome: string | null; failureCode: string | null }[] };
 }
@@ -129,7 +129,7 @@ export async function listApplicationMemberDiagnostics(databaseUrl: string, acto
       JOIN public.products p ON p.id=i.product_id WHERE i.organization_id=$1 AND i.id=$2`,[organizationId,instanceId]);
     if(!instance.rows[0]) throw new AdministrationDenied();
     const count=await client.query<{total:string}>("SELECT count(*) AS total FROM public.product_memberships WHERE organization_id=$1 AND product_instance_id=$2",[organizationId,instanceId]);
-    const records=await client.query<ApplicationMemberDiagnostic>(`SELECT pm.id,COALESCE(u.display_name,'Member') AS "memberName",
+    const records=await client.query<ApplicationMemberDiagnostic>(`SELECT pm.id,pm.membership_id AS "membershipId",COALESCE(u.display_name,'Member') AS "memberName",
       m.status AS "membershipStatus",pm.desired_enabled AS "desiredEnabled",
       CASE WHEN c.id IS NULL THEN NULL ELSE jsonb_build_object('operation',c.operation,'status',COALESCE(j.status,'queued'),
         'attemptCount',COALESCE(j.attempt_count,0),'failureCode',j.failure_code,'attempts',COALESCE((SELECT jsonb_agg(

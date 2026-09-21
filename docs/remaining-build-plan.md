@@ -10,7 +10,7 @@ Rebased 2026-09-21 against committed application revision `84653c1`, the impleme
 - Phases 03–15 remain unfinished; Phase 16 is conditional expansion.
 - Dedicated Convex, Neon PostgreSQL and Vercel resources exist. The stable web deployment was verified at `8d72e92`; latest code is newer. Preview READY does not prove production acceptance.
 - At the committed application baseline: 69 automated tests, 28 browser component checks using explicit fixtures, 28 applied migrations, and typecheck/lint/build evidence. [CI at 84653c1 passed](https://github.com/mosnin/company-humans/actions/runs/35640077777). These checks do not prove authenticated or provider workflows.
-- Subsequent entitlement configuration prerequisite: contracts, migration 0029 and scoped server writes passed local and hosted verification. The suite now has 72 tests and 29 applied migrations. The authenticated mutation API is implemented; scoped administration reads are verified; administration UI and effective enforcement remain unfinished; saved settings do not grant access.
+- Subsequent entitlement configuration prerequisite: contracts, migration 0029 and scoped server writes passed local and hosted verification. The suite now has 72 tests and 29 applied migrations. The authenticated mutation API is implemented; scoped administration reads are verified; administration UI is implemented with fixture-backed browser verification; effective enforcement and real authenticated acceptance remain unfinished; saved settings do not grant access.
 
 ## Execution rules
 
@@ -206,7 +206,7 @@ Then evaluate public adapter SDK, marketplace/security review, additional payout
 
 1. Finish OAuth provider configuration and prove one real sign-in/sign-out with canonical identity.
 2. Run the real two-organization identity lifecycle and repair findings; verify the current release and close Phase 01 only with evidence.
-3. Build scoped entitlement read/API and administration UI on the verified configuration boundary. Preserve tenant denial, revision concurrency, immutable history and audit atomicity. This remains desired policy until enforcement is proven.
+3. Verify the entitlement read/API and administration UI through real OAuth and complete member access orchestration. Preserve tenant denial, revision concurrency, immutable history and audit atomicity. This remains desired policy until enforcement is proven.
 4. Add entitlement/access administration, provision/resume execution, safe restore and provider-aware reconciliation; configure restricted hosted workers. Preserve the completed local disable and suspend/remove executor.
 5. Connect real Scalar organization/member lifecycle and pass Phase 02.
 6. Connect real Scalar usage and enforce budgets before broader expensive access.

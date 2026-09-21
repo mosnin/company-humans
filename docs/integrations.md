@@ -65,3 +65,7 @@ The native Scalar OAuth attempt opened during the connector refresh expired with
 ## Entitlement preparation
 
 Organization defaults and member overrides now have versioned desired-policy storage. No Scalar transport applies these settings yet; no provider receipt, member grant or usage limit is implied. Administration UI/API, effective resolution and adapter enforcement remain outstanding.
+
+## Entitlement settings interface
+
+Admins can now configure organization defaults and mapped-member overrides in a dedicated page. This changes desired policy only. No Scalar adapter applies the settings yet; actual capabilities and usage limits remain unverified.
