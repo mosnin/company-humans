@@ -15,10 +15,12 @@ const Result = z.discriminatedUnion("status", [
 ]);
 export interface ProvisioningScope { actorUserId: UserId; organizationId: OrganizationId }
 interface OperationRow {
+  operation: "provisionOrganization" | "connectOrganization"; requested_external_organization_id: string | null;
   id: string; product_instance_id: string; idempotency_key: string; status: string;
   attempt_count: number; lease_token: string | null; lease_expired: boolean;
 }
 export interface ProvisioningLease {
+  operation: "provisionOrganization" | "connectOrganization"; requestedExternalOrganizationId: string | null;
   operationId: string; productInstanceId: string; idempotencyKey: string;
   leaseToken: string; attemptNumber: number;
 }
@@ -59,7 +61,7 @@ export async function claimProvisioningOperation(url: string, scope: Provisionin
     const selected = await client.query<OperationRow>(
       `SELECT o.*, o.lease_expires_at <= clock_timestamp() AS lease_expired FROM public.provisioning_operations o
        JOIN public.product_instances i ON i.organization_id = o.organization_id AND i.id = o.product_instance_id
-       WHERE o.organization_id = $1 AND ($2::text IS NULL OR i.product_id = $2) AND i.desired_enabled AND i.mode = 'provisioned' AND i.provisioning_status = 'pending'
+       WHERE o.organization_id = $1 AND ($2::text IS NULL OR i.product_id = $2) AND i.desired_enabled AND ((i.mode='provisioned' AND o.operation='provisionOrganization') OR (i.mode='connected' AND o.operation='connectOrganization')) AND i.provisioning_status = 'pending'
          AND ((o.status IN ('pending','retry_wait') AND o.next_attempt_at <= now())
            OR (o.status = 'running' AND o.lease_expires_at <= now()))
        ORDER BY o.next_attempt_at, o.id FOR UPDATE OF o SKIP LOCKED LIMIT 1`, [scope.organizationId, productId ?? null]);
@@ -87,7 +89,7 @@ export async function claimProvisioningOperation(url: string, scope: Provisionin
     [scope.organizationId, row.id, attemptNumber, leaseToken, scope.actorUserId]);
     await appendIdentityAudit(client, { ...scope, action: "product.provisioning.claimed", targetType: "provisioning_operation",
       targetId: row.id, afterState: { attemptNumber } });
-    return { operationId: row.id, productInstanceId: row.product_instance_id, idempotencyKey: row.idempotency_key, leaseToken, attemptNumber };
+    return { operation:row.operation,requestedExternalOrganizationId:row.requested_external_organization_id,operationId: row.id, productInstanceId: row.product_instance_id, idempotencyKey: row.idempotency_key, leaseToken, attemptNumber };
   });
 }
 
@@ -104,7 +106,7 @@ export async function finishProvisioningAttempt(url: string, scope: Provisioning
     if (!row || row.status !== "running" || row.lease_token !== leaseToken || row.lease_expired) throw new Error("Stale provisioning lease");
     if (options.activateInstance) {
       if (parsed.status !== "succeeded") throw new Error("Only successful provisioning can activate an instance");
-      await client.query("SELECT company_human_private.activate_provisioned_instance($1,$2,$3)",
+      await client.query(row.operation==="connectOrganization"?"SELECT company_human_private.activate_connected_instance($1,$2,$3)":"SELECT company_human_private.activate_provisioned_instance($1,$2,$3)",
         [row.id, leaseToken, parsed.providerReference]);
     }
     const retryable = parsed.status === "pending" || parsed.status === "retryable_failure";

@@ -18,7 +18,7 @@ Migration, seed and database tests require `DATABASE_URL`. Without it, integrati
 
 ## Latest recorded evidence
 
-165 automated tests (24 contracts, 20 database, 121 web), typecheck, lint and production build pass for the restricted usage-limit worker. 62 fixture-backed desktop/mobile browser checks pass for the delivery diagnostics increment. All four configured databases have 34 migrations. See chronological evidence below for scope and limitations.
+166 automated tests (24 contracts, 21 database, 121 web), typecheck, lint and production build pass for connection orchestration. 62 fixture-backed desktop/mobile browser checks pass for the delivery diagnostics increment. All four configured databases have 35 migrations. See chronological evidence below for scope and limitations.
 
 ## Historical foundation evidence
 
@@ -223,3 +223,15 @@ The existing limit editor shows queued/running/retry/failed/superseded/readback 
 Verified: all 165 automated tests, typecheck, lint, production build and 62 fixture-backed desktop/mobile browser tests pass. Six new browser cases cover status/history, stale success after save, refresh preserving unsaved input and independent parent/member state. Desktop and mobile screenshots were inspected. Database scenarios verify revision selection, payload exclusion and parent/member separation under restricted credentials. No migration changed; real OAuth/provider acceptance remains incomplete. Prior worker commit 187cb1b passed hosted CI 35650458374.
 
 Both expanded restricted-role scenarios also passed on hosted verification PostgreSQL (62.43 seconds combined test execution). No database migration or production provider call was required.
+
+## Existing product organization connection — 2026-09-21
+
+Added an applications.manage server boundary for an immutable candidate organization on a pending connected instance. It validates catalog support, scopes actor/instance, serializes requests, rejects target changes and records one operation plus audit atomically. The dispatcher now calls connectOrganization for connected intent, preserving create behavior, stable keys, bounded retries and normalized failures. A separate restricted activation function requires the exact requested active organization, live lease, current permission, enabled pending instance and nonretired product. Web credentials cannot invoke it.
+
+All 166 automated tests (24 contracts, 21 database, 121 web), typecheck, lint and production build pass. The new restricted-role scenario covers concurrency, tenant/target validation, atomic audit rollback, pending retry, wrong/inactive provider responses, direct activation mismatch denial and revocation during a provider call. Both connection and existing provisioning regressions passed hosted verification before the final direct-SQL test extension. Prior diagnostics commit 7c8ec54 passed CI 35651117839. No UI changed; 62 browser checks remain recorded from that commit.
+
+This is generic connection orchestration tested with fixture adapters. The real adapter must authenticate the sponsoring organization's connection and verify remote authority before success; a supplied external ID is never proof of ownership. No public connection API/UI or Scalar transport is exposed. The existing organization executor's initiating-human audit model and revoked-call reconciliation still need refinement before hosted operation. CH-16 and Phase 02 are not complete.
+
+Live OAuth recheck confirmed dedicated Convex signing configuration exists but both GitHub/Google credential pairs remain absent. GitHub browser still requires sign-in; the user was asked to sign in while independent work continues. No real authentication or provider access is claimed.
+
+The final connection scenario, including direct SQL target-mismatch denial, passed hosted verification (25.45 seconds). Migration 0035 then applied to local development and hosted production; replay made no changes. All four databases have 35 migrations. No production fixture records or provider connections were created.

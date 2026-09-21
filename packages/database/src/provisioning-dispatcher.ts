@@ -32,8 +32,10 @@ export async function dispatchProvisioningOperation(databaseUrl: string, scope: 
   let response: z.infer<typeof Response>;
   try {
     const raw = await Promise.race([
-      registration.adapter.provisionOrganization({ organizationId: scope.organizationId,
-        productInstanceId: ProductInstanceIdSchema.parse(lease.productInstanceId), idempotencyKey: lease.idempotencyKey }),
+      lease.operation==='connectOrganization'
+        ? registration.adapter.connectOrganization({organizationId:scope.organizationId,productInstanceId:ProductInstanceIdSchema.parse(lease.productInstanceId),idempotencyKey:lease.idempotencyKey,externalOrganizationId:z.string().min(1).max(256).parse(lease.requestedExternalOrganizationId)})
+        : registration.adapter.provisionOrganization({ organizationId: scope.organizationId,
+          productInstanceId: ProductInstanceIdSchema.parse(lease.productInstanceId), idempotencyKey: lease.idempotencyKey }),
       new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("Adapter deadline exceeded")), 60_000); }),
     ]);
     const parsed = Response.safeParse(raw);
@@ -44,7 +46,9 @@ export async function dispatchProvisioningOperation(databaseUrl: string, scope: 
     response = { status: "retryable_failure", code: "adapter_transport_failure" };
   } finally { if (timer) clearTimeout(timer); }
   if (response.status === "succeeded") {
-    if (response.value.status !== "active") {
+    if (lease.operation==='connectOrganization' && response.value.externalOrganizationId!==lease.requestedExternalOrganizationId) {
+      await finishProvisioningAttempt(databaseUrl,scope,lease.operationId,lease.leaseToken,{status:'permanent_failure',code:'provider_organization_mismatch'});
+    } else if (response.value.status !== "active") {
       await finishProvisioningAttempt(databaseUrl, scope, lease.operationId, lease.leaseToken,
         { status: "permanent_failure", code: "provider_organization_not_active" });
     } else {
