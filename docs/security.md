@@ -186,3 +186,7 @@ Each scan page is limited to 50 bound suspended mappings. Every member is revali
 ## Health collector boundary
 
 company_human_health_worker is a separate NOLOGIN role with tenant/product RLS, observation insert and scoped service audit only. Collection rejects owner/superuser/bypass/general-service connections. The collector accepts registered adapters rather than caller-provided URLs, bounds getHealth to ten seconds and strips free-form provider output. Observation and audit are atomic. No health result grants access. Hosted worker credentials/scheduling remain unconfigured.
+
+## Local Convex state isolation
+
+Local Convex development state may contain deployment credentials and database contents. `.convex/` is excluded from Git and both root/nested `.convex` directories are explicitly excluded from Vercel CLI uploads. Local OAuth signing keys remain separate from production. Never upload local state as a deployment artifact.
