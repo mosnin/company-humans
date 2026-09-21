@@ -1,9 +1,11 @@
+import { rejectCrossOriginMutation } from "@/lib/mutation-origin";
 import { NextRequest, NextResponse } from "next/server";
 import { syncAuthUser, findCanonicalUser } from "@company-human/database/auth-users";
 import { readProviderIdentity } from "@/lib/provider-identity";
 export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
-  if (request.headers.get("origin") !== request.nextUrl.origin) return NextResponse.json({ error: "Request denied" }, { status: 403 });
+  const denied = rejectCrossOriginMutation(request);
+  if (denied) return denied;
   const url = process.env.DATABASE_IDENTITY_URL;
   if (!url) return NextResponse.json({ error: "Identity unavailable" }, { status: 503 });
   try {

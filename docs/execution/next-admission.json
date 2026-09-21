@@ -1,13 +1,13 @@
 {
   "$schema": "company-os.work-admission-receipt.v1",
-  "request_id": "provisioning-diagnostics-20260921",
-  "task_id": "CH-15-admin-diagnostics",
+  "request_id": "identity-origin-boundary-20260921",
+  "task_id": "CH-9-mutation-origin",
   "manager_id": "root",
-  "work_class": "implementation",
+  "work_class": "repair",
   "admitted": true,
   "blockers": [],
-  "mission_state_sha256": "c01bda82a717e97f1307d6cf6cd3621e699b0c9f1ddaf92f75662d7234a177f6",
-  "governor_decision_sha256": "0f0d1e2774f33bb95b5dc54ab66d403e35d1f4187126ab09a7546e029328d99b",
+  "mission_state_sha256": "10452dada836129d7187006de804f33957bd2fa90edf307e3ea9d01337fa8a1a",
+  "governor_decision_sha256": "135c433d24e5de7fbe1f02772b318717259ddf96d675104e748df42df85784be",
   "governor_mode": "normal",
   "dominant_bottleneck": {
     "capability_id": "phase:03",
@@ -29,8 +29,16 @@
     "packaging",
     "checkpoint"
   ],
-  "replacement_orders": [],
-  "navigation_decision_sha256": "6246eb9707d8756fe3c8a170a8cee7ec33137fc4862d1eae8e654e03649d41eb",
+  "replacement_orders": [
+    {
+      "order_id": "replace-worker:current-bottleneck-worker:first_runtime",
+      "kind": "replace_worker",
+      "worker_id": "current-bottleneck-worker",
+      "reason": "second miss of first_runtime",
+      "issued_at": "2026-09-21T17:15:39.339151Z"
+    }
+  ],
+  "navigation_decision_sha256": "39780ac91b7a2cc18c98ae81295f6841dc70ea16f19f29ac891dfc79123e61df",
   "navigation_mode": "navigate",
   "next_action": {
     "action_kind": "materialize",
@@ -38,5 +46,5 @@
     "capability_id": "phase:03",
     "instruction": "Materialize the smallest real phase:03 artifact that changes objective reality."
   },
-  "receipt_sha256": "ab397a8eeb12c2ee89357dca57bf3c37ee09e226f94ed4cdc46f25df614f52da"
+  "receipt_sha256": "d93bed5def1f08ce676965e63c05e07547cd9edb8a4bea658f37777e7e7fc6c3"
 }

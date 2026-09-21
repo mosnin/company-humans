@@ -1,3 +1,4 @@
+import { rejectCrossOriginMutation } from "@/lib/mutation-origin";
 import { NextRequest, NextResponse } from "next/server";
 import { listVisibleOrganizations } from "@company-human/database/rls";
 import { createOrganization } from "@company-human/database/organizations";
@@ -23,6 +24,8 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const denied = rejectCrossOriginMutation(request);
+  if (denied) return denied;
   const identity = await resolveAuthenticatedUser().catch(() => ({ status: "unavailable" as const }));
   if (identity.status === "unavailable") return NextResponse.json({ error: "Identity unavailable" }, { status: 503 });
   if (identity.status === "unauthenticated") return NextResponse.json({ error: "Authentication required" }, { status: 401 });

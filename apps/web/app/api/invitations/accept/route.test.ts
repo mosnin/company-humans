@@ -20,7 +20,7 @@ describe("invitation acceptance boundary", () => {
     const { acceptInvitation } = await import("@company-human/database/membership-lifecycle");
     vi.mocked(resolveAuthenticatedUser).mockResolvedValue({ status: "unauthenticated" });
     const request = new NextRequest("http://localhost/api/invitations/accept", {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: "secret" }),
+      method: "POST", headers: { "content-type": "application/json", origin: "http://localhost" }, body: JSON.stringify({ token: "secret" }),
     });
     expect((await POST(request)).status).toBe(401);
     expect(acceptInvitation).not.toHaveBeenCalled();

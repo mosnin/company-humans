@@ -20,7 +20,7 @@ Migration, seed and database tests require `DATABASE_URL`. Without it, integrati
 
 - 9 shared-contract tests: canonical IDs, versioned envelopes, signatures/tampering, role policy definitions, product metadata and adapter interface shape.
 - 11 database integration scenarios: migration/seed idempotency, user synchronization/tombstones, organization identity, RLS, role/team scope, invitation lifecycle, product intent, durable provisioning attempts, restricted dispatcher activation, and restricted write credentials.
-- 21 web/backend tests: configuration/authentication boundaries, provider issuer/subject mapping, same-origin profile synchronization, verified-email ownership, session revocation/expiry/owner mismatch, account-linking denial, organization creation, invitation denial, and audited role-policy conflict/actor binding.
+- 34 web/backend tests: configuration/authentication boundaries, provider issuer/subject mapping, same-origin profile synchronization, verified-email ownership, session revocation/expiry/owner mismatch, account-linking denial, organization creation, invitation denial, and audited role-policy conflict/actor binding.
 - The restricted-role scenario uses actual non-owner database logins. It exercises creation, invitation, teams, grant changes, audit reads, suspension, removal, reinvitation, cross-tenant denial and direct privilege-escalation attempts. It also proves the Phase 00 user/organization/membership/signed-event scenario.
 - Twenty Playwright component tests exercise desktop and 390px mobile interaction. They cover invite links, removal confirmation/denial, team assignment, stale permission edits, role-aware navigation invitation persistence through a simulated sign-in return, OAuth start failures and sign-out failures.
 - Package typecheck includes test sources. Production builds exclude those tests from package artifacts.
@@ -53,3 +53,9 @@ The full suite now has 39 tests and passes with typecheck, lint and production b
 ## Applications diagnostics
 
 Restricted database tests verify authorized operation/attempt projection, cross-user denial and omission of lease tokens and provider references. Two new route tests cover cross-origin enable denial and server-derived actor binding without fabricating an existing instance status. All 41 automated tests pass (full suite followed by the new route cases). Twenty browser component checks pass across desktop and mobile, including failure-history expansion, empty state and hidden contributor navigation. The mobile screenshot shows readable content without horizontal overflow. These browser tests use explicit fixtures, not connected OAuth.
+
+## Browser mutation request origin
+
+54 automated tests pass: 9 contracts, 11 PostgreSQL scenarios and 34 web/backend cases. The twelve mutation-handler cases cover absent/null origin, foreign host, deceptive host suffix, protocol and port changes, plus normal same-origin authentication. A separate case covers Next proxy hostname normalization and rejects forwarded-host overrides. Existing positive mutation tests now explicitly supply the browser's Origin header. Typecheck, lint and production build pass.
+
+The production build was started on loopback port 3215 and all twelve handlers were exercised via real HTTP. Missing/foreign origins returned 403; valid local origin reached authentication and returned 503 because OAuth is unconfigured. Public health returned 200. The first runtime run caught the internal-hostname mismatch; the corrected guard passed all checks. The server was stopped after verification. [The receipt binds the checked source hashes](execution/origin-runtime-evidence.json). This does not prove real login or authenticated end-to-end mutations.

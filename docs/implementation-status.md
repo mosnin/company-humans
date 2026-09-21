@@ -10,7 +10,7 @@ Updated 2026-09-21. Destination: `mosnin/company-humans`, branch `codex/company-
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 41 contract/database/route/Convex tests pass. Twenty desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass.
+- 54 contract/database/route/Convex tests pass. Twenty desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass.
 - The local development and verification databases have 21 migrations applied; the development baseline includes seven reference-product seeds. Restricted connection credentials are stored only in ignored `apps/web/.env.local`; no OAuth provider secrets or tenant demo records were created.
 
 ## Phase gates
@@ -67,3 +67,7 @@ Only fixture adapters were executed, on disposable local test records. No real e
 The dedicated Applications admin page now displays tenant-scoped setup state, attempt counts, retry eligibility, normalized failures and expandable history using the inherited Company OS card/typography/layout primitives. Permission denial, empty, unavailable and pagination states are explicit. Connected organization state does not claim sponsored member access or live product health. The query requires applications.manage and projects no lease tokens or provider references. The enable API rejects cross-origin requests and no longer falsely labels existing active instances pending.
 
 Verified: 41 automated tests (39 full-suite plus two new route tests), typecheck, lint, build and 20 desktop/mobile browser component checks. The new mobile screenshot was inspected. Authentication/API fixtures remain explicit; this is not real OAuth or provider evidence. Hosted CI 35630343181 passed at 5246869. Manual retry, reconciliation and real Scalar execution remain incomplete.
+
+## Phase 01 request-origin repair — 2026-09-21
+
+The mutation sweep found ten endpoints without an Origin check. All twelve browser mutation endpoints now use one shared guard, with exact scheme/host/port checks before authentication. Real HTTP testing found and repaired a Next proxy internal-host normalization mismatch. All 54 automated tests, typecheck, lint and production build pass; all twelve HTTP endpoints reject missing/foreign origin and reach authentication for a valid origin. No real OAuth session was available. Prior Applications diagnostics commit 4e71af9 passed hosted CI run 35630879094. Phase 01 remains In progress pending real Convex OAuth and authenticated tenant workflows.

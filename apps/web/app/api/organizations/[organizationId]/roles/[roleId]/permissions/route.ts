@@ -1,8 +1,11 @@
+import { rejectCrossOriginMutation } from "@/lib/mutation-origin";
 import { NextRequest, NextResponse } from "next/server";
 import { RolePermissionError, SetRolePermissionsSchema, setRolePermissions } from "@company-human/database/role-permissions";
 import { resolveAuthenticatedUser } from "@/lib/authenticated-user";
 
 export async function PUT(request: NextRequest, context: { params: Promise<{ organizationId: string; roleId: string }> }) {
+  const denied = rejectCrossOriginMutation(request);
+  if (denied) return denied;
   const identity = await resolveAuthenticatedUser().catch(() => ({ status: "unavailable" as const }));
   if (identity.status !== "ok") return NextResponse.json({ error: "Sign in or check your access" }, {
     status: identity.status === "unauthenticated" ? 401 : identity.status === "forbidden" ? 403 : 503,

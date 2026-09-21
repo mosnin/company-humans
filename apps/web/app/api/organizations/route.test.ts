@@ -16,7 +16,7 @@ afterEach(() => {
 
 function request(body: unknown): NextRequest {
   return new NextRequest(url, {
-    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+    method: "POST", headers: { "content-type": "application/json", origin: "http://localhost" }, body: JSON.stringify(body),
   });
 }
 

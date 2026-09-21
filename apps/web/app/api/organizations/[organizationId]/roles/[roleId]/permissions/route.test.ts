@@ -11,7 +11,7 @@ const userId = `ch_usr_${"a".repeat(32)}`;
 const organizationId = `ch_org_${"b".repeat(32)}`;
 const roleId = `ch_role_${"c".repeat(32)}`;
 const context = { params: Promise.resolve({ organizationId, roleId }) };
-function request(body: unknown) { return new NextRequest("http://localhost/api/permissions", { method: "PUT", body: JSON.stringify(body) }); }
+function request(body: unknown) { return new NextRequest("http://localhost/api/permissions", { method: "PUT", headers: { origin: "http://localhost" }, body: JSON.stringify(body) }); }
 beforeEach(() => { vi.resetAllMocks(); vi.stubEnv("DATABASE_SERVICE_URL", "test-only"); mocks.identity.mockResolvedValue({ status: "ok", userId }); });
 describe("role policy boundary", () => {
   it("rejects unauthenticated changes before reaching the database", async () => {

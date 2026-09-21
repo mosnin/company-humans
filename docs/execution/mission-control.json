@@ -24,12 +24,12 @@
     "first_mutation": {
       "satisfied": true,
       "miss_count": 0,
-      "satisfied_at": "2026-09-21T17:15:39.339151Z"
+      "satisfied_at": "2026-09-21T17:21:43.199616Z"
     },
     "first_runtime": {
       "satisfied": false,
-      "miss_count": 2,
-      "last_checked_at": "2026-09-21T17:15:39.339151Z"
+      "miss_count": 3,
+      "last_checked_at": "2026-09-21T17:21:43.199616Z"
     },
     "first_render": {
       "miss_count": 0,
@@ -128,6 +128,11 @@
           "kind": "product_source",
           "path": "apps/web/convex/auth.ts",
           "sha256": "baec20bc3de675343a324bc6cce3ac62d8272551f4d2162f538d953fb2a1f3ea"
+        },
+        {
+          "kind": "product_source",
+          "path": "apps/web/lib/mutation-origin.ts",
+          "sha256": "bbe996b1d064f21dba4896ae35f8228cd5186e7262dc6ff2a031047fb22e0fde"
         }
       ]
     },
@@ -388,6 +393,21 @@
         "path": "apps/web/components/administration/applications.tsx",
         "sha256": "a5567d3a2973bf22ced1eac5c16640c5eb5722a92fab9b417d022d508b1bb9f6"
       }
+    },
+    {
+      "$schema": "company-os.mission-execution-event.v1",
+      "event_id": "identity-origin-boundary-20260921",
+      "kind": "artifact_materialized",
+      "occurred_at": "2026-09-21T17:21:43.199616Z",
+      "event_sha256": "3081036498ca6bcd61a11252ed618885623e6b4aba0741a30f0b7e1d45d69725",
+      "work_class": "repair",
+      "units": 1.0,
+      "capability_id": "phase:01",
+      "evidence": {
+        "kind": "product_source",
+        "path": "apps/web/lib/mutation-origin.ts",
+        "sha256": "bbe996b1d064f21dba4896ae35f8228cd5186e7262dc6ff2a031047fb22e0fde"
+      }
     }
   ],
   "work_units": {
@@ -399,7 +419,7 @@
     "implementation": 3.0,
     "integration": 2.0,
     "packaging": 0.0,
-    "repair": 0.0,
+    "repair": 1.0,
     "research": 0.0,
     "runtime": 0.0
   },
@@ -422,6 +442,13 @@
       "worker_id": "current-bottleneck-worker",
       "reason": "second miss of first_runtime",
       "issued_at": "2026-09-21T17:15:39.339151Z"
+    },
+    {
+      "order_id": "replace-manager:current-bottleneck-manager:first_runtime",
+      "kind": "replace_manager",
+      "manager_id": "current-bottleneck-manager",
+      "reason": "repeated mission deadline failure: first_runtime",
+      "issued_at": "2026-09-21T17:21:43.199616Z"
     }
   ],
   "consumed_wake_keys": [],
@@ -537,7 +564,7 @@
     "$schema": "company-os.outcome-executive-decision.v1",
     "objective_id": "company-human",
     "objective": "Build and independently verify the complete Company Human platform in mosnin/company-humans against the canonical Notion tree and phases 00\u201316. Preserve company-os-web. Use Convex OAuth, organization-sponsored ecosystem access with Scalar first, scoped roles and admin activity visibility, bounded usage and centralized commercial control, modular human work/CRM/context/creator workspaces, recoverable Chippi referral attribution, immutable commissions and real regulated payouts while merchant billing remains independent. Verify sales, referral and UGC configurations without forks. Use Symbolic context and Flow when connected; inspect Callix UTM tracking for reuse. Expansion remains conditional on stable first-party contracts and actual demand.",
-    "budget_fraction_consumed": 0.020872200138888887,
+    "budget_fraction_consumed": 0.02508354811342593,
     "reality_level": "R0",
     "reality_level_index": 0,
     "mode": "normal",
@@ -699,7 +726,7 @@
         "existing_implementation": null
       }
     ],
-    "decision_sha256": "d9d4d4a3059b6a4ef3f99ea1d00bd93e68a59606e22f201d045164f41efd06b1",
+    "decision_sha256": "242444802cd61493fe67760c3bfa8e0a0b897e98eb8c634aff2d8d6e2c047c25",
     "navigation_decision_sha256": "a40ccc5f921acddaf691e931bb0726558fe9d5bf6e7551e6c646b046a7d1c821",
     "navigation_mode": "navigate",
     "waypoint": "R3_FIRST_REALITY",
@@ -747,7 +774,7 @@
     }
   },
   "checkpoint": null,
-  "state_sha256": "e72c17cbeb847af99df246344950b8079b06bf1984284fe941dde5181405c234",
+  "state_sha256": "e5d31a05da5a898c09388ba56f6fa56f138c31fd8d97d750ba35d7e1ab885479",
   "goal_route_sha256": "fbe18be85de19dee2838b7e5484d00de48083c72abd2c5bf57928acbf0178344",
   "root_goal_sha256": "03d30ad602d562e0245176463ef01d2c90f14d5300bfdfdecc84f825e56644a5",
   "scheduler_binding": "Active Codex thread goal; this local lease is not an installed background automation",

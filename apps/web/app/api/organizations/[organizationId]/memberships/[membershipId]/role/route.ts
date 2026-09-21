@@ -1,3 +1,4 @@
+import { rejectCrossOriginMutation } from "@/lib/mutation-origin";
 import { NextRequest, NextResponse } from "next/server";
 import { changeMembershipRole } from "@company-human/database/organization-authority";
 import { resolveAuthenticatedUser } from "@/lib/authenticated-user";
@@ -5,6 +6,8 @@ import { resolveAuthenticatedUser } from "@/lib/authenticated-user";
 export const runtime = "nodejs";
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ organizationId: string; membershipId: string }> }): Promise<NextResponse> {
+  const denied = rejectCrossOriginMutation(request);
+  if (denied) return denied;
   const identity = await resolveAuthenticatedUser().catch(() => ({ status: "unavailable" as const }));
   if (identity.status === "unavailable") return NextResponse.json({ error: "Identity unavailable" }, { status: 503 });
   if (identity.status === "unauthenticated") return NextResponse.json({ error: "Authentication required" }, { status: 401 });

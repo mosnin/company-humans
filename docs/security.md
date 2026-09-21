@@ -46,3 +46,9 @@ Operations and attempt history use RLS requiring applications.manage in the expl
 External effects that occur before local revocation remain a reconciliation/offboarding requirement. Rejection of local activation does not prove the provider cancelled its resource; the failed transaction leaves the journal available for investigation. No production worker login or credential has been created by these migrations.
 
 Applications diagnostics are restricted by applications.manage both in server page checks and the database service query/RLS. The projection excludes provider references, leases and raw payloads. Browser enable mutations require an exact same-origin Origin header; user identity remains server-derived.
+
+## Browser mutation origin checks — 2026-09-21
+
+All twelve cookie-authenticated POST/PUT/PATCH handlers reject absent, null or foreign Origin before identity resolution or database work. The shared guard compares the exact scheme and destination Host, including port; client-supplied X-Forwarded-Host cannot expand the allowlist. Using Host preserves the browser-facing authority when Next's proxy normalizes its internal URL hostname. Deployments must preserve the original destination Host and protocol. Legitimate same-origin requests still require OAuth and tenant authorization; Origin is not authentication.
+
+A regression run initially failed ten of twelve route boundary scenarios. After the repair, all twelve deny wrong origins before auth, and a proxy-normalization case denies forwarded-host spoofing. A real production-build HTTP check confirms missing/foreign Origin returns 403 and valid local Origin reaches the unconfigured-authentication 503 boundary for each route. No OAuth callback, webhook or signed machine API was changed; future integration endpoints must use their own signature/API-key boundaries. See [runtime evidence](execution/origin-runtime-evidence.json).

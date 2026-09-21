@@ -1,3 +1,4 @@
+import { rejectCrossOriginMutation } from "@/lib/mutation-origin";
 import { NextRequest, NextResponse } from "next/server";
 import { acceptInvitation } from "@company-human/database/membership-lifecycle";
 import { resolveAuthenticatedUser } from "@/lib/authenticated-user";
@@ -5,6 +6,8 @@ import { resolveAuthenticatedUser } from "@/lib/authenticated-user";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const denied = rejectCrossOriginMutation(request);
+  if (denied) return denied;
   const identity = await resolveAuthenticatedUser({ requireVerifiedEmail: true }).catch(() => ({ status: "unavailable" as const }));
   if (identity.status === "unavailable") return NextResponse.json({ error: "Identity unavailable" }, { status: 503 });
   if (identity.status === "unauthenticated") return NextResponse.json({ error: "Authentication required" }, { status: 401 });
