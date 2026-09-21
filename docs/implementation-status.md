@@ -2,6 +2,8 @@
 
 Updated 2026-09-21. Destination: `mosnin/company-humans`, branch `codex/company-human-foundation`, [draft PR 1](https://github.com/mosnin/company-humans/pull/1). Company OS remains unchanged.
 
+Current remaining work and acceptance gates: [remaining phased build plan](remaining-build-plan.md), rebased against application revision b7c756a and the canonical Notion roadmap. Historical sections below retain their original evidence counts and deployment state.
+
 ## Verified locally
 
 - Shared canonical IDs, signed event/audit contracts, migration checksums, deterministic product seeds, and versioned adapter interface.
@@ -10,8 +12,8 @@ Updated 2026-09-21. Destination: `mosnin/company-humans`, branch `codex/company-
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 54 contract/database/route/Convex tests pass. Twenty desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass.
-- The local development and verification databases have 21 migrations applied; the development baseline includes seven reference-product seeds. Restricted connection credentials are stored only in ignored `apps/web/.env.local`; no OAuth provider secrets or tenant demo records were created.
+- 58 contract/database/route/Convex tests pass. Twenty-two desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Hosted CI at b7c756a passed in run 35635987769.
+- Local development/verification and hosted verification/production databases have 24 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
 
 ## Phase gates
 
@@ -19,8 +21,8 @@ Updated 2026-09-21. Destination: `mosnin/company-humans`, branch `codex/company-
 | --- | --- | --- |
 | Source scaffold | Implemented; local checks pass | Live authenticated layout and deployment verification. |
 | 00 Foundation | Verified at 3fbc494 | Public GitHub run 35522115426 passed install, typecheck, lint, migrations, seed, tests, build and browser checks. |
-| 01 Identity kernel | In progress | Real Convex OAuth sign-in/sign-out, browser create/invite/accept/assign/switch/suspend scenario, deployed web credential wiring. |
-| 02 Provisioning | In progress; groundwork only | Real Scalar adapter, product membership, entitlements, state machine, health, and full lifecycle proof. Catalog/pending intent grants no access. |
+| 01 Identity kernel | In progress | Real Convex OAuth sign-in/sign-out, browser create/invite/accept/assign/switch/suspend scenario, and acceptance of the latest deployed revision. Restricted web credentials are configured. |
+| 02 Provisioning | In progress; groundwork only | Real Scalar adapter, member-command execution, entitlements, hosted worker, health, and full lifecycle proof. Mapping and pending intent grant no access. |
 | 03 Metering and billing | Not started | Measured Scalar usage, budgets, hard stops, cost and billing projections. |
 | 04 Human workspace | Not started | Contributor Work, Apps, Context, Earnings, Leaderboard, Team, manager workflows. Identity administration is not this phase's completed shell. |
 | 05 CRM and human work | Not started | Native records, assignments, visibility, actor attribution, Scalar sync. |
