@@ -1,6 +1,6 @@
 # Company Human — remaining phased build plan
 
-Rebased 2026-09-21 against committed application revision `b043665`, current implementation evidence, all 92 captured tracker tasks, and the previously captured canonical Notion roadmap. This is an execution plan, not a replacement PRD. Explicit owner directions apply: `mosnin/company-humans`, Convex OAuth, organization-sponsored ecosystem access, and all three beta configurations.
+Rebased 2026-09-21 against committed application revision `2d4b5d7`, current implementation evidence, all 92 captured tracker tasks, and the previously captured canonical Notion roadmap. This is an execution plan, not a replacement PRD. Explicit owner directions apply: `mosnin/company-humans`, Convex OAuth, organization-sponsored ecosystem access, and all three beta configurations.
 
 ## Current position
 
@@ -13,6 +13,31 @@ Rebased 2026-09-21 against committed application revision `b043665`, current imp
 - Exact finite organization/member usage limits, immutable revisions, scoped administration reads and the authenticated mutation API are committed. The usage-limit editor is implemented and locally verified. Saved limits do not yet stop remote product usage.
 - Organization/member entitlement configuration, scoped reads, mutation API and administration UI are implemented. Member access requests and tenant-scoped member selection are implemented. Both return or display unconfirmed provider access; neither grants remote access.
 - Adapter V2 now requires creating a remote member suspended and validates that receipt. The restricted V2 suspended-creation worker and receipt-backed suspended identity binding are implemented with local and hosted database verification; real Scalar transport, policy/limit acknowledgement, reconciliation and final activation remain incomplete. Existing V1 organization and denial workers are preserved.
+
+## Replanning checkpoint — 2026-09-21
+
+This refresh preserves the canonical phase numbers and does not restart completed infrastructure. The Notion roadmap and tracker schema were fetched again for this planning pass. Recorded test counts above were read from repository evidence; no application test suite was rerun for this documentation update.
+
+### Finish the current bounded change
+
+The working tree contains migration `0036_provisioner_receipt_retention.sql` and related provisioning code/tests. They are not part of committed revision `2d4b5d7`. Complete review of receipt retention after permission revocation/product disable, service actor auditing and original initiating-user fencing. Confirm final local and hosted verification, migration application/replay, documentation and commit before counting this change as delivered. Retaining a provider receipt does not itself implement reconciliation or safe activation.
+
+### What has advanced since the previous baseline
+
+- Exact usage-limit adapter contracts, immutable revision jobs, restricted apply/readback execution and administration diagnostics are committed. They have fixture-backed verification; no real provider hard stop has been demonstrated.
+- Existing-organization connection intent and dispatch are committed. Provider authorization, real Scalar transport and the user-facing connection flow still need implementation and acceptance.
+- Suspended member creation and receipt-backed identity binding exist. Effective entitlements, complete limit acknowledgement, safe activation/resume and reconciliation remain work to do.
+
+### Delivery checkpoints
+
+1. **Usable identity:** real OAuth plus a two-organization membership/permission lifecycle (Phase 01).
+2. **Usable sponsored Scalar:** real organization/member lifecycle, finite usage enforcement and administrator visibility (Phases 02–03).
+3. **Usable human workspace:** contributor work, CRM, scoped context and manager workflows (Phases 04–06).
+4. **Real commercial loop:** recoverable merchant attribution, commissions and reconciled payouts (Phases 07–08).
+5. **Configurable ecosystem:** remaining products, creator workflows and enterprise configuration (Phases 09–11).
+6. **Production acceptance:** resilience, Chippi dogfood, telemetry-based pricing and three beta configurations (Phases 12–15).
+
+Security, isolation, audit and design verification accompany every checkpoint. Phase 12 is the integrated resilience gate, not a reason to defer those protections.
 
 ## Execution rules
 
@@ -206,6 +231,7 @@ Then evaluate public adapter SDK, marketplace/security review, additional payout
 
 ## Immediate bounded task queue
 
+0. Finish and verify the uncommitted provisioning receipt-retention change described above; record its exact migration/deployment state and commit it independently.
 1. Configure the dedicated Convex OAuth provider and prove real sign-in/sign-out with canonical identity. Complete native Symbolic sign-in separately to inspect existing runs; do not claim new evaluation execution through a read-only connection.
 2. Run the real two-organization create/invite/accept/assign/switch/suspend lifecycle; repair findings and verify the exact deployed revision before closing Phase 01.
 3. Use the implemented restricted usage-limit apply/readback worker and exact adapter extension (application/readback schemas and revision/target matching) to build the next orchestration stage on the implemented restricted V2 suspended-creation worker: apply current policy/finite limits to the now-bound suspended provider identity, read back state and fence activation against revoked intent. Existing request API, selection UI, V2 schema and bootstrap journal do not need rebuilding.

@@ -2,7 +2,7 @@
 
 Updated 2026-09-21. Destination: `mosnin/company-humans`, branch `codex/company-human-foundation`, [draft PR 1](https://github.com/mosnin/company-humans/pull/1). Company OS remains unchanged.
 
-Current remaining work and acceptance gates: [remaining phased build plan](remaining-build-plan.md), rebased against committed application revision b043665 and the canonical Notion roadmap. Historical sections below retain their original evidence counts and deployment state.
+Current remaining work and acceptance gates: [remaining phased build plan](remaining-build-plan.md), rebased against committed application revision 2d4b5d7 and the canonical Notion roadmap. Historical sections below retain their original evidence counts and deployment state.
 
 ## Verified locally
 
