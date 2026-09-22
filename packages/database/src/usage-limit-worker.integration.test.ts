@@ -138,7 +138,7 @@ describe.skipIf(!databaseUrl)('restricted exact usage-limit dispatch',()=>{
       expect(JSON.stringify(events)).not.toContain('fixture-member');expect(JSON.stringify(events)).not.toContain('secret-not-to-persist');
     } finally {
       await sql.end();
-      for(const table of ['usage_limit_attempts','usage_limit_jobs','product_usage_limit_revisions','product_usage_limits','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
+      for(const table of ['member_denial_access_receipts','member_denial_attempts','member_denial_jobs','member_access_commands','product_membership_commands','usage_limit_attempts','usage_limit_jobs','product_usage_limit_revisions','product_usage_limits','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
       await admin.query('DELETE FROM organizations WHERE id=ANY($1)',[orgs]);await admin.query('DELETE FROM users WHERE id=$1',[owner]);await admin.query('DELETE FROM products WHERE id=$1',[product]);
       for(const role of [serviceRole,workerRole])await admin.query(`DROP ROLE ${role}`);await admin.end();
     }

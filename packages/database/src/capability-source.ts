@@ -22,7 +22,9 @@ export async function readCurrentCapabilityInputs(client:Client,organizationId:s
    WHERE pm.organization_id=$1 AND pm.id=$2 AND pm.desired_enabled AND pm.provisioning_status='suspended'
     AND pm.external_member_id IS NOT NULL AND i.external_organization_id IS NOT NULL
     AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status<>'retired'
-    AND m.status='active' AND u.status='active' AND o.status='active'`,[organizationId,productMembershipId]);
+    AND m.status='active' AND u.status='active' AND o.status='active'
+    AND EXISTS(SELECT 1 FROM public.role_permissions permission WHERE permission.organization_id=m.organization_id
+      AND permission.role_id=m.role_id AND permission.permission_key='product.use')`,[organizationId,productMembershipId]);
   const row=result.rows[0];if(!row)return null;
   const catalog=ProductCatalogMetadataV1Schema.safeParse(row.catalog_metadata);if(!catalog.success)return null;
   const revisions=z.array(EntitlementRevisionV1Schema).parse(row.revisions);

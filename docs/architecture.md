@@ -31,3 +31,7 @@ Member creation now has two verified kernel boundaries: the restricted V2 execut
 ## Health collection
 
 The restricted health collector records each provider check independently from provisioning state. Latest-started observations are projected for admins with a five-minute monitoring freshness window; failed checks remain visible. This is monitoring only. The permission-scoped admin status interface shows saved observations, freshness and failures. Scheduling and real adapter health verification remain incomplete.
+
+## Access policy safety
+
+Entitlement and finite-limit revisions invalidate bound member access transactionally, while preserving intended assignments for a later authorized activation. Existing durable denial jobs carry monotonic access revisions. Provider state is projected only from full current fenced receipts, independently of local intent. Preparation checks target product.use from persisted tenant grants without impersonating that member. Role/org/catalog invalidation and an activation readiness resolver remain unfinished; no app launch is enabled by these preparations.

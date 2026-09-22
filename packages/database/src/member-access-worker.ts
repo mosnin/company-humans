@@ -36,6 +36,6 @@ export async function dispatchFencedMemberDenial(url:string,organizationId:Organ
   }catch{result={status:"retryable_failure",code:"adapter_transport_failure"}; /* Raw provider errors never enter the journal. */}
   const receipt=result.status==='succeeded'
     ?{status:'succeeded' as const,value:{externalMemberId:command.target.externalMemberId,status:command.access as 'suspended'|'removed'}}:result;
-  await finishMemberDenial(url,organizationId,lease,receipt);
+  await finishMemberDenial(url,organizationId,lease,receipt,result.status==='succeeded'?result.value:undefined);
   return 'processed';
 }

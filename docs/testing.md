@@ -413,3 +413,5 @@ Identity-offboarding verification: real restricted database tests cover cross-or
 ## Immutable hosted migration release
 
 From an installed checkout using Node24, set DATABASE_URL securely for the intended verification database and run `node scripts/migrate-release.mjs <committed-sha>`. The script extracts only that commit's SQL and matching runner; unfinished worker files are excluded. Verify targeted database tests before repeating the same committed revision on production. Never run integration tests against production. Release migration replay at fe45da6 returned an empty applied list on hosted verification. Credentials are never command-line arguments or committed files.
+
+0051–0053 final local verification:340 automated tests passed (70 contracts,35 PostgreSQL,235 web), followed by repository typecheck, lint and production build. Full-suite cleanup and old desired-disable assertions were corrected to match retained audit records and honest pending state. Independent review accepted tenant grants, provenance, exact receipt projection and UI precedence. Hosted and real-provider acceptance remain separate.

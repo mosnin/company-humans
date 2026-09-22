@@ -31,7 +31,7 @@ describe.skipIf(!databaseUrl)('durable member capability snapshots',()=>{
    await setProductEntitlement(url.toString(),{...config,membershipId:org.ownerMembershipId});
    const denied=await prepareMemberCapabilitySnapshot(url.toString(),input);expect(denied.policyRevision).toBe(2);expect(denied.capabilities).toEqual([]);
    const stored=(await admin.query('SELECT source,payload FROM member_capability_snapshots WHERE product_membership_id=$1 AND policy_revision=2',[mapping])).rows[0];
-   expect(stored.source.revisions).toHaveLength(2);expect(stored.source.desiredRevision).toBe(1);
+   expect(stored.source.revisions).toHaveLength(2);expect(stored.source.desiredRevision).toBe(4); // Three policy changes advance the bound mapping intent.
    await setProductEntitlement(url.toString(),{...config,effect:'inherit',expectedRevision:2});
    expect((await prepareMemberCapabilitySnapshot(url.toString(),input)).capabilities).toEqual(['read']);
    await admin.query('UPDATE products SET catalog_metadata=$2 WHERE id=$1',[product,{...metadata,supportedCapabilities:['write']}]);
@@ -55,7 +55,7 @@ describe.skipIf(!databaseUrl)('durable member capability snapshots',()=>{
    await expect(prepareMemberCapabilitySnapshot(url.toString(),input)).rejects.toThrow();
    expect((await admin.query('SELECT provisioning_status FROM product_memberships WHERE id=$1',[mapping])).rows[0].provisioning_status).toBe('suspended');
   }finally{
-   await sql.end();for(const table of ['capability_attempts','capability_jobs','member_capability_snapshots','entitlement_policy_revisions','entitlement_policies','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
+   await sql.end();for(const table of ['member_denial_access_receipts','member_denial_attempts','member_denial_jobs','member_access_commands','product_membership_commands','capability_attempts','capability_jobs','member_capability_snapshots','entitlement_policy_revisions','entitlement_policies','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
    await admin.query('DELETE FROM organizations WHERE id=ANY($1)',[orgs]);await admin.query('DELETE FROM users WHERE id=ANY($1)',[users]);await admin.query('DELETE FROM products WHERE id=$1',[product]);await admin.query(`DROP ROLE ${role}`);await admin.end();
   }
  });

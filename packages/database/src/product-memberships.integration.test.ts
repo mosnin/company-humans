@@ -71,7 +71,7 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       await expect(runtime.query("DELETE FROM product_memberships WHERE id=$1",[ids[0]])).rejects.toThrow();
       await runtime.query("UPDATE product_memberships SET desired_enabled=false WHERE id=$1",[ids[0]]);
       await expect(runtime.query("UPDATE product_memberships SET desired_enabled=true WHERE id=$1",[ids[0]])).rejects.toThrow();
-      expect((await listMemberApplications(readerUrl.toString(),alice,org.organizationId))[0]?.status).toBe('suspended');
+      expect((await listMemberApplications(readerUrl.toString(),alice,org.organizationId))[0]?.status).toBe('access_update_pending');
       await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("reconciliation");
       await admin.query("UPDATE product_instances SET desired_enabled=false WHERE id=$1",[instance]);
       await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");

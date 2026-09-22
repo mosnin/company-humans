@@ -89,8 +89,15 @@ describe.skipIf(!databaseUrl)('restricted capability staging worker',()=>{
    await prepare();await dispatch(fixture(async()=>({status:'pending',operationId:'remote-job'}),async()=>{throw new Error('Unexpected readback');}));expect((await status(9)).status).toBe('retry_wait');
    await admin.query("UPDATE capability_jobs SET next_attempt_at=now()-interval '1 second' WHERE product_membership_id=$1 AND revision=9",[mapping]);
    await dispatch(fixture(good().stageCapabilities,async()=>({status:'succeeded',value:{...lease.state,memberAccess:'active'}} as unknown as Awaited<ReturnType<ProductCapabilityAdapterV1['getStagedCapabilities']>>)));expect((await status(9)).failure_code).toBe('invalid_adapter_response');
+   await prepare();const permissionRevoked=(await claim())!;
+   const targetRole=(await admin.query('SELECT role_id FROM memberships WHERE id=$1',[org.ownerMembershipId])).rows[0].role_id;
+   await admin.query("DELETE FROM role_permissions WHERE organization_id=$1 AND role_id=$2 AND permission_key='product.use'",[org.organizationId,targetRole]);
+   await expect(prepareMemberCapabilitySnapshot(url.toString(),input)).rejects.toThrow();
+   await finishCapability(worker.toString(),org.organizationId,permissionRevoked,{status:'succeeded',value:permissionRevoked.state},{status:'succeeded',value:permissionRevoked.state});
+   expect((await status(10)).status).toBe('superseded');
+   await admin.query("INSERT INTO role_permissions(organization_id,role_id,permission_key) VALUES($1,$2,'product.use')",[org.organizationId,targetRole]);
    await prepare();const revoked=(await claim())!;await admin.query('UPDATE product_instances SET desired_enabled=false WHERE id=$1',[instance]);
-   await finishCapability(worker.toString(),org.organizationId,revoked,{status:'succeeded',value:revoked.state},{status:'succeeded',value:revoked.state});expect((await status(10)).status).toBe('superseded');
+   await finishCapability(worker.toString(),org.organizationId,revoked,{status:'succeeded',value:revoked.state},{status:'succeeded',value:revoked.state});expect((await status(11)).status).toBe('superseded');
    expect((await admin.query('SELECT provisioning_status FROM product_memberships WHERE id=$1',[mapping])).rows[0].provisioning_status).toBe('suspended');
    await workerSql.query("SELECT set_config('company_human.organization_id',$1,false),set_config('company_human.product_id',$2,false)",[org.organizationId,product]);
    await expect(workerSql.query("UPDATE product_memberships SET provisioning_status='active' WHERE id=$1",[mapping])).rejects.toThrow('permission denied');
@@ -102,7 +109,7 @@ describe.skipIf(!databaseUrl)('restricted capability staging worker',()=>{
    const events=(await admin.query("SELECT actor_service_id,actor_user_id,after_state FROM identity_audit_events WHERE organization_id=$1 AND actor_type='service'",[org.organizationId])).rows;
    expect(events.length).toBeGreaterThan(10);expect(events.every(e=>e.actor_service_id==='capability-worker'&&e.actor_user_id===null)).toBe(true);expect(JSON.stringify(events)).not.toContain('secret-do-not-persist');
   }finally{
-   await workerSql.end();await sql.end();for(const table of ['capability_attempts','capability_jobs','member_capability_snapshots','entitlement_policy_revisions','entitlement_policies','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
+   await workerSql.end();await sql.end();for(const table of ['member_denial_access_receipts','member_denial_attempts','member_denial_jobs','member_access_commands','product_membership_commands','capability_attempts','capability_jobs','member_capability_snapshots','entitlement_policy_revisions','entitlement_policies','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
    await admin.query('DELETE FROM organizations WHERE id=ANY($1)',[orgs]);await admin.query('DELETE FROM users WHERE id=ANY($1)',[users]);await admin.query('DELETE FROM products WHERE id=$1',[product]);await admin.query(`DROP ROLE ${workerRole}`);await admin.query(`DROP ROLE ${role}`);await admin.end();
   }
  });

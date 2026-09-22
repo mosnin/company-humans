@@ -483,3 +483,11 @@ Production deployment dpl_3vBnRRDPd4k1DXkV9bEUeDBE3VaL is READY at fe45da6682c00
 Hosted verification and production applied committed migrations0048–0050. Nine hosted denial, offboarding, bootstrap and product lifecycle tests passed with network-appropriate60-second test/hook timeouts. A restricted production usage-ingestion login is configured in Vercel; no provider signing credentials or real Scalar event acceptance are claimed.
 
 `scripts/migrate-release.mjs` executes SQL and the matching migration runner from one immutable committed revision, excluding concurrent unfinished working-tree migrations. Replay of fe45da6 against hosted verification applied no changes. Repository-local Git author email now resolves to the authenticated GitHub owner; a subsequent production deployment succeeded without rewriting history.
+
+### Policy invalidation and contributor access state — 2026-09-22
+
+0051–0053 add atomic entitlement/limit access invalidation, full fenced denial readback projection, current target product.use checks, and an honest contributor pending-access state. Bound assignments retain desired intent; they cannot become usable from these changes. Provider failures/disconnection remain visible before pending changes. Independent review accepted the final state after correcting unavailable-state precedence. Local integration covers concurrent policy edits, immutable provenance, audit rollback, foreign tenant denial and stale/forged receipt rejection.
+
+Hosted rollout remains pending for these migrations. Activation, comprehensive role/team/org/catalog invalidation, hosted worker dispatch and actual Scalar lifecycle acceptance remain open.
+
+0051–0053 final local verification:340 automated tests passed (70 contracts,35 PostgreSQL,235 web), followed by repository typecheck, lint and production build. Full-suite cleanup and old desired-disable assertions were corrected to match retained audit records and honest pending state. Independent review accepted tenant grants, provenance, exact receipt projection and UI precedence. Hosted and real-provider acceptance remain separate.

@@ -37,6 +37,14 @@ describe.skipIf(!databaseUrl)('restricted automatic capability preparation',()=>
    const page1=await refreshCapabilitySnapshots(preparer.toString(),{...input,limit:1});expect(page1.prepared).toBe(1);expect(page1.nextCursor).not.toBeNull();
    const page2=await refreshCapabilitySnapshots(preparer.toString(),{...input,limit:1,after:page1.nextCursor});expect(page2.prepared).toBe(1);expect(page2.nextCursor).toBeNull();
    const unchanged=await refreshCapabilitySnapshots(preparer.toString(),input);expect(unchanged).toEqual({scanned:2,prepared:0,reused:2,skipped:0,nextCursor:null});
+   // Customizing the target contributor role must block preparation even though the owner still has product.use.
+   const contributorRole=(await admin.query('SELECT role_id FROM memberships WHERE id=$1',[member2])).rows[0].role_id;
+   await admin.query("DELETE FROM role_permissions WHERE organization_id=$1 AND role_id=$2 AND permission_key='product.use'",[org.organizationId,contributorRole]);
+   expect(await refreshCapabilitySnapshots(preparer.toString(),input)).toEqual({scanned:2,prepared:0,reused:1,skipped:1,nextCursor:null});
+   // A matching permission in another organization cannot authorize this target.
+   expect((await admin.query("SELECT count(*)::int n FROM role_permissions WHERE organization_id=$1 AND permission_key='product.use'",[other.organizationId])).rows[0].n).toBeGreaterThan(0);
+   await admin.query("INSERT INTO role_permissions(organization_id,role_id,permission_key) VALUES($1,$2,'product.use')",[org.organizationId,contributorRole]);
+   expect((await refreshCapabilitySnapshots(preparer.toString(),input)).reused).toBe(2);
    await setProductEntitlement(url.toString(),{...config,effect:'deny',expectedRevision:1});
    const concurrent=await Promise.all(Array.from({length:3},()=>refreshCapabilitySnapshots(preparer.toString(),input)));
    expect(concurrent.reduce((n,r)=>n+r.prepared,0)).toBe(2);
@@ -70,7 +78,7 @@ describe.skipIf(!databaseUrl)('restricted automatic capability preparation',()=>
    const events=(await admin.query("SELECT actor_user_id,actor_service_id FROM identity_audit_events WHERE organization_id=$1 AND action='product.capabilities.refreshed'",[org.organizationId])).rows;
    expect(events).toHaveLength(6);expect(events.every(r=>r.actor_user_id===null&&r.actor_service_id==='capability-preparer')).toBe(true);
   }finally{
-   await sql.end();for(const table of ['capability_attempts','capability_jobs','member_capability_snapshots','entitlement_policy_revisions','entitlement_policies','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
+   await sql.end();for(const table of ['member_denial_access_receipts','member_denial_attempts','member_denial_jobs','member_access_commands','product_membership_commands','capability_attempts','capability_jobs','member_capability_snapshots','entitlement_policy_revisions','entitlement_policies','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
    await admin.query('DELETE FROM organizations WHERE id=ANY($1)',[orgs]);await admin.query('DELETE FROM users WHERE id=ANY($1)',[users]);await admin.query('DELETE FROM products WHERE id=$1',[product]);await admin.query(`DROP ROLE ${preparerRole}`);await admin.query(`DROP ROLE ${role}`);await admin.end();
   }
  });

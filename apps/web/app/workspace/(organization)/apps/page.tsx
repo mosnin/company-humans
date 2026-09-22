@@ -3,6 +3,7 @@ import { getWorkspace } from "@/lib/workspace";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 const states = {
+  access_update_pending: ["Access update pending", "Your organization is updating access to this tool."],
   preparing: ["Being prepared", "Your organization is setting up your access."],
   suspended: ["Access paused", "Contact your administrator if you need this tool for your work."],
   unavailable: ["Currently unavailable", "Your administrator needs to review this connection."],
