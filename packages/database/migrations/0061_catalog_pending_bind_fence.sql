@@ -94,6 +94,10 @@ GRANT EXECUTE ON FUNCTION company_human_private.block_stale_catalog_binding(text
 
 -- Keep the existing receipt, identity and tenant checks. Acquire the catalog
 -- lock before projecting a binding so both possible commit orders are fenced.
+-- The prior migration transferred this function to the non-login binding role.
+-- Replace it as that exact owner; hosted migration logins are not superusers.
+GRANT CREATE ON SCHEMA company_human_private TO company_human_member_binding;
+SET LOCAL ROLE company_human_member_binding;
 CREATE OR REPLACE FUNCTION company_human_private.bind_suspended_product_member(command_id text, lease uuid)
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE job public.member_bootstrap_jobs%ROWTYPE;
@@ -167,6 +171,8 @@ BEGIN
  RETURN true;
 END;
 $$;
+RESET ROLE;
+REVOKE CREATE ON SCHEMA company_human_private FROM company_human_member_binding;
 
 GRANT CREATE ON SCHEMA company_human_private TO company_human_policy_denial;
 ALTER FUNCTION company_human_private.bump_catalog_access_revision() OWNER TO company_human_policy_denial;
