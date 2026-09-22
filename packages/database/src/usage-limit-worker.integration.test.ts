@@ -109,6 +109,33 @@ describe.skipIf(!databaseUrl)('restricted exact usage-limit dispatch',()=>{
       expect(memberView.settings.find(row=>row.window==='utc_month')?.delivery?.status).toBe('succeeded');
       expect(memberView.settings.find(row=>row.window==='utc_month')?.organizationDelivery?.status).toBe('failed');
       expect((await admin.query('SELECT provisioning_status FROM product_memberships WHERE id=$1',[mapping])).rows[0].provisioning_status).toBe('suspended');
+      // A revoke and restore cannot make an older positive member limit receipt current again.
+      const memberRevision=await setProductUsageLimit(service.toString(),{...input,membershipId:org.ownerMembershipId,expectedRevision:1,maximumQuantity:'9'});
+      expect(memberRevision.revision).toBe(2);
+      // Isolated fixture reset permits a claim; production has no activation path that clears this flag yet.
+      await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
+      const staleMember=(await claim())!;
+      const ownerRole=(await admin.query('SELECT role_id FROM memberships WHERE id=$1',[org.ownerMembershipId])).rows[0].role_id;
+      await admin.query("DELETE FROM role_permissions WHERE organization_id=$1 AND role_id=$2 AND permission_key='product.use'",[org.organizationId,ownerRole]);
+      await admin.query("INSERT INTO role_permissions(organization_id,role_id,permission_key) VALUES($1,$2,'product.use')",[org.organizationId,ownerRole]);
+      await finishUsageLimit(worker.toString(),org.organizationId,staleMember,
+        {status:'succeeded',value:staleMember.state},{status:'succeeded',value:staleMember.state});
+      expect((await status(member.usageLimitId,2)).status).toBe('superseded');
+      expect((await admin.query('SELECT claimed_access_revision FROM usage_limit_attempts WHERE usage_limit_id=$1 AND revision=2',[member.usageLimitId])).rows[0].claimed_access_revision).toBe('1');
+      expect((await admin.query('SELECT access_revision,policy_blocked FROM product_memberships WHERE id=$1',[mapping])).rows[0]).toEqual({access_revision:'2',policy_blocked:true});
+      // A second catalog requirement is checked at receipt time, not merely at claim.
+      await admin.query('UPDATE products SET catalog_metadata=$2 WHERE id=$1',[product,{...metadata,requiredPermissions:['product.use','billing.read.all']}]);
+      await setProductUsageLimit(service.toString(),{...input,membershipId:org.ownerMembershipId,expectedRevision:2,maximumQuantity:'8'});
+      await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
+      const extraPermission=(await claim())!;expect(extraPermission.state.scope).toBe('member');
+      await admin.query("DELETE FROM role_permissions WHERE organization_id=$1 AND role_id=$2 AND permission_key='billing.read.all'",[org.organizationId,ownerRole]);
+      await finishUsageLimit(worker.toString(),org.organizationId,extraPermission,
+        {status:'succeeded',value:extraPermission.state},{status:'succeeded',value:extraPermission.state});
+      expect((await status(member.usageLimitId,3)).status).toBe('superseded');
+      await setProductUsageLimit(service.toString(),{...input,membershipId:org.ownerMembershipId,expectedRevision:3,maximumQuantity:'7'});
+      await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
+      expect(await claim()).toBeNull();expect((await status(member.usageLimitId,4)).status).toBe('superseded');
+      await admin.query("INSERT INTO role_permissions(organization_id,role_id,permission_key) VALUES($1,$2,'billing.read.all')",[org.organizationId,ownerRole]);
       // Target revocation during a call makes its otherwise valid receipt historical.
       await save(6);const revoked=(await claim())!;await admin.query("UPDATE product_instances SET desired_enabled=false WHERE id=$1",[instance]);
       await finishUsageLimit(worker.toString(),org.organizationId,revoked,{status:'succeeded',value:revoked.state},{status:'succeeded',value:revoked.state});expect((await status(id,7)).status).toBe('superseded');
@@ -133,7 +160,7 @@ describe.skipIf(!databaseUrl)('restricted exact usage-limit dispatch',()=>{
       await expect(sql.query("UPDATE usage_limit_attempts SET outcome='succeeded' WHERE usage_limit_id=$1 AND revision=2",[id])).rejects.toThrow('immutable');
       await sql.query("SELECT set_config('company_human.product_id',$1,false)",[createCanonicalId('product')]);expect((await sql.query('SELECT * FROM usage_limit_jobs')).rowCount).toBe(0);
       await sql.query("SELECT set_config('company_human.organization_id',$1,false),set_config('company_human.product_id',$2,false)",[foreign.organizationId,product]);expect((await sql.query('SELECT * FROM usage_limit_jobs')).rowCount).toBe(0);
-      const events=(await admin.query("SELECT envelope,actor_service_id,after_state FROM identity_audit_events WHERE organization_id=$1 AND actor_type='service'",[org.organizationId])).rows;
+      const events=(await admin.query("SELECT envelope,actor_service_id,after_state FROM identity_audit_events WHERE organization_id=$1 AND actor_type='service' AND action LIKE 'product.usage_limit.%'",[org.organizationId])).rows;
       expect(events.length).toBeGreaterThan(10);for(const event of events){AuditEnvelopeV1Schema.parse(event.envelope);expect(event.actor_service_id).toBe('usage-limit-worker');}
       expect(JSON.stringify(events)).not.toContain('fixture-member');expect(JSON.stringify(events)).not.toContain('secret-not-to-persist');
     } finally {

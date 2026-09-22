@@ -226,3 +226,7 @@ Removing product.use or assigning a denying role now invalidates bound assignmen
 ## Catalog permission checks in capability preparation
 
 Restricted capability readers now require each catalog-required permission, plus product.use, on the target member's current tenant role. Unknown catalog permission keys fail closed. The normalized requirement set enters the snapshot source, so changed catalog requirements cannot reuse an older capability snapshot. This is local capability staging only: positive member-limit delivery and revocation for additional requirements remain separate open tasks; no product activation is authorized by a prepared snapshot.
+
+## Positive member limit delivery
+
+The restricted usage-limit worker checks the target member's product.use and all registered catalog-required permissions before applying a positive member limit and again before accepting readback. Each member attempt records the access revision at claim; revocation and restoration leave an older attempt stale. A zero limit remains deliverable as a hard stop after revocation, and organization aggregate limits do not acquire a fictitious member permission requirement. This controls worker delivery only. Atomic provider enforcement against a concurrent access revision, safe product activation and budget enforcement are still pending.

@@ -131,3 +131,5 @@ Product memberships retain desired assignment separately from policy_blocked. Ea
 ## Authorization revocation (0054–0055)
 
 Product commands carry separate source_authorization for loss of product.use or reassignment to a denying role. A private trigger owner appends service-provenance denial commands and audit entries; the same access journal and jobs handle delivery. A shared organization authorization lock serializes role-policy changes and role assignment. Differential grant writes avoid deleting grants that are retained. A migration-only helper reconciles preexisting bound, unblocked unauthorized mappings and is idempotent; it changes neither roles nor assignments.
+
+Migration0057 adds an immutable claimed_access_revision to usage_limit_attempts. It is nullable for organization aggregate and historical attempts; positive member receipts require an exact current revision. An older in-flight attempt without a revision cannot become current.

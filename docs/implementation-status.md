@@ -507,3 +507,7 @@ Independent review accepted0054–0055: new-transition and historical reconcilia
 ### Catalog permission staging — 2026-09-22
 
 0056 adds narrow global permission-catalog reads to the restricted capability preparer and worker. The shared source reader requires the target member to hold every catalog requirement and product.use within the current organization; unknown requirements deny preparation. The requirement set is part of the source fingerprint. Local migration and two focused PostgreSQL tests pass, including a target contributor lacking an owner-held requirement and an unknown requirement. Positive member limits and remote denial on loss of an additional requirement are still outstanding; no activation claim is made.
+
+### Positive member-limit authorization — 2026-09-22
+
+0057 locally adds the target-role permission predicate and claimed access revision fence to positive member-limit attempts. Real PostgreSQL tests prove an older receipt is superseded after product.use revocation and restoration, and that removing another catalog requirement during the call supersedes the receipt. Zero hard stops and aggregate organization limits remain deliverable. This is worker delivery safety, not proof of real provider enforcement or member activation.

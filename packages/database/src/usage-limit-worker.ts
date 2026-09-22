@@ -11,20 +11,33 @@ interface Row {
   lease_token: string | null; expired: boolean; latest: boolean; eligible: boolean;
   product_instance_id: string; membership_id: string | null; meter_key: string; unit: string; window_key: string; maximum_quantity: string;
   external_organization_id: string | null; external_member_id: string | null; catalog_metadata: unknown;
+  access_revision:string|null; claimed_access_revision:string|null;
 }
 export interface UsageLimitLease { productId: ProductId; state: AppliedUsageLimitState; leaseToken: string; attemptNumber: number; idempotencyKey: string; }
 const selection = `SELECT j.*,j.lease_expires_at<=clock_timestamp() AS expired,l.product_instance_id,l.membership_id,l.meter_key,l.unit,l.window_key,
-  r.maximum_quantity,i.external_organization_id,pm.external_member_id,p.catalog_metadata,
+  r.maximum_quantity,i.external_organization_id,pm.external_member_id,pm.access_revision,attempt.claimed_access_revision,p.catalog_metadata,
   NOT EXISTS (SELECT 1 FROM public.product_usage_limit_revisions newer WHERE newer.usage_limit_id=l.id AND newer.revision>j.revision) AS latest,
   (r.maximum_quantity=0 OR (o.status='active' AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status<>'retired'
-    AND (l.membership_id IS NULL OR (m.status='active' AND u.status='active' AND pm.desired_enabled AND pm.provisioning_status IN ('active','suspended'))))) AS eligible
+    AND (l.membership_id IS NULL OR (m.status='active' AND u.status='active' AND pm.desired_enabled
+      AND NOT pm.policy_blocked AND pm.provisioning_status IN ('active','suspended')
+      AND EXISTS(SELECT 1 FROM public.role_permissions permission WHERE permission.organization_id=m.organization_id
+        AND permission.role_id=m.role_id AND permission.permission_key='product.use')
+      AND jsonb_typeof(p.catalog_metadata->'requiredPermissions')='array'
+      AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(p.catalog_metadata->'requiredPermissions')='array'
+        THEN p.catalog_metadata->'requiredPermissions' ELSE '[]'::jsonb END) required(permission_key)
+        LEFT JOIN public.permissions known ON known.key=required.permission_key
+        LEFT JOIN public.role_permissions permission ON permission.organization_id=m.organization_id
+          AND permission.role_id=m.role_id AND permission.permission_key=required.permission_key
+        WHERE known.key IS NULL OR permission.permission_key IS NULL))))) AS eligible
   FROM public.usage_limit_jobs j JOIN public.product_usage_limits l ON l.organization_id=j.organization_id AND l.id=j.usage_limit_id
   JOIN public.product_usage_limit_revisions r ON r.organization_id=j.organization_id AND r.usage_limit_id=j.usage_limit_id AND r.revision=j.revision
   JOIN public.product_instances i ON i.organization_id=l.organization_id AND i.id=l.product_instance_id
   JOIN public.products p ON p.id=i.product_id JOIN public.organizations o ON o.id=l.organization_id
   LEFT JOIN public.product_memberships pm ON pm.organization_id=l.organization_id AND pm.product_instance_id=l.product_instance_id AND pm.membership_id=l.membership_id
   LEFT JOIN public.memberships m ON m.organization_id=l.organization_id AND m.id=l.membership_id
-  LEFT JOIN public.users u ON u.id=m.user_id`;
+  LEFT JOIN public.users u ON u.id=m.user_id
+  LEFT JOIN public.usage_limit_attempts attempt ON attempt.organization_id=j.organization_id
+    AND attempt.usage_limit_id=j.usage_limit_id AND attempt.revision=j.revision AND attempt.attempt_number=j.attempt_count`;
 function stateFor(row: Row): AppliedUsageLimitState | null {
   const parsed = AppliedUsageLimitStateSchema.safeParse({ schemaVersion: 1,
     limit: { schemaVersion: 1, usageLimitId: row.usage_limit_id, organizationId: row.organization_id, productInstanceId: row.product_instance_id,
@@ -79,7 +92,7 @@ export async function claimUsageLimit(url: string, organizationId: OrganizationI
     const leaseToken = randomUUID(), attemptNumber = row.attempt_count + 1;
     await client.query(`UPDATE public.usage_limit_jobs SET status='running',attempt_count=$3,lease_token=$4,lease_expires_at=now()+interval '2 minutes',updated_at=now()
       WHERE usage_limit_id=$1 AND revision=$2`, [row.usage_limit_id,row.revision,attemptNumber,leaseToken]);
-    await client.query(`INSERT INTO public.usage_limit_attempts(organization_id,usage_limit_id,revision,attempt_number,lease_token) VALUES($1,$2,$3,$4,$5)`, [organizationId,row.usage_limit_id,row.revision,attemptNumber,leaseToken]);
+    await client.query(`INSERT INTO public.usage_limit_attempts(organization_id,usage_limit_id,revision,attempt_number,lease_token,claimed_access_revision) VALUES($1,$2,$3,$4,$5,$6)`, [organizationId,row.usage_limit_id,row.revision,attemptNumber,leaseToken,row.membership_id===null?null:row.access_revision]);
     await audit(client,organizationId,{...row,attempt_count:attemptNumber},'claimed',{});
     return { productId, state: state!, leaseToken, attemptNumber, idempotencyKey: `usage-limit:${row.usage_limit_id}:${row.revision}` };
   });
@@ -100,7 +113,8 @@ export async function finishUsageLimit(url: string, organizationId: Organization
         : readback ?? {status:'permanent_failure',code:'provider_readback_missing'};
       if (receipt.status === 'succeeded' && !matchesAppliedUsageLimit(expected,receipt.value)) receipt = {status:'permanent_failure',code:'provider_limit_mismatch'};
     }
-    const active = current(row) && matchesAppliedUsageLimit(expected,stateFor(row));
+    const active = current(row) && matchesAppliedUsageLimit(expected,stateFor(row))
+      && (row.membership_id===null || Number(row.maximum_quantity)===0 || row.claimed_access_revision===row.access_revision);
     const retry = receipt.status === 'pending' || receipt.status === 'retryable_failure';
     const status = !active ? 'superseded' : receipt.status === 'succeeded' ? 'succeeded' : retry && row.attempt_count < 5 ? 'retry_wait' : 'failed';
     const code = !active ? 'superseded_policy' : retry && row.attempt_count >= 5 ? 'retry_exhausted' : 'code' in receipt ? receipt.code : null;
