@@ -139,7 +139,7 @@ it.skipIf(!url)('policy revisions durably deny bound members, preserve bootstrap
   await sql.end();
   for(const table of ['identity_audit_events','member_denial_access_receipts','member_denial_attempts','member_denial_jobs','member_access_commands','member_bootstrap_attempts','member_bootstrap_jobs','usage_limit_attempts','usage_limit_jobs','product_usage_limit_revisions','product_usage_limits','entitlement_policy_revisions','entitlement_policies','product_membership_commands','product_memberships','product_instances','memberships','role_permissions','roles'])await db.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[organizations]);
   await db.query('DELETE FROM organizations WHERE id=ANY($1)',[organizations]);await db.query('DELETE FROM products WHERE id=$1',[product]);await db.query('DELETE FROM users WHERE id=ANY($1)',[[user,secondUser]]);
-  for(const role of [serviceRole,workerRole,appRole]){await db.query(`DROP OWNED BY ${role}`);await db.query(`DROP ROLE ${role}`);}
+  for(const role of [serviceRole,workerRole,appRole])await db.query(`DROP ROLE ${role}`);
   await db.end();
  }
 },30000);
