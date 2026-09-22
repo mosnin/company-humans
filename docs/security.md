@@ -222,3 +222,7 @@ Entitlement/limit edits atomically enqueue fenced denial for bound desired assig
 ## Role permission revocation
 
 Removing product.use or assigning a denying role now invalidates bound assignments in the same transaction, including explicit authorization provenance. Runtime credentials cannot manufacture that provenance. Restoring permissions leaves policy_blocked in place and does not resume remote access. Application writers acquire a shared authorization lock before row locks. Direct concurrent SQL can encounter a deadlock and must retry the entire transaction; an aborted transaction cannot commit partial denial state. The upgrade reconciler is available only to its private owner, not application/worker roles. Full provider receipt requirements apply to these denials. Other catalog-required permissions, organization/catalog invalidation and team/commercial policy remain separate unfinished work.
+
+## Catalog permission checks in capability preparation
+
+Restricted capability readers now require each catalog-required permission, plus product.use, on the target member's current tenant role. Unknown catalog permission keys fail closed. The normalized requirement set enters the snapshot source, so changed catalog requirements cannot reuse an older capability snapshot. This is local capability staging only: positive member-limit delivery and revocation for additional requirements remain separate open tasks; no product activation is authorized by a prepared snapshot.

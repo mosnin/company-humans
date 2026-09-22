@@ -24,13 +24,23 @@ export async function readCurrentCapabilityInputs(client:Client,organizationId:s
     AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status<>'retired'
     AND m.status='active' AND u.status='active' AND o.status='active'
     AND EXISTS(SELECT 1 FROM public.role_permissions permission WHERE permission.organization_id=m.organization_id
-      AND permission.role_id=m.role_id AND permission.permission_key='product.use')`,[organizationId,productMembershipId]);
+      AND permission.role_id=m.role_id AND permission.permission_key='product.use')
+    AND jsonb_typeof(p.catalog_metadata->'requiredPermissions')='array'
+    AND NOT EXISTS(
+      SELECT 1 FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(p.catalog_metadata->'requiredPermissions')='array'
+        THEN p.catalog_metadata->'requiredPermissions' ELSE '[]'::jsonb END) required(permission_key)
+      LEFT JOIN public.permissions known ON known.key=required.permission_key
+      LEFT JOIN public.role_permissions permission ON permission.organization_id=m.organization_id
+        AND permission.role_id=m.role_id AND permission.permission_key=required.permission_key
+      WHERE known.key IS NULL OR permission.permission_key IS NULL
+    )`,[organizationId,productMembershipId]);
   const row=result.rows[0];if(!row)return null;
   const catalog=ProductCatalogMetadataV1Schema.safeParse(row.catalog_metadata);if(!catalog.success)return null;
   const revisions=z.array(EntitlementRevisionV1Schema).parse(row.revisions);
   const scope={organizationId:organizationId,productInstanceId:row.product_instance_id,membershipId:row.membership_id};
   const capabilities=resolveRequestedCapabilities({...scope,supportedCapabilities:catalog.data.supportedCapabilities,revisions});
   const target={externalOrganizationId:row.external_organization_id,externalMemberId:row.external_member_id};
-  const source={schemaVersion:1,desiredRevision:row.desired_revision,supportedCapabilities:[...catalog.data.supportedCapabilities].sort(),revisions,target};
+  const source={schemaVersion:1,desiredRevision:row.desired_revision,supportedCapabilities:[...catalog.data.supportedCapabilities].sort(),
+    requiredPermissions:[...new Set(['product.use',...catalog.data.requiredPermissions])].sort(),revisions,target};
   return {source,state:{...scope,schemaVersion:1 as const,capabilities,target,mode:'replace_all' as const,memberAccess:'suspended' as const}};
 }

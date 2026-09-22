@@ -78,6 +78,16 @@ describe.skipIf(!databaseUrl)('restricted automatic capability preparation',()=>
    }finally{await runtime.end();}
    const events=(await admin.query("SELECT actor_user_id,actor_service_id FROM identity_audit_events WHERE organization_id=$1 AND action='product.capabilities.refreshed'",[org.organizationId])).rows;
    expect(events).toHaveLength(7);expect(events.every(r=>r.actor_user_id===null&&r.actor_service_id==='capability-preparer')).toBe(true);
+   // A catalog requirement must be held by the target member, even if the initiating owner holds it.
+   await admin.query('UPDATE product_instances SET desired_enabled=true WHERE id=$1',[instance]);
+   await admin.query('UPDATE products SET catalog_metadata=$2 WHERE id=$1',[product,{...metadata,requiredPermissions:['product.use','billing.read.all']}]);
+   expect(await refreshCapabilitySnapshots(preparer.toString(),input)).toEqual({scanned:2,prepared:0,reused:0,skipped:2,nextCursor:null});
+   await admin.query("INSERT INTO role_permissions(organization_id,role_id,permission_key) VALUES($1,$2,'billing.read.all')",[org.organizationId,contributorRole]);
+   expect((await refreshCapabilitySnapshots(preparer.toString(),input)).prepared).toBe(1);
+   expect((await admin.query('SELECT source FROM member_capability_snapshots WHERE product_membership_id=$1 ORDER BY policy_revision DESC LIMIT 1',[mapping2])).rows[0].source.requiredPermissions).toEqual(['billing.read.all','product.use']);
+   // An unknown catalog requirement never becomes an implicit grant.
+   await admin.query('UPDATE products SET catalog_metadata=$2 WHERE id=$1',[product,{...metadata,requiredPermissions:['product.use','unknown.permission']}]);
+   expect((await refreshCapabilitySnapshots(preparer.toString(),input)).skipped).toBe(2);
   }finally{
    await sql.end();for(const table of ['member_denial_access_receipts','member_denial_attempts','member_denial_jobs','member_access_commands','product_membership_commands','capability_attempts','capability_jobs','member_capability_snapshots','entitlement_policy_revisions','entitlement_policies','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
    await admin.query('DELETE FROM organizations WHERE id=ANY($1)',[orgs]);await admin.query('DELETE FROM users WHERE id=ANY($1)',[users]);await admin.query('DELETE FROM products WHERE id=$1',[product]);await admin.query(`DROP ROLE ${preparerRole}`);await admin.query(`DROP ROLE ${role}`);await admin.end();

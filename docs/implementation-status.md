@@ -503,3 +503,7 @@ Deployment dpl_6QSNumgNK1jZmxnqajteCG5Fn29R is READY at072691414ac89085661ba5023
 Independent review accepted0054–0055: new-transition and historical reconciliation paths preserve authorization truth, use restricted provenance and the shared fence, reject forged/runtime calls, and remain idempotent. No actual provider activation or revocation is inferred.
 
 0054–0055 hosted verification applied the exact committed cd3e114 migrations and passed three permission/capability integration tests in54.21 seconds. The browser fallback for Notion also requires sign-in to Mosnin's Notion; no tracker write was made. Canonical captured requirements remain the implementation authority.
+
+### Catalog permission staging — 2026-09-22
+
+0056 adds narrow global permission-catalog reads to the restricted capability preparer and worker. The shared source reader requires the target member to hold every catalog requirement and product.use within the current organization; unknown requirements deny preparation. The requirement set is part of the source fingerprint. Local migration and two focused PostgreSQL tests pass, including a target contributor lacking an owner-held requirement and an unknown requirement. Positive member limits and remote denial on loss of an additional requirement are still outstanding; no activation claim is made.
