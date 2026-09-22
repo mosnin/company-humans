@@ -42,3 +42,5 @@ jobs:
       - run: npm run test:browser -w @company-human/web
       - name: Build and verify real anonymous runtime
         run: node scripts/verify-anonymous-runtime-ci.mjs
+      - name: Verify signed usage against actual HTTP and restricted database
+        run: node scripts/verify-usage-runtime.mjs
