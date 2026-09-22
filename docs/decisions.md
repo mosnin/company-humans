@@ -123,3 +123,7 @@ The user explicitly directed continued work despite external blockers. CH-20's c
 ### Human usage attribution cannot trust a signature alone
 
 Review reproduced an accepted signed event claiming a nonexistent human. A service signing key authenticates its product scope, not the existence of the claimed human. Human events now require explicit membership attribution validated against the canonical membership/user/organization relationship at the database. Delayed reports use historical membership identity regardless of current suspension.
+
+### Fence every provider member access transition
+
+The existing V1 resume API has no revision precondition. A delayed resume could execute after suspension and restore access. A new additive ProductMemberAccessAdapterV1 requires one monotonic revision for activation, denial and removal, plus atomic comparison of the complete current capability and finite-limit policy. Legacy denial workers are not sufficient for a registration that enables fenced grants. No live provider registration is upgraded automatically.

@@ -11,6 +11,10 @@
     "./signing": {
       "types": "./dist/signing.d.ts",
       "default": "./dist/signing.js"
+    },
+    "./member-access-conformance": {
+      "types": "./dist/member-access-adapter.conformance.d.ts",
+      "default": "./dist/member-access-adapter.conformance.js"
     }
   },
   "scripts": {
