@@ -37,3 +37,17 @@ export async function ingestUsageEvent(client: Client, input: unknown, authority
     return { eventId: existing.rows[0]!.event_id, disposition: existing.rows[0]!.disposition, duplicate: true };
   } catch (error) { await client.query("ROLLBACK TO SAVEPOINT usage_ingestion"); await client.query("RELEASE SAVEPOINT usage_ingestion"); throw error; }
 }
+
+/** Dedicated server connection; no table-owner fallback. */
+export async function storeSignedUsage(databaseUrl: string, input: unknown, authority: UsageSigningAuthority) {
+  const { Client: PgClient } = await import("pg");
+  const client = new PgClient({ connectionString: databaseUrl, connectionTimeoutMillis: 5000, statement_timeout: 10000 });
+  await client.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await ingestUsageEvent(client,input,authority);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) { await client.query("ROLLBACK"); throw error; }
+  finally { await client.end(); }
+}

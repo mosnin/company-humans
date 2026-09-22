@@ -169,3 +169,9 @@ Verified: 228 automated tests (58 contracts, 26 database, 144 web), typecheck/li
 ## Contributor apps — 2026-09-22
 
 The contributor Apps page displays own organization-sponsored assignments. Provider launch remains unavailable until authenticated identity, current permissions/limits and actual adapter activation are verified.
+
+### Signed usage endpoint
+
+`POST /api/usage/events` accepts the version-1 `usage.recorded` signed envelope. It uses service authentication, independent of browser sessions/cookies. The operator-managed `USAGE_SIGNING_AUTHORITIES` registry pins each key to organization, product, product instance, source system and test/production environment, plus notBefore/expiresAt/revoked state. `secretEnv` references a separate server secret named `USAGE_SIGNING_KEY_*`; secret material is not embedded in registry metadata. Revocation or expiry rejects even a correctly signed request. Rotation uses a new key ID with the same explicit scope and a bounded overlap; remove/revoke the old registry entry afterward. Runtime key CRUD/rotation tooling remains unfinished.
+
+Body size is enforced from actual streamed bytes (64 KiB), not a caller-supplied Content-Length. The route verifies signature and scope before opening the dedicated `DATABASE_USAGE_INGEST_URL` connection. HTTP responses: 201 accepted, 202 persisted in quarantine, 200 identical retry, 409 conflicting retry, 401 failed authentication, 413 oversized body, 415 non-JSON, 503 unavailable ingestion. Quarantine is an acknowledgement of durable receipt, not permission to bill. Products must retain and retry failed events. No Scalar reporting key or real usage source has been configured.

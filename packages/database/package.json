@@ -95,6 +95,10 @@
     "./application-health": {
       "types": "./dist/application-health.d.ts",
       "default": "./dist/application-health.js"
+    },
+    "./usage-ingestion": {
+      "types": "./dist/usage-ingestion.d.ts",
+      "default": "./dist/usage-ingestion.js"
     }
   },
   "scripts": {

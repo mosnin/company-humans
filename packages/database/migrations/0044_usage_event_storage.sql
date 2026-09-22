@@ -1,5 +1,13 @@
 -- Product meter versions and source usage are immutable; valuation is a separate projection.
-CREATE ROLE company_human_usage_ingest NOLOGIN NOSUPERUSER NOBYPASSRLS;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='company_human_usage_ingest') THEN
+    CREATE ROLE company_human_usage_ingest NOLOGIN NOSUPERUSER NOBYPASSRLS;
+  ELSIF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='company_human_usage_ingest' AND (rolsuper OR rolbypassrls OR rolcanlogin)) THEN
+    RAISE EXCEPTION 'Unsafe preexisting usage ingestion role';
+  END IF;
+END;
+$$;
 GRANT USAGE ON SCHEMA public TO company_human_usage_ingest;
 CREATE TABLE public.meter_definitions (
   product_id text NOT NULL REFERENCES public.products(id),
