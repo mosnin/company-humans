@@ -437,3 +437,7 @@ Validation: 157 web tests passed, repository typecheck/lint and production build
 Email authentication follow-up: full library lifecycle coverage and transactional send limits are implemented. 163 web tests pass. Production Google/email configuration and the live authenticated workspace journey remain open; the connected Resend account currently only has alerts.usechippi.com verified, and no Company Human sender has been selected.
 
 Cross-tab invitation return is implemented with a 30-minute application expiry and clearing on acceptance/sign-out. The updated Google/email browser suite passes all 84 cases with two workers; typecheck, lint and production build pass. A first five-worker local run had two unrelated mobile interaction failures that passed in the full two-worker rerun; these are not presented as provider acceptance.
+
+### Production deployment checkpoint — 2026-09-22
+
+Convex production sensible-dinosaur-165 received the Google/email implementation and authEmailRequestLimits index. Vercel deployment dpl_5LCijBopFrSPLAZyDL3TZsYPq1sp is READY and aliased to https://company-humans.vercel.app; its live /api/health reports c8319981967059ccdc9293ddfa923b8e3eef2a94. Live anonymous Chromium confirmed unavailable providers, no GitHub button, email confirmation rendering and rejection of a missing token without page errors. /api/organizations returned 401 and the Convex identity query returned null. Google consent and real email delivery remain unverified. CI 35691705991 was still running when this checkpoint was recorded.
