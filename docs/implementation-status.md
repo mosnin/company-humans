@@ -471,3 +471,7 @@ Product-scope review found no unrelated tracked copied screens/assets or obsolet
 ### Fenced denial orchestration — 2026-09-22
 
 Migration0048 and dispatcher integrate the existing lifecycle API denial intent with a shared monotonic access journal and existing durable jobs. Legacy provider methods cannot dispatch through this path. Receipt/readback, final binding validation and visible reconciliation failures are locally verified and independently reviewed. Localdevelopment/securityverification contain0048; hosted rollout is pending. The original empty development0048 journal was reset before release to correct trigger-creation ordering for non-superuser migration owners; no production0048 was applied. Activation, late-bootstrap recovery, real providers and hosted scheduling remain open.
+
+### Canonical identity offboarding — 2026-09-22
+
+0049–0050 implement atomic deletion→product-denial intent with service provenance, user/mapping serialization and historical tombstone reconciliation. Local database tests and independent review pass; full338-test suite, typecheck, lint and build pass. No hosted offboarding migration or provider revocation is claimed at this checkpoint. Convex deletion delivery, global suspension semantics and real remote execution remain open.

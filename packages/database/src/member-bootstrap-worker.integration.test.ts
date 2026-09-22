@@ -149,6 +149,8 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
       }
       await fixtureOrganizationStatus("suspended"); expect(await claim()).toBeNull();
       await fixtureOrganizationStatus("active");
+      expect(await claim()).toBeNull(); // Reactivation does not restore revoked product enable intent.
+      await setup("fresh-after-reactivation");
       const activeLease = (await claim())!;
       await admin.query("UPDATE memberships SET status='removed' WHERE id=$1", [member]); await finish(activeLease);
       expect((await admin.query("SELECT status FROM member_bootstrap_jobs WHERE command_id=$1", [activeLease.commandId])).rows[0].status).toBe("superseded");
