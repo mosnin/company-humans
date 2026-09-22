@@ -56,3 +56,7 @@ User direction: Google and email magic links replace GitHub sign-in. GitHub is r
 Magic links expire after 15 minutes, preserve the invitation return route, and open an email confirmation page before token redemption. The custom identity callback permits an unverified email account at request time but only stamps verification after token redemption. It never merges Google and email accounts by matching email. Google and email using the same address remain separate identities pending an explicit secure linking flow.
 
 Production delivery, Google consent, token replay/expiry in the running backend, and the authenticated workspace/invitation journey remain unverified. No provider credentials were fabricated or copied from another product.
+
+### Invitation return across tabs
+
+Pending invitations now use same-origin local storage with a 30-minute application expiry so an email link opened in a separate tab can return to the invitation. The token is removed from the URL immediately and cleared after successful acceptance or sign-out. Storage is optional: if unavailable, contributors can reopen the original invitation after signing in. A saved token does not grant access; the server still requires the authenticated recipient's verified email, a valid unused invitation, and active organization policy. Cross-device return requires reopening the original invitation.

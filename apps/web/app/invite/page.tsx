@@ -15,21 +15,21 @@ export default function AcceptInvitationPage() {
     if (fragment) {
       setToken(fragment);
       if (/^[A-Za-z0-9_-]{43}$/.test(fragment)) {
-        try { sessionStorage.setItem("ch_pending_invitation", JSON.stringify({ token: fragment, expiresAt: Date.now() + 30 * 60_000 })); } catch { /* A private browser may deny storage; the code remains in the form. */ }
+        try { localStorage.setItem("ch_pending_invitation", JSON.stringify({ token: fragment, expiresAt: Date.now() + 30 * 60_000 })); } catch { /* A private browser may deny storage; the code remains in the form. */ }
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
       }
       return;
     }
     try {
-      const saved = JSON.parse(sessionStorage.getItem("ch_pending_invitation") ?? "null");
+      const saved = JSON.parse(localStorage.getItem("ch_pending_invitation") ?? "null");
       if (saved && saved.expiresAt > Date.now() && /^[A-Za-z0-9_-]{43}$/.test(saved.token)) setToken(saved.token);
-      else sessionStorage.removeItem("ch_pending_invitation");
+      else localStorage.removeItem("ch_pending_invitation");
     } catch { /* Storage is optional; a pasted invitation still works. */ }
   }, []);
 
   async function accept(): Promise<void> {
     if (!/^[A-Za-z0-9_-]{43}$/.test(token)) { setStatus("failed"); return; }
-    try { sessionStorage.setItem("ch_pending_invitation", JSON.stringify({ token, expiresAt: Date.now() + 30 * 60_000 })); } catch { /* Continue with this request. */ }
+    try { localStorage.setItem("ch_pending_invitation", JSON.stringify({ token, expiresAt: Date.now() + 30 * 60_000 })); } catch { /* Continue with this request. */ }
     setStatus("submitting");
     try {
       const response = await fetch("/api/invitations/accept", {
@@ -39,7 +39,7 @@ export default function AcceptInvitationPage() {
       if (response.status === 401) { setStatus("sign_in"); return; }
       if (response.status === 503) { setStatus("unavailable"); return; }
       if (!response.ok) { setStatus("failed"); return; }
-      try { sessionStorage.removeItem("ch_pending_invitation"); } catch { /* The server has consumed the token. */ }
+      try { localStorage.removeItem("ch_pending_invitation"); } catch { /* The server has consumed the token. */ }
       setStatus("accepted");
       window.location.replace("/workspace/select");
     } catch {

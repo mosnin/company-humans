@@ -383,3 +383,5 @@ Validation: 157 web tests passed, repository typecheck/lint and production build
 ### Email authentication lifecycle verification
 
 Six additional tests run the actual Convex Auth actions/mutations, Company Human callback, token storage and session creation inside convex-test. Only outbound Resend delivery is intercepted. They prove verified identity after redemption, invitation return in the issued URL, one-use redemption, expiry, email substitution denial, old-link invalidation on resend, recipient and global request limits, transactional rollback on denial, and hourly capacity reset. All 163 web tests pass. This is integration-harness evidence, not live provider delivery or a hosted authenticated browser journey.
+
+The browser harness now exercises Google and email instead of the removed GitHub provider. Added desktop/mobile checks for email normalization, invitation redirect, delivery acknowledgement, resend form, cross-tab invitation restoration and expired invitation removal. CI run 35691393318 failed because its older fixture expected the removed GitHub button; that stale expectation is corrected here.

@@ -435,3 +435,5 @@ Production delivery, Google consent, token replay/expiry in the running backend,
 Validation: 157 web tests passed, repository typecheck/lint and production build passed. Actual Chromium against the production build displayed the email confirmation and rejected a missing token without page errors. This does not verify real email delivery or Google consent.
 
 Email authentication follow-up: full library lifecycle coverage and transactional send limits are implemented. 163 web tests pass. Production Google/email configuration and the live authenticated workspace journey remain open; the connected Resend account currently only has alerts.usechippi.com verified, and no Company Human sender has been selected.
+
+Cross-tab invitation return is implemented with a 30-minute application expiry and clearing on acceptance/sign-out. The updated Google/email browser suite passes all 84 cases with two workers; typecheck, lint and production build pass. A first five-worker local run had two unrelated mobile interaction failures that passed in the full two-worker rerun; these are not presented as provider acceptance.

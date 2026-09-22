@@ -76,7 +76,7 @@ test("invitation survives sign-in navigation without a URL token and clears on a
   await expect(page.getByLabel("Invitation code")).toHaveValue(token);
   await page.getByRole("button", { name: "Accept invitation" }).click();
   await page.waitForURL("**/workspace/select");
-  expect(await page.evaluate(() => sessionStorage.getItem("ch_pending_invitation"))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem("ch_pending_invitation"))).toBeNull();
 });
 
 test("OAuth sign-in preserves invitation return and handles provider failure", async ({page}) => {
@@ -86,7 +86,8 @@ test("OAuth sign-in preserves invitation return and handles provider failure", a
   await page.getByRole("button",{name:"Continue with Google"}).click();
   await expect(page.getByRole("alert")).toContainText("Sign-in could not start");
   expect(input).toEqual({provider:"google",redirectTo:"/auth/complete?returnTo=invite"});
-  await expect(page.getByRole("button",{name:"Continue with GitHub"})).toBeEnabled();
+  await expect(page.getByRole("button",{name:"Continue with GitHub"})).toHaveCount(0);
+  await expect(page.getByRole("button",{name:"Email me a sign-in link"})).toBeEnabled();
 });
 test("sign-out waits for session revocation before leaving", async ({page}) => {
   await page.route("**/mock-auth/sign-out", route => route.fulfill({status:503}));
@@ -436,4 +437,32 @@ test("health view explains missing, degraded and reauthorization states",async({
  await page.goto("/?screen=health-degraded");await expect(page.getByRole("heading",{name:"Degraded at last check"})).toBeVisible();
  await page.goto("/?screen=health-reauth");await expect(page.getByText("Reauthorization is not available here yet.",{exact:false})).toBeVisible();
  await expect(page.getByRole("button",{name:"Reconnect",exact:true})).toHaveCount(0);
+});
+
+test("email sign-in normalizes email, preserves invitation return and shows delivery acknowledgement", async ({ page }) => {
+  let input: Record<string, unknown> = {};
+  await page.route("**/mock-auth/sign-in", async route => {
+    input = route.request().postDataJSON();
+    await route.fulfill({ status: 200, json: {} });
+  });
+  await page.goto("/?screen=oauth");
+  await page.getByLabel("Email address").fill("Person@Example.test");
+  await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+  await expect(page.getByRole("status")).toContainText("Check your email");
+  expect(input).toEqual({ provider: "email", email: "person@example.test", redirectTo: "/auth/complete?returnTo=invite" });
+  await page.getByRole("button", { name: "Use another email or resend" }).click();
+  await expect(page.getByLabel("Email address")).toBeVisible();
+});
+
+test("invitation survives a new tab but is not restored after expiry", async ({ page, context }) => {
+  const token = "b".repeat(43);
+  await page.goto(`/?screen=invite#${token}`);
+  await expect(page.getByLabel("Invitation code")).toHaveValue(token);
+  const nextTab = await context.newPage();
+  await nextTab.goto("/?screen=invite");
+  await expect(nextTab.getByLabel("Invitation code")).toHaveValue(token);
+  await nextTab.evaluate(() => localStorage.setItem("ch_pending_invitation", JSON.stringify({ token: "b".repeat(43), expiresAt: Date.now() - 1 })));
+  await nextTab.reload();
+  await expect(nextTab.getByLabel("Invitation code")).toHaveValue("");
+  expect(await nextTab.evaluate(() => localStorage.getItem("ch_pending_invitation"))).toBeNull();
 });

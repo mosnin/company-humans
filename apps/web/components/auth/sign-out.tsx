@@ -7,7 +7,9 @@ export function SignOutButton() {
   const [failed,setFailed] = useState(false);
   async function leave() {
     setPending(true);setFailed(false);
-    try { await signOut(); window.location.assign("/sign-in"); }
+    try { await signOut();
+      try { localStorage.removeItem("ch_pending_invitation"); } catch { /* Browser storage is optional. */ }
+      window.location.assign("/sign-in"); }
     catch { setPending(false);setFailed(true); }
   }
   return <span className="inline-flex items-center gap-2">
