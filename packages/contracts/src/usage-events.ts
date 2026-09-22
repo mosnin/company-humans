@@ -21,8 +21,8 @@ export const UsagePayloadV1Schema = z.object({
 export const UsageEventV1Schema = EventEnvelopeV1Schema.extend({
   eventType: z.literal("usage.recorded"), productId: ProductIdSchema, payload: UsagePayloadV1Schema,
 }).superRefine((event, ctx) => {
-  if (event.actor.type === "human" && event.actor.membershipId && event.actor.membershipId !== event.payload.membershipId) {
-    ctx.addIssue({ code: "custom", message: "Usage actor membership must match usage attribution", path: ["actor", "membershipId"] });
+  if (event.actor.type === "human" && (!event.actor.membershipId || event.actor.membershipId !== event.payload.membershipId)) {
+    ctx.addIssue({ code: "custom", message: "Human usage requires an explicit matching membership", path: ["actor", "membershipId"] });
   }
 });
 export const SignedUsageEventV1Schema = UsageEventV1Schema.safeExtend({ signature: EnvelopeSignatureV1Schema });

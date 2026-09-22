@@ -119,3 +119,7 @@ Production delivery, Google consent, token replay/expiry in the running backend,
 ## Independent metering preparation while provider setup is pending
 
 The user explicitly directed continued work despite external blockers. CH-20's canonical usage contract and immutable ingestion storage can be implemented independently of Scalar deployment; this does not close Phase 01/02 or permit uncontrolled expensive access. The source is Notion documents 03 and 06 and tracker CH-20. Meter quantities reuse the existing exact 12-integer/6-fraction decimal representation. Meter definition versions are immutable. Unknown meter versions or mismatched units are quarantined rather than billed. Pricing remains separate and unknown provider cost/rate is represented by null, never fabricated zero. Authenticated public transport, key lifecycle, quarantine resolution, aggregation, budgets and real product emission remain subsequent work.
+
+### Human usage attribution cannot trust a signature alone
+
+Review reproduced an accepted signed event claiming a nonexistent human. A service signing key authenticates its product scope, not the existence of the claimed human. Human events now require explicit membership attribution validated against the canonical membership/user/organization relationship at the database. Delayed reports use historical membership identity regardless of current suspension.

@@ -7,7 +7,7 @@ export interface UsageSigningAuthority {
   productInstanceId: string; environment: "test" | "production"; sourceSystem: string;
 }
 /** Caller supplies a server-resolved, unrevoked signing authority, never request fields.
- * Requires an open transaction and restricted usage-ingest connection. No public API yet.
+ * Requires an open transaction and restricted usage-ingest connection.
  */
 export async function ingestUsageEvent(client: Client, input: unknown, authority: UsageSigningAuthority): Promise<{ eventId: string; disposition: "accepted" | "quarantined"; duplicate: boolean }> {
   const verified = verifyEventEnvelope(input, id => id === authority.keyId ? authority.key : undefined);
@@ -25,6 +25,8 @@ export async function ingestUsageEvent(client: Client, input: unknown, authority
     const p = event.payload;
     const meter = await client.query("SELECT 1 FROM public.meter_definitions WHERE product_id=$1 AND meter_key=$2 AND version=$3 AND unit=$4", [event.productId,p.meterKey,p.meterVersion,p.unit]);
     const disposition = meter.rowCount === 1 ? "accepted" : "quarantined";
+    // The database binds human actor user IDs to the attributed historical membership.
+    // Do not require active membership: delayed consumption remains accountable after removal.
     const inserted = await client.query(`INSERT INTO public.usage_events
       (event_id,organization_id,product_id,product_instance_id,environment,source_system,source_event_id,idempotency_key,membership_id,team_id,meter_key,meter_version,quantity,unit,occurred_at,reported_at,disposition,envelope,signature)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) ON CONFLICT DO NOTHING RETURNING event_id`,

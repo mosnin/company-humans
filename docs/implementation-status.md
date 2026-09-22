@@ -449,3 +449,5 @@ CH-20 endpoint: POST /api/usage/events now verifies signed service events agains
 ### Usage aggregation preparation — 2026-09-22
 
 CH-21 has an implemented, locally tested read projection and authenticated endpoint. It aggregates exact quantities across explicit occurrence windows with own/team/all RLS and preserves product/meter/version/unit boundaries. Migration0045 is applied only to local security verification. Durable billing windows, real Scalar emission, quarantine recovery and budget enforcement remain open. Phase03 remains in progress, with Phase01/02 provider acceptance still open. Notion write access is unavailable; no tracker task was marked Done.
+
+Usage ingestion provenance correction is locally verified: human identity is tied to canonical historical membership by database constraints; foreign attribution and parser bypass fail. Actual HTTP/Next/restricted-PostgreSQL concurrent retry verification passed using a disposable test database. Migration0046 remains local verification only. No live Scalar activity or financial billing acceptance is claimed.
