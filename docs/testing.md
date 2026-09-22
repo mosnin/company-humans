@@ -350,8 +350,14 @@ This proves anonymous denial and rendered configuration/error states in a real l
 
 The local production build compiled successfully but failed while writing its TypeScript/Turbopack cache with ENOSPC. Only this repository's generated `.next` output was removed afterward. This run is not a passing production build; hosted CI remains the build gate for this test-only increment.
 
-## Production-build anonymous runtime CI — in progress
+## Production-build anonymous runtime CI — implemented; verification below
 
 The quality workflow now runs scripts/verify-anonymous-runtime-ci.mjs after the fixture browser suite. The runner is restricted to GitHub Actions with a loopback company_human_test database and refuses preexisting deployment selection or .env.local. It creates separate nonsuperuser/non-BYPASSRLS database logins, starts an anonymous local Convex backend, waits for actual identity function deployment, sets independent ephemeral signing keys, builds the app with the local public URL, starts next start and runs the four real-runtime anonymous checks. No production secret or OAuth provider credential is required. Private keys/passwords are not printed or uploaded. The ordinary production build is performed inside this step so its compiled client targets the ephemeral backend.
 
 Syntax/diff checks passed locally. Full CI execution is required before accepting this workflow change; it cannot run against the existing developer checkout by design. Real OAuth and tenant lifecycle remain separate acceptance gates.
+
+## Hosted production-runtime verification — 2026-09-21
+
+CI run [35662114990](https://github.com/mosnin/company-humans/actions/runs/35662114990) completed successfully at application revision `3d26a8b`. Inspected job output confirms 58 contract, 26 database and 149 web tests; 80 fixture browser checks; local Convex function deployment; production compilation and TypeScript; and four actual-runtime browser checks against next start. The run also passed clean install, typecheck, lint, all migrations and seed. Runtime subprocess shutdown and job cleanup completed successfully.
+
+This closes the production-build gate left open by local ENOSPC and verifies the new CI runtime procedure. It establishes anonymous access denial and configuration/error presentation with a real isolated backend and built web server. It does not establish OAuth consent, authenticated canonical synchronization, two-organization journeys, live Scalar access or a production deployment. Phase 01 and Phase 02 remain open.

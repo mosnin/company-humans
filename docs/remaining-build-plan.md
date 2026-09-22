@@ -9,7 +9,7 @@ Updated 2026-09-21 against application commit `3ee0e1a`, the current working tre
 - **Phase 02: in progress.** Catalog/setup intent, provisioning journals, suspended member binding, capability and limit delivery machinery, diagnostics and durable health collection exist. Real Scalar access, final activation, reconciliation and hosted worker operation remain incomplete.
 - **Phases 03–15: unfinished.** Phase 16 is conditional expansion.
 - Dedicated Convex, PostgreSQL and Vercel resources already exist. Do not create replacement projects. The last recorded production web baseline is `8d72e92`; current branch code is newer and still needs deployment acceptance.
-- Freshly checked CI: **35660233183 succeeded at 3ee0e1a**. Committed evidence: 228 automated checks and 42 migrations. The health page has recorded verification totaling 233 automated checks and 80 browser fixture checks, with typecheck/lint passing. Its runtime code passed the production build before five additional page tests were added. These suites were not rerun for this planning update.
+- Latest verified CI: **35662114990 succeeded at 3d26a8b**. Evidence: 233 automated checks, 80 fixture browser checks, 42 migrations, production build and four real anonymous-runtime browser checks against an isolated Convex backend. Health administration is committed. Real OAuth and live provider acceptance remain open.
 - Browser fixtures and adapter test doubles do not establish live OAuth, native product access, hard stops or payouts. No phase is closed by this plan.
 
 ## First usable release
