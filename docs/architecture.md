@@ -30,4 +30,4 @@ Member creation now has two verified kernel boundaries: the restricted V2 execut
 
 ## Health collection
 
-The restricted health collector records each provider check independently from provisioning state. Latest-started observations are projected for admins with a five-minute monitoring freshness window; failed checks remain visible. This is monitoring only. Scheduling, real adapters and the admin status interface remain incomplete.
+The restricted health collector records each provider check independently from provisioning state. Latest-started observations are projected for admins with a five-minute monitoring freshness window; failed checks remain visible. This is monitoring only. The permission-scoped admin status interface shows saved observations, freshness and failures. Scheduling and real adapter health verification remain incomplete.

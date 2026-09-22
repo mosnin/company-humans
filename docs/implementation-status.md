@@ -1,6 +1,6 @@
 # Implementation status
 
-Updated 2026-09-21. Destination: `mosnin/company-humans`, branch `codex/company-human-foundation`, [draft PR 1](https://github.com/mosnin/company-humans/pull/1). Company OS remains unchanged.
+Updated 2026-09-22. Destination: `mosnin/company-humans`, branch `codex/company-human-foundation`, [draft PR 1](https://github.com/mosnin/company-humans/pull/1). Company OS remains unchanged.
 
 Current remaining work and acceptance gates: [remaining phased build plan](remaining-build-plan.md), refreshed against the canonical Notion roadmap; subsequent health-page and isolated-runtime delivery evidence is recorded below. Historical sections below retain their original evidence counts and deployment state.
 
@@ -11,9 +11,11 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Identity synchronization, tenant isolation, stored capabilities, audited permission changes, invitation lifecycle, team scope, and append-only runtime audit permissions.
 - Direct contributor SQL cannot promote itself, change the organization, become a team manager, grant permissions, or activate a product.
 - People, Teams, Permissions, and Audit pages use scoped services. The shell generalizes Company OS's header, rail, canvas, form, and table design.
-- Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in in tab storage for 30 minutes and clears on acceptance.
-- 233 contract/database/route/Convex tests pass. Eighty desktop/mobile browser component tests pass with explicitly mocked authentication/API responses. Typecheck includes test sources; lint and production build pass. Latest checked application CI at 3d26a8b passed in run 35662114990, including four separate real anonymous-runtime checks against a production build and isolated Convex backend.
-- Local development/verification and hosted verification/production databases have 42 migrations applied, with seven reference-product seeds. Local credentials remain in ignored environment files, including mode-0600 Neon files; Vercel holds restricted runtime credentials. OAuth provider client credentials and real authenticated acceptance remain outstanding.
+- Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in across same-origin tabs with a 30-minute application expiry and clears on acceptance/sign-out.
+- Google and email magic-link authentication replace GitHub. Library lifecycle, token replay/expiry, cross-tab invite return and request limits have local verification; actual provider credentials and authenticated acceptance remain outstanding.
+- Signed usage ingestion, exact scoped aggregation and audited quarantine recovery have local database and HTTP evidence. CI at ec564ab passed in run35747591915:308 automated tests,84 fixture browser checks,4 real anonymous runtime checks and actual signed HTTP/database concurrency verification. Detailed counts below are dated checkpoints.
+- Migrations0044–0047 are applied on hosted verification and production; the three metering integration tests passed against hosted verification. Local databases contain the same metering migrations; subsequent in-progress provisioning migrations are tracked separately below. Seven reference products remain catalog entries, not live integrations. Restricted credentials stay in ignored environment files.
+
 
 ## Phase gates
 
@@ -22,9 +24,9 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 | Source scaffold | Implemented; local checks pass | Live authenticated layout and deployment verification. |
 | 00 Foundation | Verified at 3fbc494 | Public GitHub run 35522115426 passed install, typecheck, lint, migrations, seed, tests, build and browser checks. |
 | 01 Identity kernel | In progress | Real Convex OAuth sign-in/sign-out, browser create/invite/accept/assign/switch/suspend scenario, and acceptance of the latest deployed revision. Restricted web credentials are configured. |
-| 02 Provisioning | In progress; groundwork only | Real Scalar adapter, provision/resume execution, entitlements, hosted worker, reconciliation, health, and full lifecycle proof. Suspend/remove execution has fixture-backed verification. Mapping and pending intent grant no access. |
-| 03 Metering and billing | Not started | Measured Scalar usage, budgets, hard stops, cost and billing projections. |
-| 04 Human workspace | Not started | Contributor Work, Apps, Context, Earnings, Leaderboard, Team, manager workflows. Identity administration is not this phase's completed shell. |
+| 02 Provisioning | In progress | Real Scalar adapter, fenced activation/denial orchestration, hosted workers and full lifecycle proof. Suspended bootstrap, policy staging/readback and health administration have local coverage. Mapping and pending intent grant no access. |
+| 03 Metering and billing | In progress; independent preparation | Signed storage/API, scoped aggregation and quarantine recovery implemented locally. Real Scalar emission, durable billing windows, budgets, hard stops, valuation and billing remain open. |
+| 04 Human workspace | Not started | Contributor Work, Context, Earnings, Leaderboard, Team and manager workflows. Apps assignment visibility exists, but does not yet launch real sponsored access. |
 | 05 CRM and human work | Not started | Native records, assignments, visibility, actor attribution, Scalar sync. |
 | 06 Company OS context | Not started | Real connection, approved scopes, freshness, revocation, denial. |
 | 07 Attribution | Not started | Merchant links, SDKs, verified Chippi events and recoverable attribution. |
@@ -40,7 +42,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 
 ## External gates
 
-1. **Convex deployed; OAuth and development capacity remain:** dedicated free-plan project `company-humans` / production `sensible-dinosaur-165` was created and deployed on 2026-09-21. Signing keys, live anonymous identity denial, OIDC discovery and public JWKS were verified. A separate development deployment still fails with the 40-deployment quota. `SITE_URL` is configured; Google/GitHub provider configuration and actual OAuth round-trip remain required. See [authentication setup](authentication.md).
+1. **Convex deployed; Google/email setup remains:** dedicated free-plan project `company-humans` / production `sensible-dinosaur-165` is deployed. Signing keys, anonymous identity denial, discovery and JWKS were verified. Independent local Convex development bypasses the cloud development quota. Google Cloud first-use terms/project selection and a Company Human email sender remain unresolved. No GitHub provider is enabled. See [authentication setup](authentication.md).
 2. **GitHub Actions resolved:** the owner authorized making `mosnin/company-humans` public. Run 35522115426 at 3fbc494 passed all steps, including the Convex replacement. The earlier private-repository restriction no longer blocks CI.
 3. **Production web:** https://company-humans.vercel.app is deployed with dedicated Convex and restricted PostgreSQL configuration. Health and anonymous denial are verified; real authenticated use remains unverified. No existing product deployment or credential has been reused.
 
@@ -455,3 +457,9 @@ Usage ingestion provenance correction is locally verified: human identity is tie
 Quarantine recovery is implemented and locally verified through restricted database integration and authenticated endpoint tests. It preserves immutable source history and releases one accounting input after exact meter registration. Migration0047 is local verification only at this checkpoint. CH20/21 and Phase03 remain open for real provider flow, durable windows and downstream budgets/billing.
 
 Phase02 activation prerequisite: additive fenced member access contract and reusable conformance runner implemented and locally reviewed/tested. The contract prevents safe activation from being represented by legacy resume alone. Durable activation/reconciliation worker and real Scalar implementation remain unimplemented; no remote access was granted.
+
+### Metering hosted verification and scope sweep — 2026-09-22
+
+CI35747591915 passed at ec564ab, including the new actual HTTP concurrency verification. Hosted verification applied0044–0047 and passed signed ingestion, scoped aggregation and quarantine recovery integration tests. Production applied those four migrations from an immutable snapshot of committed ec564ab. An earlier combined attempt encountered an uncommitted0048 trigger-ownership ordering error and rolled back its entire transaction; no partial production schema was left behind. Only the committed metering snapshot was then released. New0048 remains a separate local provisioning task.
+
+Product-scope review found no unrelated tracked copied screens/assets or obsolete contributor authentication imports. Corrected current Google/email setup instructions, health UI documentation, landing claims and contributor home links. Historical dated evidence remains intact; unfinished work, CRM and earnings are not presented as available features.

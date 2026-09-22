@@ -14,14 +14,14 @@ export default function Home() {
         <PageHeader
           size="display"
           title="A clear place for people to work"
-          description="See the work ahead, the relationships moving, the tools available, and the money earned."
+          description="Bring your team together, organize access, and see reported usage."
         />
         <Link className="t-link t-body-medium mb-8 inline-block" href="/workspace/select">Open your workspace</Link>
         <Card className="max-w-2xl">
           <CardContent>
             <h2 className="t-title-3 text-ink">Built for the people behind the outcomes</h2>
             <p className="t-body mt-4 text-ink-2">
-              Company Human brings a team’s work, access, and progress into one workspace. Each organization chooses the tools its people need and sponsors their use.
+              Invite your team, manage roles, and review application assignments in your organization’s workspace.
             </p>
           </CardContent>
         </Card>
