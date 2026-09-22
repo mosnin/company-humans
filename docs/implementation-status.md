@@ -14,7 +14,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in across same-origin tabs with a 30-minute application expiry and clears on acceptance/sign-out.
 - Google and email magic-link authentication replace GitHub. Library lifecycle, token replay/expiry, cross-tab invite return and request limits have local verification; actual provider credentials and authenticated acceptance remain outstanding.
 - Signed usage ingestion, exact scoped aggregation and audited quarantine recovery have local database and HTTP evidence. CI at ec564ab passed in run35747591915:308 automated tests,84 fixture browser checks,4 real anonymous runtime checks and actual signed HTTP/database concurrency verification. Detailed counts below are dated checkpoints.
-- Migrations0044–0047 are applied on hosted verification and production; the three metering integration tests passed against hosted verification. Local databases contain the same metering migrations; subsequent in-progress provisioning migrations are tracked separately below. Seven reference products remain catalog entries, not live integrations. Restricted credentials stay in ignored environment files.
+- Migrations through0050 are applied on hosted verification and production; metering and nine focused provisioning/offboarding tests passed against hosted verification. Local databases contain the same metering migrations; subsequent in-progress provisioning migrations are tracked separately below. Seven reference products remain catalog entries, not live integrations. Restricted credentials stay in ignored environment files.
 
 
 ## Phase gates
@@ -475,3 +475,11 @@ Migration0048 and dispatcher integrate the existing lifecycle API denial intent 
 ### Canonical identity offboarding — 2026-09-22
 
 0049–0050 implement atomic deletion→product-denial intent with service provenance, user/mapping serialization and historical tombstone reconciliation. Local database tests and independent review pass; full338-test suite, typecheck, lint and build pass. No hosted offboarding migration or provider revocation is claimed at this checkpoint. Convex deletion delivery, global suspension semantics and real remote execution remain open.
+
+### Production and immutable migration release — 2026-09-22
+
+Production deployment dpl_3vBnRRDPd4k1DXkV9bEUeDBE3VaL is READY at fe45da6682c005f5c14988a5b0efed76ba775f62. The live health endpoint reports that exact revision; mobile Chromium verified the corrected landing page, anonymous Usage redirect, no GitHub sign-in, and no page errors. Anonymous organization/aggregate requests and unsigned usage ingestion return401. CI run35751516447 passed at the same revision. Real Google/email sign-in remains unverified.
+
+Hosted verification and production applied committed migrations0048–0050. Nine hosted denial, offboarding, bootstrap and product lifecycle tests passed with network-appropriate60-second test/hook timeouts. A restricted production usage-ingestion login is configured in Vercel; no provider signing credentials or real Scalar event acceptance are claimed.
+
+`scripts/migrate-release.mjs` executes SQL and the matching migration runner from one immutable committed revision, excluding concurrent unfinished working-tree migrations. Replay of fe45da6 against hosted verification applied no changes. Repository-local Git author email now resolves to the authenticated GitHub owner; a subsequent production deployment succeeded without rewriting history.

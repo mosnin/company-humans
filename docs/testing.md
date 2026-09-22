@@ -18,7 +18,7 @@ Migration, seed and database tests require `DATABASE_URL`. Without it, integrati
 
 ## Latest recorded evidence
 
-166 automated tests (24 contracts, 21 database, 121 web), typecheck, lint and production build pass for connection orchestration. 62 fixture-backed desktop/mobile browser checks pass for the delivery diagnostics increment. All four configured databases have 35 migrations. See chronological evidence below for scope and limitations.
+At committed fe45da6, 338 automated tests (70 contracts, 34 database, 234 web), typecheck, lint and production build passed locally. CI run35751516447 passed at the same revision. Hosted verification and production contain migrations through0050. Subsequent uncommitted work must pass its own checks. See implementation-status.md and chronological evidence below for scope and limitations.
 
 ## Historical foundation evidence
 
@@ -409,3 +409,7 @@ Release checkpoint71e6b7c: local Usage page/type/lint/build checks passed. An is
 0048 integration covers atomic disable→journal/job, restricted writes and tenant denial, rejection of legacy adapters, readback failure reconciled without duplicate mutation, higher removal while prior suspension is outstanding, visible missing-binding failure, and org/member/fence changes after claim. Independent review identified and closed the initial binding-completion and silent-stall defects. New synchronous jobs required fixture cleanup ordering fixes; production foreign keys remain intact. Full current working-tree checks passed:70 contracts,33 database and232 web tests, typecheck, lint and build (includes subsequent local identity-offboarding work, recorded separately).
 
 Identity-offboarding verification: real restricted database tests cover cross-organization fan-out, unaffected same-org/foreign users, service provenance, stale/duplicate profile events, concurrent mapping insertion/deletion in both observed lock orders, direct privilege denial and audit-failure rollback. Historical backfill preserves source identity timestamps/status and replays without duplicates. Fresh database migration through0049 passed, then0050 normal runner/replay passed. The manually applied local0049 test schema was reconciled to its byte-identical source checksum after inspecting trigger/function ownership; concurrent fixture rows were retained. Final repository checks pass:70 contracts,34 PostgreSQL,234 web tests (338 total), typecheck, lint and production build. Hosted0048–0050 rollout remains separate.
+
+## Immutable hosted migration release
+
+From an installed checkout using Node24, set DATABASE_URL securely for the intended verification database and run `node scripts/migrate-release.mjs <committed-sha>`. The script extracts only that commit's SQL and matching runner; unfinished worker files are excluded. Verify targeted database tests before repeating the same committed revision on production. Never run integration tests against production. Release migration replay at fe45da6 returned an empty applied list on hosted verification. Credentials are never command-line arguments or committed files.
