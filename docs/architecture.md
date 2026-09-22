@@ -37,3 +37,7 @@ The restricted health collector records each provider check independently from p
 Entitlement and finite-limit revisions invalidate bound member access transactionally, while preserving intended assignments for a later authorized activation. Existing durable denial jobs carry monotonic access revisions. Provider state is projected only from full current fenced receipts, independently of local intent. Preparation checks target product.use from persisted tenant grants without impersonating that member. Role/org/catalog invalidation and an activation readiness resolver remain unfinished; no app launch is enabled by these preparations.
 
 Role-policy edits and membership role changes serialize through an organization authorization lock. Grant writes retain unchanged rows. Permission loss emits durable denial with authorization provenance, and an owner-only reconciliation covers preexisting gaps. Remote effects still require provider delivery/readback; restoring a role grant alone never activates access.
+
+## Organization suspension access invalidation
+
+A sponsoring organization's active-to-suspended or active-to-closed status transition now appends fenced denial intent for each bound desired member mapping in the same transaction. It preserves assignment and provider state, requiring the member denial worker's exact readback to record remote suspension. No automatic access restoration occurs when the organization becomes active again. Organization lifecycle APIs and real provider suspension remain separate work.

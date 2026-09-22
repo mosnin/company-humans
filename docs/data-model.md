@@ -133,3 +133,7 @@ Product memberships retain desired assignment separately from policy_blocked. Ea
 Product commands carry separate source_authorization for loss of product.use or reassignment to a denying role. A private trigger owner appends service-provenance denial commands and audit entries; the same access journal and jobs handle delivery. A shared organization authorization lock serializes role-policy changes and role assignment. Differential grant writes avoid deleting grants that are retained. A migration-only helper reconciles preexisting bound, unblocked unauthorized mappings and is idempotent; it changes neither roles nor assignments.
 
 Migration0057 adds an immutable claimed_access_revision to usage_limit_attempts. It is nullable for organization aggregate and historical attempts; positive member receipts require an exact current revision. An older in-flight attempt without a revision cannot become current.
+
+## Organization status provenance (0058–0059)
+
+Product membership commands record separate source_workspace provenance for organization status changes. The private trigger owner increments desired and shared access revisions, records the organization state and audit event, and uses the existing durable denial job. A migration-only helper reconciles historical bound assignments in inactive organizations, skipping already blocked mappings on repeated recovery runs. Unbound member bootstrap is not changed.

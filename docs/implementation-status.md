@@ -511,3 +511,7 @@ Independent review accepted0054–0055: new-transition and historical reconcilia
 ### Positive member-limit authorization — 2026-09-22
 
 0057 locally adds the target-role permission predicate and claimed access revision fence to positive member-limit attempts. Real PostgreSQL tests prove an older receipt is superseded after product.use revocation and restoration, and that removing another catalog requirement during the call supersedes the receipt. Zero hard stops and aggregate organization limits remain deliverable. This is worker delivery safety, not proof of real provider enforcement or member activation.
+
+### Organization status denial — 2026-09-22
+
+0058–0059 implement durable fenced denial for active-to-inactive organization transitions and private historical reconciliation. Assignments stay desired; remote state is only confirmed by exact provider receipts. Local test covers foreign tenant isolation, audit rollback, a failed compact receipt and no restoration on reactivation. The migration owner fixture changes status because the general service guard intentionally forbids it; no user-facing organization suspension API or live Scalar provider action is claimed. A fresh59-migration replay and full342 automated tests passed locally, and repository typecheck, lint and production build passed.

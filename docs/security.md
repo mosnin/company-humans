@@ -230,3 +230,7 @@ Restricted capability readers now require each catalog-required permission, plus
 ## Positive member limit delivery
 
 The restricted usage-limit worker checks the target member's product.use and all registered catalog-required permissions before applying a positive member limit and again before accepting readback. Each member attempt records the access revision at claim; revocation and restoration leave an older attempt stale. A zero limit remains deliverable as a hard stop after revocation, and organization aggregate limits do not acquire a fictitious member permission requirement. This controls worker delivery only. Atomic provider enforcement against a concurrent access revision, safe product activation and budget enforcement are still pending.
+
+## Organization status boundary
+
+Status changes to suspended or closed atomically block bound desired member access and append immutable service provenance and audit. The general service role cannot forge the source field or call the recovery helper. A failed audit rolls back the organization status change and all denial side effects. The current application still lacks an authorized organization suspension API; local tests use a migration-owner fixture while retaining the rest of the guard. Remote denial is pending until worker delivery and fenced readback succeed.
