@@ -41,3 +41,7 @@ Role-policy edits and membership role changes serialize through an organization 
 ## Organization suspension access invalidation
 
 A sponsoring organization's active-to-suspended or active-to-closed status transition now appends fenced denial intent for each bound desired member mapping in the same transaction. It preserves assignment and provider state, requiring the member denial worker's exact readback to record remote suspension. No automatic access restoration occurs when the organization becomes active again. Organization lifecycle APIs and real provider suspension remain separate work.
+
+## Catalog access changes
+
+An access-relevant product catalog edit or retirement now appends a fenced denial for each existing bound desired member mapping across organizations in the same database transaction. Cosmetic catalog edits leave access revisions alone. The denial uses the same worker journal and cannot project a provider suspension from a compact receipt. Pending suspended-member bootstrap commands carry a database-stamped catalog revision. Binding and catalog changes share an advisory lock; when the command is stale, binding retains the suspended identity and atomically queues a single fenced denial for that mapping. A draft catalog entry cannot bind a new member. No product activation is enabled by these preparations.

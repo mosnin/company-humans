@@ -29,27 +29,31 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
     const org = await createOrganization(databaseUrl!, { ownerUserId: owner, name: "Bootstrap fixture", slug: `bootstrap-${suffix}` });
     const foreign = await createOrganization(databaseUrl!, { ownerUserId: owner, name: "Other fixture", slug: `bootstrap-other-${suffix}` });
     const fixtureUsers = [owner];
-    const orgIds = [org.organizationId, foreign.organizationId], scalar = referenceProductId("scalar");
+    const orgIds = [org.organizationId, foreign.organizationId], product = createCanonicalId("product");
     const member = (await admin.query("SELECT id FROM memberships WHERE organization_id=$1", [org.organizationId])).rows[0].id;
     async function setup(key: string) {
       const instance = createCanonicalId("productInstance");
       await admin.query(`INSERT INTO product_instances (id,organization_id,product_id,instance_key,mode,provisioning_status,external_organization_id,created_by_user_id)
-        VALUES ($1,$2,$3,$4,'connected','active',$5,$6)`, [instance, org.organizationId, scalar, key, `fixture-${key}-${suffix}`, owner]);
+        VALUES ($1,$2,$3,$4,'connected','active',$5,$6)`, [instance, org.organizationId, product, key, `fixture-${key}-${suffix}`, owner]);
       const mapping = await requestProductMembership(service.toString(), { actorUserId: owner, organizationId: org.organizationId, productInstanceId: instance, membershipId: member });
       return { instance, mapping };
     }
-    const claim = () => claimMemberBootstrap(worker.toString(), org.organizationId, scalar);
+    const claim = () => claimMemberBootstrap(worker.toString(), org.organizationId, product);
     const finish = (lease: NonNullable<Awaited<ReturnType<typeof claim>>>) => finishMemberBootstrap(worker.toString(), org.organizationId, lease, suspended);
     const sql = new Client({ connectionString: worker.toString() }); await sql.connect();
     try {
+      await admin.query("INSERT INTO products(id,product_key,display_name,catalog_status,catalog_metadata) VALUES($1,$2,'Bootstrap fixture','ready',$3)",
+        [product,`bootstrap-${suffix}`,{schemaVersion:1,description:'Test only',category:'sales',supportedCapabilities:[],
+          provisioningModes:['connected'],supportedMemberOperations:['provision','suspend'],usageMeters:[],requiredPermissions:['product.use'],
+          adapterVersion:'1.0.0',billingBehavior:'organization_sponsored',deepLinks:{},connectionRequirements:[]}]);
       const first = await setup("first");
-      await expect(claimMemberBootstrap(service.toString(), org.organizationId, scalar)).rejects.toThrow("restricted worker");
-      await expect(claimMemberBootstrap(databaseUrl!, org.organizationId, scalar)).rejects.toThrow("restricted worker");
-      expect(await claimMemberBootstrap(worker.toString(), foreign.organizationId, scalar)).toBeNull();
+      await expect(claimMemberBootstrap(service.toString(), org.organizationId, product)).rejects.toThrow("restricted worker");
+      await expect(claimMemberBootstrap(databaseUrl!, org.organizationId, product)).rejects.toThrow("restricted worker");
+      expect(await claimMemberBootstrap(worker.toString(), foreign.organizationId, product)).toBeNull();
       expect(await claimMemberBootstrap(worker.toString(), org.organizationId, referenceProductId("cadre"))).toBeNull();
       // V1 is rejected before claiming a job or contacting the product.
       const old = { ...adapter(async () => suspended), contractVersion: 1 };
-      await expect(dispatchMemberBootstrap(worker.toString(), org.organizationId, { productId: scalar, adapter: old as unknown as ProductAdapterV2 })).rejects.toThrow("version 2");
+      await expect(dispatchMemberBootstrap(worker.toString(), org.organizationId, { productId: product, adapter: old as unknown as ProductAdapterV2 })).rejects.toThrow("version 2");
       expect((await admin.query("SELECT * FROM member_bootstrap_jobs WHERE organization_id=$1", [org.organizationId])).rowCount).toBe(0);
       const claims = await Promise.all(Array.from({ length: 6 }, claim));
       expect(claims.filter(Boolean)).toHaveLength(1); const lease = claims.find(Boolean)!;
@@ -114,14 +118,14 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
       expect(events.every(e => e.actor_type === "service" && e.actor_service_id === "member-bootstrap-worker")).toBe(true);
       // The dispatcher sends explicit initial denial, never resume/access operations.
       await setup("dispatch"); let called = false;
-      await dispatchMemberBootstrap(worker.toString(), org.organizationId, { productId: scalar, adapter: adapter(async input => {
+      await dispatchMemberBootstrap(worker.toString(), org.organizationId, { productId: product, adapter: adapter(async input => {
         called = true; expect(input.initialAccess).toBe("suspended"); expect(input.organizationId).toBe(org.organizationId); return suspended;
       }) }); expect(called).toBe(true);
       const invalid = await setup("active-response");
-      await dispatchMemberBootstrap(worker.toString(), org.organizationId, { productId: scalar, adapter: adapter(async () => ({ status: "succeeded", value: { externalMemberId: "wrong", status: "active" } }) as unknown as Awaited<ReturnType<ProductAdapterV2["provisionMember"]>>) });
+      await dispatchMemberBootstrap(worker.toString(), org.organizationId, { productId: product, adapter: adapter(async () => ({ status: "succeeded", value: { externalMemberId: "wrong", status: "active" } }) as unknown as Awaited<ReturnType<ProductAdapterV2["provisionMember"]>>) });
       expect((await admin.query("SELECT failure_code FROM member_bootstrap_jobs j JOIN product_membership_commands c ON c.id=j.command_id WHERE c.product_membership_id=$1", [invalid.mapping])).rows[0].failure_code).toBe("invalid_adapter_response");
       await setup("transport");
-      await dispatchMemberBootstrap(worker.toString(), org.organizationId, { productId: scalar, adapter: adapter(async () => { throw new Error("secret-do-not-persist"); }) });
+      await dispatchMemberBootstrap(worker.toString(), org.organizationId, { productId: product, adapter: adapter(async () => { throw new Error("secret-do-not-persist"); }) });
       expect((await admin.query("SELECT failure_code FROM member_bootstrap_jobs WHERE organization_id=$1 AND status='retry_wait'", [org.organizationId])).rows).toEqual([{ failure_code: "adapter_transport_failure" }]);
       await admin.query("UPDATE member_bootstrap_jobs SET status='failed' WHERE organization_id=$1 AND status='retry_wait'", [org.organizationId]);
       // Revocation while the remote call is outstanding retains its receipt for reconciliation.
@@ -169,6 +173,7 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
       await sql.end();
       for (const table of ["member_denial_attempts", "member_denial_jobs", "member_bootstrap_attempts", "member_bootstrap_jobs", "product_membership_commands", "product_memberships", "identity_audit_events", "product_instances", "memberships", "roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`, [orgIds]);
       await admin.query("DELETE FROM organizations WHERE id=ANY($1)", [orgIds]); await admin.query("DELETE FROM users WHERE id=ANY($1)", [fixtureUsers]);
+      await admin.query("DELETE FROM products WHERE id=$1", [product]);
       for (const role of [serviceRole, workerRole]) await admin.query(`DROP ROLE ${role}`); await admin.end();
     }
   });

@@ -137,3 +137,9 @@ Migration0057 adds an immutable claimed_access_revision to usage_limit_attempts.
 ## Organization status provenance (0058–0059)
 
 Product membership commands record separate source_workspace provenance for organization status changes. The private trigger owner increments desired and shared access revisions, records the organization state and audit event, and uses the existing durable denial job. A migration-only helper reconciles historical bound assignments in inactive organizations, skipping already blocked mappings on repeated recovery runs. Unbound member bootstrap is not changed.
+
+## Catalog access provenance (0060)
+
+Product membership commands also record a separate, constrained source_catalog object for service-origin catalog denials. Changes to catalog status or access-bearing metadata block bound desired mappings, advance the shared access revision and write an audit event per mapping. Description, display name and deep-link changes do not advance access. A private one-time helper reconciles already bound members of non-ready products. The record preserves desired assignment; a provider state change still requires the current full fenced receipt.
+
+Migration0061 adds products.access_contract_revision and product_membership_commands.catalog_access_revision. A database trigger stamps provision intent from the current product revision, and access-bearing catalog edits increment it. A stale or unstamped command that finishes suspended binding receives a per-mapping source_catalog denial command and audit in that binding transaction. This is separate from the monotonic member access revision used for provider receipts; it identifies whether creation began under a superseded catalog contract.

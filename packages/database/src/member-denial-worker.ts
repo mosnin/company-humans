@@ -13,7 +13,7 @@ const Response=z.discriminatedUnion("status",[
 ]);
 type Receipt=z.infer<typeof Response>;
 interface Row {command_id:string;product_instance_id:string;membership_id:string;operation:"suspendMember"|"removeMember";
-  idempotency_key:string;attempt_count:number;status:string;lease_token:string|null;expired:boolean;current_revision:boolean;external_member_id:string|null;access_revision:string;external_organization_id:string|null;binding_member_id:string|null;binding_current:boolean;fence_current:boolean;source_policy:unknown|null;source_authorization:unknown|null;source_workspace:unknown|null;}
+  idempotency_key:string;attempt_count:number;status:string;lease_token:string|null;expired:boolean;current_revision:boolean;external_member_id:string|null;access_revision:string;external_organization_id:string|null;binding_member_id:string|null;binding_current:boolean;fence_current:boolean;source_policy:unknown|null;source_authorization:unknown|null;source_workspace:unknown|null;source_catalog:unknown|null;}
 export interface MemberDenialLease { commandId:string;productInstanceId:string;membershipId:string;operation:"suspendMember"|"removeMember";
   idempotencyKey:string;leaseToken:string;attemptNumber:number; accessCommand?:MemberAccessCommand; bindingFailure?:"provider_binding_reconciliation_required"; }
 async function transaction<T>(url:string,organizationId:OrganizationId,run:(client:Client)=>Promise<T>):Promise<T> {
@@ -87,7 +87,7 @@ export async function finishMemberDenial(url:string,organizationId:OrganizationI
   const receipt=Response.parse(raw);
   const fencedReceipt=accessReceipt===undefined?undefined:MemberAccessCommandSchema.parse(accessReceipt);
   await transaction(url,organizationId,async client=>{
-    const result=await client.query<Row>(`SELECT j.*,c.operation,c.idempotency_key,c.source_policy,c.source_authorization,c.source_workspace,pm.product_instance_id,pm.membership_id,pm.external_member_id,
+    const result=await client.query<Row>(`SELECT j.*,c.operation,c.idempotency_key,c.source_policy,c.source_authorization,c.source_workspace,c.source_catalog,pm.product_instance_id,pm.membership_id,pm.external_member_id,
       a.access_revision,a.external_organization_id,a.external_member_id AS binding_member_id,
       (a.external_member_id IS NOT NULL AND a.external_organization_id IS NOT NULL AND a.external_member_id=pm.external_member_id AND a.external_organization_id=i.external_organization_id) AS binding_current,
       (a.access_revision=pm.access_revision) AS fence_current,
@@ -110,7 +110,7 @@ export async function finishMemberDenial(url:string,organizationId:OrganizationI
     const changedBinding=lease.accessCommand!==undefined&&!row.binding_current;
     const acceptable=receipt.status!=='succeeded'||(row.operation==='removeMember'?receipt.value.status==='removed':['suspended','removed'].includes(receipt.value.status));
     const wrongMember=receipt.status==='succeeded'&&row.external_member_id!==null&&row.external_member_id!==receipt.value.externalMemberId;
-    const missingFence=(row.source_policy!==null||row.source_authorization!==null||row.source_workspace!==null)&&receipt.status==='succeeded'&&(!lease.accessCommand||!fencedReceipt);
+    const missingFence=(row.source_policy!==null||row.source_authorization!==null||row.source_workspace!==null||row.source_catalog!==null)&&receipt.status==='succeeded'&&(!lease.accessCommand||!fencedReceipt);
     const normalized:Receipt=missingFence?{status:'permanent_failure',code:'fenced_policy_receipt_required'}:changedBinding?{status:'permanent_failure',code:'provider_binding_reconciliation_required'}:wrongMember?{status:'permanent_failure',code:'provider_member_mismatch'}:acceptable?receipt:{status:'permanent_failure',code:'provider_access_not_denied'};
     const retry=normalized.status==='pending'||normalized.status==='retryable_failure';
     let status=!row.current_revision?'superseded':normalized.status==='succeeded'?'succeeded':retry&&row.attempt_count<5?'retry_wait':'failed';

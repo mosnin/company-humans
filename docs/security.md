@@ -234,3 +234,7 @@ The restricted usage-limit worker checks the target member's product.use and all
 ## Organization status boundary
 
 Status changes to suspended or closed atomically block bound desired member access and append immutable service provenance and audit. The general service role cannot forge the source field or call the recovery helper. A failed audit rolls back the organization status change and all denial side effects. The current application still lacks an authorized organization suspension API; local tests use a migration-owner fixture while retaining the rest of the guard. Remote denial is pending until worker delivery and fenced readback succeed.
+
+## Catalog change boundary
+
+The catalog denial trigger is owned by a non-login, non-BYPASSRLS role. Application and worker roles cannot call its recovery helper or forge source_catalog provenance. Access-relevant catalog changes block bound desired members in the same transaction, and an audit insertion failure rolls the catalog edit back. The service command constraint rejects incomplete catalog provenance. Full fenced provider readback is required to mark a denial delivered. Pending suspended binding is serialized with catalog edits by a shared advisory lock and checked against a database-stamped contract revision. A stale binding queues a one-mapping denial; failed audit persistence rolls it back. Role-permission loss during pending binding still needs its own authorization fence. Product activation remains closed.

@@ -54,10 +54,6 @@ it.skipIf(!url)('policy revisions durably deny bound members, preserve bootstrap
    expect(await visibleStatus()).toBe('unavailable');
   }
   await db.query("UPDATE product_memberships SET provisioning_status='active' WHERE id=$1",[mapping]);
-  await db.query("UPDATE products SET catalog_status='retired' WHERE id=$1",[product]);
-  expect(await visibleStatus()).toBe('unavailable');
-  await db.query("UPDATE products SET catalog_status='ready' WHERE id=$1",[product]);
-  expect(await visibleStatus()).toBe('access_update_pending');
   // Plain disable intent has the same honest pending state without provider confirmation.
   await db.query('UPDATE product_memberships SET policy_blocked=false,desired_enabled=false WHERE id=$1',[mapping]);
   expect(await visibleStatus()).toBe('access_update_pending');
