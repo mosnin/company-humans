@@ -48,3 +48,11 @@ Independent local RS256 keys were generated in memory and piped to the local CLI
 Verified against the running local backend: function/schema deployment succeeded; Convex TypeScript passed; OIDC discovery returned the local HTTP issuer; JWKS contained one RSA public key and no private key parameter; an actual anonymous HTTP query to `identity:current` returned successful null. This is local infrastructure acceptance, not OAuth consent/session or two-organization application acceptance. The initial binary download failed with ENOSPC; removing only this repository's generated `.next` output allowed the retry to succeed.
 
 References: [Convex local deployments](https://docs.convex.dev/cli/local-deployments), [agent mode](https://docs.convex.dev/cli/agent-mode).
+
+## Contributor authentication correction — 2026-09-22
+
+User direction: Google and email magic links replace GitHub sign-in. GitHub is removed from provider registration and UI allowlisting. Convex remains the session authority. Email is delivered through Resend with AUTH_RESEND_KEY and AUTH_EMAIL_FROM on the dedicated Convex deployment; Google needs AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET. AUTH_ENABLED_PROVIDERS=google,email is enabled on the web deployment only after the corresponding provider configuration is verified.
+
+Magic links expire after 15 minutes, preserve the invitation return route, and open an email confirmation page before token redemption. The custom identity callback permits an unverified email account at request time but only stamps verification after token redemption. It never merges Google and email accounts by matching email. Google and email using the same address remain separate identities pending an explicit secure linking flow.
+
+Production delivery, Google consent, token replay/expiry in the running backend, and the authenticated workspace/invitation journey remain unverified. No provider credentials were fabricated or copied from another product.

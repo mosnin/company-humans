@@ -38,3 +38,13 @@ it("never links OAuth accounts by matching email and rejects unverified profiles
   expect(await t.run(ctx=>saveOAuthUser(ctx,{existingUserId:first,profile}))).toBe(first);
   await expect(t.run(ctx=>saveOAuthUser(ctx,{existingUserId:null,profile:{...profile,emailVerified:false}}))).rejects.toThrow("verified email");
 });
+it("email request remains unverified until token redemption and cannot downgrade a verified account", async () => {
+  const t = convexTest(schema, modules);
+  const id = await t.run(ctx => saveOAuthUser(ctx, { existingUserId: null, type: "email", profile: { email: "person@example.test" } }));
+  expect((await t.run(ctx => ctx.db.get(id)))?.emailVerificationTime).toBeUndefined();
+  await t.run(ctx => saveOAuthUser(ctx, { existingUserId: id, type: "email", profile: { email: "person@example.test", emailVerified: true } }));
+  const verified = await t.run(ctx => ctx.db.get(id));
+  expect(verified?.emailVerificationTime).toBeTypeOf("number");
+  await t.run(ctx => saveOAuthUser(ctx, { existingUserId: id, type: "email", profile: { email: "person@example.test" } }));
+  expect(await t.run(ctx => ctx.db.get(id))).toEqual(verified);
+});

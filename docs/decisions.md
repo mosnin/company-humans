@@ -107,3 +107,11 @@ Canonical 05 requires versioned common semantics; 06 requires bounded usage and 
 Canonical documents 05/06 require entitlement application before activation and current runtime gates before spend. The legacy applyEntitlements signature does not prove provider identity, complete-set replacement, applied revision or continued suspension. ProductCapabilityAdapterV1 is an additive V2 extension requiring stageCapabilities and independent getStagedCapabilities. Existing V1 organization/denial and V2 bootstrap interfaces remain compatible; neither substitutes for this extension.
 
 A policyRevision identifies a monotonically increasing complete member capability snapshot, not one individual preference revision. The future durable snapshot producer must assign it atomically and preserve source revisions. Providers must reject stale revisions and equal revisions with different contents, replace the entire set, preserve suspension and leave limits/counters intact. Empty sets revoke all staged capabilities. These provider obligations require live proof; schema validation alone cannot establish them. No production registration or policy snapshot journal is introduced here.
+
+## Contributor authentication correction — 2026-09-22
+
+User direction: Google and email magic links replace GitHub sign-in. GitHub is removed from provider registration and UI allowlisting. Convex remains the session authority. Email is delivered through Resend with AUTH_RESEND_KEY and AUTH_EMAIL_FROM on the dedicated Convex deployment; Google needs AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET. AUTH_ENABLED_PROVIDERS=google,email is enabled on the web deployment only after the corresponding provider configuration is verified.
+
+Magic links expire after 15 minutes, preserve the invitation return route, and open an email confirmation page before token redemption. The custom identity callback permits an unverified email account at request time but only stamps verification after token redemption. It never merges Google and email accounts by matching email. Google and email using the same address remain separate identities pending an explicit secure linking flow.
+
+Production delivery, Google consent, token replay/expiry in the running backend, and the authenticated workspace/invitation journey remain unverified. No provider credentials were fabricated or copied from another product.

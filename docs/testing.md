@@ -369,3 +369,13 @@ Added /workspace/apps and an Apps navigation item for every active workspace mem
 Verified: 237 automated tests (58 contracts, 26 database, 153 web), typecheck, lint and production build pass. Expanded assignment integration passed locally and on hosted verification PostgreSQL (14.95 seconds), covering own assignment, foreign organization/user denial, owner-credential rejection, forbidden provider-column reads and writes, and disabled-state projection. Four page tests cover authenticated scope, no-workspace denial, normalized errors and non-granting states. Real OAuth and provider launch are still pending; this page does not fulfill the complete sponsored-access journey.
 
 All 80 existing desktop/mobile fixture checks also pass after the Apps navigation change. Migration 0043 is applied to both local databases and hosted verification/production, with production replay current. No provider assignment or production fixture data was created. Notion write tools are unavailable in this turn, so tracker synchronization remains pending.
+
+## Contributor authentication correction — 2026-09-22
+
+User direction: Google and email magic links replace GitHub sign-in. GitHub is removed from provider registration and UI allowlisting. Convex remains the session authority. Email is delivered through Resend with AUTH_RESEND_KEY and AUTH_EMAIL_FROM on the dedicated Convex deployment; Google needs AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET. AUTH_ENABLED_PROVIDERS=google,email is enabled on the web deployment only after the corresponding provider configuration is verified.
+
+Magic links expire after 15 minutes, preserve the invitation return route, and open an email confirmation page before token redemption. The custom identity callback permits an unverified email account at request time but only stamps verification after token redemption. It never merges Google and email accounts by matching email. Google and email using the same address remain separate identities pending an explicit secure linking flow.
+
+Production delivery, Google consent, token replay/expiry in the running backend, and the authenticated workspace/invitation journey remain unverified. No provider credentials were fabricated or copied from another product.
+
+Validation: 157 web tests passed, repository typecheck/lint and production build passed. Actual Chromium against the production build displayed the email confirmation and rejected a missing token without page errors. This does not verify real email delivery or Google consent.

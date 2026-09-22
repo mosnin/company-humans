@@ -4,11 +4,17 @@ import type { Id } from "./_generated/dataModel";
 
 export async function saveOAuthUser(
   ctx: AuthMutationContext,
-  args: { existingUserId: Id<"users"> | null; profile: Record<string, unknown> },
+  args: { existingUserId: Id<"users"> | null; profile: Record<string, unknown>; type?: string },
 ): Promise<Id<"users">> {
   const { email, emailVerified, name } = args.profile;
-  if (typeof email !== "string" || emailVerified !== true || !email.includes("@")) {
+  if (typeof email !== "string" || (emailVerified !== true && args.type !== "email") || !email.includes("@")) {
     throw new Error("A verified email address is required");
+  }
+  // Email requests create an unverified account before the token is redeemed.
+  // Never grant a verified identity or overwrite an existing profile at that step.
+  if (emailVerified !== true) {
+    if (args.existingUserId) return args.existingUserId;
+    return ctx.db.insert("users", { email: email.toLowerCase() });
   }
   const data = {
     email: email.toLowerCase(), name: typeof name === "string" ? name.slice(0, 256) : email,
