@@ -112,3 +112,31 @@ export async function resolveAccessContext(databaseUrl: string, userId: UserId, 
     };
   });
 }
+
+export interface MemberApplication {
+  id: string;
+  name: string;
+  instanceKey: string;
+  status: "preparing" | "suspended" | "unavailable" | "access_check_required";
+}
+
+/** Own assignments only. Stored active state alone never authorizes a product launch. */
+export async function listMemberApplications(databaseUrl: string, userId: UserId, organizationId: OrganizationId): Promise<MemberApplication[]> {
+  OrganizationIdSchema.parse(organizationId);
+  return withTenantContext(databaseUrl, userId, async client => {
+    const result = await client.query<MemberApplication>(`SELECT pm.id, p.display_name AS name, i.instance_key AS "instanceKey",
+      CASE WHEN NOT pm.desired_enabled OR NOT i.desired_enabled OR pm.provisioning_status='suspended'
+          OR i.provisioning_status='suspended' THEN 'suspended'
+        WHEN p.catalog_status='retired' OR pm.provisioning_status IN ('failed','removed')
+          OR i.provisioning_status IN ('failed','disconnected') THEN 'unavailable'
+        WHEN pm.provisioning_status='active' AND i.provisioning_status='active' THEN 'access_check_required'
+        ELSE 'preparing' END AS status
+      FROM public.product_memberships pm
+      JOIN public.memberships m ON m.organization_id=pm.organization_id AND m.id=pm.membership_id
+      JOIN public.product_instances i ON i.organization_id=pm.organization_id AND i.id=pm.product_instance_id
+      JOIN public.products p ON p.id=i.product_id
+      WHERE pm.organization_id=$1 AND m.user_id=$2 AND m.status='active'
+      ORDER BY p.display_name,i.instance_key,pm.id`, [organizationId,userId]);
+    return result.rows;
+  });
+}

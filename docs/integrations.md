@@ -165,3 +165,7 @@ collectApplicationHealth accepts only a trusted registered adapter and canonical
 readApplicationHealth requires applications.manage, filters the current provider binding and chooses the latest-started check rather than whichever response finishes last. A failed latest check never falls back to old healthy. Freshness uses a five-minute monitoring policy and the database clock, not an authorization grant. Provider IDs, raw errors and free text do not enter the public projection. Administrative UI and recovery controls remain to be wired.
 
 Verified: 228 automated tests (58 contracts, 26 database, 144 web), typecheck/lint/build; the expanded health scenario passed locally and on hosted verification PostgreSQL (28.37 seconds). It covers wrong role/tenant/product, stale/future health, private-text removal, latest failure, retirement during collection, obsolete bindings, reversed completion order, audit rollback and denied writes/deletes. Migrations 0041–0042 were verified before production application; no production fixtures were inserted. There are 42 migrations in the schema. No UI changed; prior 76 browser fixtures were not rerun. Previous commit 75aefb2 passed CI 35659570027. CH-19 and real-provider health acceptance remain open.
+
+## Contributor apps — 2026-09-22
+
+The contributor Apps page displays own organization-sponsored assignments. Provider launch remains unavailable until authenticated identity, current permissions/limits and actual adapter activation are verified.

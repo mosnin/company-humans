@@ -105,3 +105,7 @@ Migration 0040 adds service provenance to member_capability_snapshots. Each row 
 ## Application health observations
 
 Migrations 0041–0042 add application_health_observations keyed by UUID, with organization/instance composite foreign key, collection start/recording times, sanitized health or normalized failure and checked external organization binding. Runtime workers may append but cannot update/delete history. The current admin read selects the latest-started observation for the current binding; obsolete/null bindings are excluded.
+
+## Contributor apps — 2026-09-22
+
+Migration 0043 adds contributor self-read policy and limited column grants on product_memberships. No new table or external provider state is introduced.

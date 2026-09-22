@@ -14,6 +14,7 @@ export function WorkspaceShell({ organizationName, capabilities, children }: { o
   const [open, setOpen] = useState(false);
   const navigation = [
     { label: "Workspace", href: "/workspace", visible: true },
+    { label: "Apps", href: "/workspace/apps", visible: true },
     { label: "People", href: "/workspace/people", visible: capabilities.includes("members.manage") },
     { label: "Teams", href: "/workspace/teams", visible: capabilities.includes("teams.manage.all") || capabilities.includes("teams.create") },
     { label: "Applications", href: "/workspace/applications", visible: capabilities.includes("applications.manage") },

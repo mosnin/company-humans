@@ -8,6 +8,7 @@ import { enableProductInstance } from "./product-instances.js";
 import { requestProductMembership } from "./product-memberships.js";
 import { referenceProductId } from "./seed.js";
 import { listApplicationMemberCandidates } from "./administration.js";
+import { listMemberApplications } from "./rls.js";
 const databaseUrl=process.env.DATABASE_URL;
 describe.skipIf(!databaseUrl)("product membership mapping",()=>{
   it("binds one pending mapping to one tenant/member/instance without allowing manufactured provider success",async()=>{
@@ -20,6 +21,10 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
     const org=await createOrganization(databaseUrl!,{ownerUserId:alice,slug:`pmem-alice-${suffix}`,name:"Alice"});
     const other=await createOrganization(databaseUrl!,{ownerUserId:bob,slug:`pmem-bob-${suffix}`,name:"Bob"});
     const orgs=[org.organizationId,other.organizationId];
+    const readerRole=`ch_pread_${suffix}`;
+    await admin.query(`CREATE ROLE ${readerRole} LOGIN PASSWORD '${password}'`);
+    await admin.query(`GRANT company_human_app TO ${readerRole}`);
+    const readerUrl=new URL(url);readerUrl.username=readerRole;
     const runtime=new Client({connectionString:url.toString()});await runtime.connect();
     try {
       const instance=await enableProductInstance(url.toString(),{actorUserId:alice,organizationId:org.organizationId,productId:referenceProductId("scalar"),mode:"connected"});
@@ -38,6 +43,20 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       await expect(listApplicationMemberCandidates(url.toString(),bob,other.organizationId,instance)).rejects.toThrow();
       const ids=await Promise.all(Array.from({length:6},()=>requestProductMembership(url.toString(),input)));
       expect(new Set(ids).size).toBe(1);
+      expect(await listMemberApplications(readerUrl.toString(),alice,org.organizationId)).toEqual([
+        {id:ids[0],name:'Scalar',instanceKey:'primary',status:'preparing'}
+      ]);
+      expect(await listMemberApplications(readerUrl.toString(),bob,org.organizationId)).toEqual([]);
+      expect(await listMemberApplications(readerUrl.toString(),alice,other.organizationId)).toEqual([]);
+      await expect(listMemberApplications(databaseUrl!,alice,org.organizationId)).rejects.toThrow('nonprivileged');
+      const reader=new Client({connectionString:readerUrl.toString()});await reader.connect();
+      try {
+        await reader.query("SELECT set_config('company_human.user_id',$1,false)",[bob]);
+        expect((await reader.query('SELECT id FROM product_memberships WHERE organization_id=$1',[org.organizationId])).rowCount).toBe(0);
+        await reader.query("SELECT set_config('company_human.user_id',$1,false)",[alice]);
+        await expect(reader.query('SELECT external_member_id FROM product_memberships')).rejects.toThrow();
+        await expect(reader.query("UPDATE product_memberships SET desired_enabled=true WHERE id=$1",[ids[0]])).rejects.toThrow();
+      } finally {await reader.end();}
       expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).members).toEqual([]);
       expect((await admin.query("SELECT provisioning_status,external_member_id FROM product_memberships WHERE id=$1",[ids[0]])).rows[0]).toEqual({provisioning_status:"pending",external_member_id:null});
       expect((await admin.query("SELECT count(*)::int AS n FROM identity_audit_events WHERE target_id=$1 AND action='product.membership.requested'",[ids[0]])).rows[0].n).toBe(1);
@@ -52,6 +71,7 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       await expect(runtime.query("DELETE FROM product_memberships WHERE id=$1",[ids[0]])).rejects.toThrow();
       await runtime.query("UPDATE product_memberships SET desired_enabled=false WHERE id=$1",[ids[0]]);
       await expect(runtime.query("UPDATE product_memberships SET desired_enabled=true WHERE id=$1",[ids[0]])).rejects.toThrow();
+      expect((await listMemberApplications(readerUrl.toString(),alice,org.organizationId))[0]?.status).toBe('suspended');
       await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("reconciliation");
       await admin.query("UPDATE product_instances SET desired_enabled=false WHERE id=$1",[instance]);
       await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
@@ -60,7 +80,7 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       await runtime.end();
       for(const table of ["product_membership_commands","product_memberships","identity_audit_events","product_instances","memberships","roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
       await admin.query("DELETE FROM organizations WHERE id=ANY($1)",[orgs]);await admin.query("DELETE FROM users WHERE id=ANY($1)",[[alice,bob]]);
-      await admin.query(`DROP ROLE ${role}`);await admin.end();
+      await admin.query(`DROP ROLE ${readerRole}`);await admin.query(`DROP ROLE ${role}`);await admin.end();
     }
   });
 });

@@ -190,3 +190,7 @@ company_human_health_worker is a separate NOLOGIN role with tenant/product RLS, 
 ## Local Convex state isolation
 
 Local Convex development state may contain deployment credentials and database contents. `.convex/` is excluded from Git and both root/nested `.convex` directories are explicitly excluded from Vercel CLI uploads. Local OAuth signing keys remain separate from production. Never upload local state as a deployment artifact.
+
+## Contributor apps — 2026-09-22
+
+Migration 0043 grants the application read role only public assignment-state columns and restricts rows to the current user's active membership. The Apps page uses this read role, not administrative service credentials. Provider IDs and mutation authority remain unavailable.
