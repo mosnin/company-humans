@@ -189,3 +189,5 @@ Canonical identity tombstones now produce durable fenced product denial intent, 
 ## Policy invalidation and readback
 
 Bound entitlement/limit changes reuse the existing member denial journal and fenced adapter contract. The worker retains complete receipts and projects provider suspension only after exact current revision/binding validation. Contributor Apps shows Access update pending for unresolved changes, preserving unavailable and observed suspended states. Local fixture adapters prove ordering and tenant/receipt rejection; no live Scalar acceptance or hosted worker dispatch is claimed. Activation/resume, late-bootstrap reconciliation and remaining authority invalidation hooks are still prerequisites.
+
+Role loss and denying role reassignment feed the same fenced denial delivery path as policy changes. Historical unauthorized bound mappings receive an auditable denial during0055 reconciliation. Permission restoration never launches or resumes an app. Local concurrency/receipt fixtures validate the orchestration, not actual provider delivery.

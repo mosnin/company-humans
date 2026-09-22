@@ -63,6 +63,7 @@ export async function changeMembershipRole(databaseUrl: string, input: {
   try {
     await client.query("BEGIN");
     await setServiceContext(client, actorUserId, organizationId);
+    await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [`product-authorization:${organizationId}`]);
     const actor = await requireAdmin(client, actorUserId, organizationId, "members.manage");
     const target = await client.query<{ user_id: string; role_key: RoleKey; status: string }>(
       "SELECT user_id, role_key, status FROM public.memberships WHERE id = $1 AND organization_id = $2 FOR UPDATE",

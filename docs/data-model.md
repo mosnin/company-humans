@@ -127,3 +127,7 @@ Migrations0049–0050 add identity-offboarding provenance to lifecycle commands 
 ## Policy invalidation and denial receipts (0051–0053)
 
 Product memberships retain desired assignment separately from policy_blocked. Each entitlement or usage-limit revision atomically blocks affected bound mappings, increments desired/access revisions and appends an immutable denial command with the initiating human and source policy revision. Unbound suspended bootstrap is preserved. member_denial_access_receipts stores the complete fenced readback per attempt; only the restricted projection function can use a current exact receipt to record suspended/removed provider state. The UI reads only the additional policy flag under existing own-assignment RLS. Capability preparer/worker roles can read tenant-scoped target role grants to require product.use.
+
+## Authorization revocation (0054–0055)
+
+Product commands carry separate source_authorization for loss of product.use or reassignment to a denying role. A private trigger owner appends service-provenance denial commands and audit entries; the same access journal and jobs handle delivery. A shared organization authorization lock serializes role-policy changes and role assignment. Differential grant writes avoid deleting grants that are retained. A migration-only helper reconciles preexisting bound, unblocked unauthorized mappings and is idempotent; it changes neither roles nor assignments.

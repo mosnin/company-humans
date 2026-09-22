@@ -14,7 +14,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in across same-origin tabs with a 30-minute application expiry and clears on acceptance/sign-out.
 - Google and email magic-link authentication replace GitHub. Library lifecycle, token replay/expiry, cross-tab invite return and request limits have local verification; actual provider credentials and authenticated acceptance remain outstanding.
 - Signed usage ingestion, exact scoped aggregation and audited quarantine recovery have local database and HTTP evidence. CI at ec564ab passed in run35747591915:308 automated tests,84 fixture browser checks,4 real anonymous runtime checks and actual signed HTTP/database concurrency verification. Detailed counts below are dated checkpoints.
-- Migrations through0050 are applied on hosted verification and production; metering and nine focused provisioning/offboarding tests passed against hosted verification. Local databases contain the same metering migrations; subsequent in-progress provisioning migrations are tracked separately below. Seven reference products remain catalog entries, not live integrations. Restricted credentials stay in ignored environment files.
+- Migrations through0053 are applied on hosted verification and production; metering and nine focused provisioning/offboarding tests passed against hosted verification. Local databases contain the same metering migrations; subsequent in-progress provisioning migrations are tracked separately below. Seven reference products remain catalog entries, not live integrations. Restricted credentials stay in ignored environment files.
 
 
 ## Phase gates
@@ -488,6 +488,16 @@ Hosted verification and production applied committed migrations0048–0050. Nine
 
 0051–0053 add atomic entitlement/limit access invalidation, full fenced denial readback projection, current target product.use checks, and an honest contributor pending-access state. Bound assignments retain desired intent; they cannot become usable from these changes. Provider failures/disconnection remain visible before pending changes. Independent review accepted the final state after correcting unavailable-state precedence. Local integration covers concurrent policy edits, immutable provenance, audit rollback, foreign tenant denial and stale/forged receipt rejection.
 
-Hosted rollout remains pending for these migrations. Activation, comprehensive role/team/org/catalog invalidation, hosted worker dispatch and actual Scalar lifecycle acceptance remain open.
+Hosted verification and production now contain0051–0053 from immutable committed source. Five targeted hosted tests passed; the policy test required removing an unnecessary DROP OWNED cleanup step for the non-superuser hosted role. The successful retry took23.18 seconds. Activation, comprehensive role/team/org/catalog invalidation, hosted worker dispatch and actual Scalar lifecycle acceptance remain open.
 
 0051–0053 final local verification:340 automated tests passed (70 contracts,35 PostgreSQL,235 web), followed by repository typecheck, lint and production build. Full-suite cleanup and old desired-disable assertions were corrected to match retained audit records and honest pending state. Independent review accepted tenant grants, provenance, exact receipt projection and UI precedence. Hosted and real-provider acceptance remain separate.
+
+### Production policy release — 2026-09-22
+
+Deployment dpl_6QSNumgNK1jZmxnqajteCG5Fn29R is READY at072691414ac89085661ba5023e17a7b2b924316a, aliased to company-humans.vercel.app. Live health reports that exact revision. Mobile Chromium verified anonymous Apps redirects to sign-in, no GitHub button, no horizontal overflow and no page errors; organization and usage endpoints deny anonymous access. Screenshot is a local QA artifact. Real OAuth and Scalar access remain unverified. CI35753046050 passed at preceding policy implementation a69d29c.
+
+### Authorization loss and historical reconciliation — 2026-09-22
+
+0054–0055 implement atomic product.use loss/reassignment denial and owner-only reconciliation of existing unauthorized bound assignments. They preserve desired assignment and role truth, retain immutable source_authorization provenance, and require current fenced readback. Local real-transaction tests observe both role-change/revocation lock orderings and verify tenant denial, audit rollback, forged provenance denial, stale receipts and idempotent recovery. All55 migrations replayed successfully on a fresh disposable database. Full-root verification passed341 tests (70 contracts,36 PostgreSQL,235 web), typecheck, lint and production build. Hosted rollout remains pending at this checkpoint.
+
+Independent review accepted0054–0055: new-transition and historical reconciliation paths preserve authorization truth, use restricted provenance and the shared fence, reject forged/runtime calls, and remain idempotent. No actual provider activation or revocation is inferred.

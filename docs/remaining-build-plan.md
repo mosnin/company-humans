@@ -1,6 +1,6 @@
 # Company Human — remaining phased build plan
 
-Updated2026-09-22 against committed metering checkpoint ec564ab and the current Usage page. Canonical Notion phases and product requirements are unchanged. Destination:`mosnin/company-humans`; source `company-os-web` remains untouched. Dated implementation evidence lives in implementation-status.md.
+Updated2026-09-22 against verified policy checkpoint a69d29c and current hosted migration evidence. Canonical Notion phases and product requirements are unchanged. Destination:`mosnin/company-humans`; source `company-os-web` remains untouched. Dated implementation evidence lives in implementation-status.md.
 
 ## Current position and evidence
 
@@ -8,8 +8,8 @@ Updated2026-09-22 against committed metering checkpoint ec564ab and the current 
 - **Phase 01: in progress.** Identity, membership, permissions and tenant protections exist; real Convex OAuth and authenticated two-organization acceptance remain open.
 - **Phase 02: in progress.** Catalog/setup intent, provisioning journals, suspended member binding, capability and limit delivery machinery, diagnostics and durable health collection exist. Real Scalar access, final activation, reconciliation and hosted worker operation remain incomplete.
 - **Phase03: in progress.** Signed immutable usage ingestion, scoped exact aggregation, quarantine recovery and usage presentation exist. Live Scalar emission, budget reservations/enforcement, durable billing windows and financial projections remain open. Phases04–15 are unfinished;16 is conditional.
-- Dedicated Convex, PostgreSQL and Vercel resources already exist. Do not create replacement projects. The last recorded production web baseline is `c831998`; current branch code is newer and still needs deployment acceptance.
-- Latest verified CI:**35747591915 succeeded at ec564ab**:308 automated tests,84 fixture browser checks,4 real anonymous-runtime checks and signed HTTP/restricted-database concurrent ingestion. Hosted verification metering tests passed; production migrations through0047 are applied. Real Google/email and live provider acceptance remain open.
+- Dedicated Convex, PostgreSQL and Vercel resources already exist. Do not create replacement projects. The verified production web baseline is `0726914`; live health and anonymous mobile/API checks passed.
+- Latest verified CI:**35753046050 succeeded at a69d29c**. Local340 automated tests, typecheck, lint and production build passed for that policy release. Hosted targeted policy tests passed; production migrations through0053 are applied. Real Google/email and live provider acceptance remain open.
 - Browser fixtures and adapter test doubles do not establish live OAuth, native product access, hard stops or payouts. No phase is closed by this plan.
 
 ## First usable release
@@ -23,7 +23,7 @@ This is the next delivery milestone across Phases 01–03. Complete it before br
 1. **Complete authenticated health and usage acceptance.** Both displays and permission tests exist and pass locally. Verify them with real authenticated users; scheduling and real Scalar health/usage observations remain outstanding.
 2. **Complete real identity acceptance.** Configure OAuth on the existing dedicated Convex project, use the verified isolated local backend with separate OAuth configuration, deploy the tested revision and run two-account/two-organization invite, role, switching and suspension journeys.
 3. **Resolve the audited Scalar control gaps.** Use the completed source assessment to establish the real provider contract and test organization. Required provider-side changes must be scoped and documented; another generic worker cannot supply missing Scalar enforcement.
-4. **Finish suspended-to-active orchestration.** Reuse existing workers to apply current capabilities and finite limits, verify acknowledgements, fence activation against revoked membership/policy, and reconcile ambiguous outcomes. Implement safe resume/restore.
+4. **Finish suspended-to-active orchestration.** Reuse existing workers to apply current capabilities and finite limits, verify acknowledgements, fence activation against revoked membership/policy, and reconcile ambiguous outcomes. Implement safe resume/restore. Remaining prerequisites include complete authorization/org/catalog invalidation, all catalog-required permission checks, exact current capability and full finite-limit readback coverage, and atomic shared-fence grant registration. Truly unmetered applications need an explicit contract decision; do not invent a dummy limit.
 5. **Operate and prove the lifecycle.** Configure restricted hosted workers, scheduling, actual health collection and recovery controls. Prove create/connect, provision, suspend, resume, remove and product disable with real Scalar receipts.
 6. **Implement measured usage and actual hard stops.** Add the Phase 03 event, budget, reservation and commercial flows; test concurrent spend and exhaustion before broader access.
 7. **Continue Phases 04–15 in order.** Deliver the human workspace, CRM/context, real attribution-to-payout loop, remaining products and production acceptance. Phase 16 remains conditional.
@@ -74,7 +74,7 @@ Audit cleanup belongs to the phase touching that code: classify copied source as
 
 ## Phase 03 — usage governance and centralized billing
 
-**Tracker:** CH-20–CH-26. **Status:** Metering and commercial enforcement not started; finite-limit configuration prerequisites implemented.
+**Tracker:** CH-20–CH-26. **Status:** In progress. Signed ingestion, scoped aggregation, quarantine recovery and Usage UI implemented; hierarchical budgets, actual enforcement, valuation and commercial billing remain open.
 
 1. Build versioned meters, authenticated usage ingestion, organization ownership, idempotent event storage and deterministic aggregation; handle duplicates, delays, corrections and out-of-order delivery.
 2. Implement organization/product/team/member/capability budgets, warning thresholds, soft stops and hard stops with explicit precedence and auditable changes.

@@ -44,25 +44,26 @@ describe.skipIf(!databaseUrl)('restricted automatic capability preparation',()=>
    // A matching permission in another organization cannot authorize this target.
    expect((await admin.query("SELECT count(*)::int n FROM role_permissions WHERE organization_id=$1 AND permission_key='product.use'",[other.organizationId])).rows[0].n).toBeGreaterThan(0);
    await admin.query("INSERT INTO role_permissions(organization_id,role_id,permission_key) VALUES($1,$2,'product.use')",[org.organizationId,contributorRole]);
-   expect((await refreshCapabilitySnapshots(preparer.toString(),input)).reused).toBe(2);
+   // Restoring permission refreshes the denial-fenced source; it never resumes the member.
+   expect(await refreshCapabilitySnapshots(preparer.toString(),input)).toEqual({scanned:2,prepared:1,reused:1,skipped:0,nextCursor:null});
    await setProductEntitlement(url.toString(),{...config,effect:'deny',expectedRevision:1});
    const concurrent=await Promise.all(Array.from({length:3},()=>refreshCapabilitySnapshots(preparer.toString(),input)));
    expect(concurrent.reduce((n,r)=>n+r.prepared,0)).toBe(2);
    const snapshots=(await admin.query('SELECT policy_revision,payload,actor_user_id,actor_service_id FROM member_capability_snapshots WHERE organization_id=$1 ORDER BY policy_revision',[org.organizationId])).rows;
-   expect(snapshots).toHaveLength(4);expect(snapshots.every(r=>r.actor_user_id===null&&r.actor_service_id==='capability-preparer')).toBe(true);
-   expect(snapshots.filter(r=>r.policy_revision===2).every(r=>r.payload.capabilities.length===0)).toBe(true);
-   expect((await admin.query('SELECT count(*)::int n FROM capability_jobs WHERE organization_id=$1',[org.organizationId])).rows[0].n).toBe(4);
+   expect(snapshots).toHaveLength(5);expect(snapshots.every(r=>r.actor_user_id===null&&r.actor_service_id==='capability-preparer')).toBe(true);
+   expect(snapshots.filter(r=>r.payload.capabilities.length===0)).toHaveLength(2);
+   expect((await admin.query('SELECT count(*)::int n FROM capability_jobs WHERE organization_id=$1',[org.organizationId])).rows[0].n).toBe(5);
    // An initiating administrator leaving cannot strand already authorized configuration for another active member.
    await setProductEntitlement(url.toString(),{...config,effect:'allow',expectedRevision:2});
    await admin.query("UPDATE memberships SET status='suspended' WHERE organization_id=$1 AND user_id=$2",[org.organizationId,users[0]]);
    const independent=await refreshCapabilitySnapshots(preparer.toString(),input);expect(independent.prepared).toBe(1);expect(independent.skipped).toBe(1);
-   expect((await admin.query('SELECT max(policy_revision) n FROM member_capability_snapshots WHERE product_membership_id=$1',[mapping2])).rows[0].n).toBe(3);
+   expect((await admin.query('SELECT max(policy_revision) n FROM member_capability_snapshots WHERE product_membership_id=$1',[mapping2])).rows[0].n).toBe(4);
    // A catalog change triggers a new snapshot without a preference mutation.
    await admin.query('UPDATE products SET catalog_metadata=$2 WHERE id=$1',[product,{...metadata,supportedCapabilities:['write']}]);
    const guard=`prep_audit_${suffix}`;
    await admin.query(`CREATE FUNCTION public.${guard}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.target_id='${mapping2}' AND NEW.action='product.capabilities.refreshed' THEN RAISE EXCEPTION 'fixture audit failure'; END IF; RETURN NEW; END; $$`);
    await admin.query(`CREATE TRIGGER ${guard} BEFORE INSERT ON identity_audit_events FOR EACH ROW EXECUTE FUNCTION public.${guard}()`);
-   try{await expect(refreshCapabilitySnapshots(preparer.toString(),input)).rejects.toThrow('fixture audit failure');expect((await admin.query('SELECT max(policy_revision) n FROM capability_jobs WHERE product_membership_id=$1'.replace('policy_revision','revision'),[mapping2])).rows[0].n).toBe(3);}
+   try{await expect(refreshCapabilitySnapshots(preparer.toString(),input)).rejects.toThrow('fixture audit failure');expect((await admin.query('SELECT max(policy_revision) n FROM capability_jobs WHERE product_membership_id=$1'.replace('policy_revision','revision'),[mapping2])).rows[0].n).toBe(4);}
    finally{await admin.query(`DROP TRIGGER ${guard} ON identity_audit_events`);await admin.query(`DROP FUNCTION public.${guard}()`);}
    expect((await refreshCapabilitySnapshots(preparer.toString(),input)).prepared).toBe(1);
    await admin.query('UPDATE product_instances SET desired_enabled=false WHERE id=$1',[instance]);expect((await refreshCapabilitySnapshots(preparer.toString(),input)).skipped).toBe(2);
@@ -76,7 +77,7 @@ describe.skipIf(!databaseUrl)('restricted automatic capability preparation',()=>
     await runtime.query("SELECT set_config('company_human.product_id',$1,false)",[createCanonicalId('product')]);expect((await runtime.query('SELECT * FROM member_capability_snapshots')).rowCount).toBe(0);
    }finally{await runtime.end();}
    const events=(await admin.query("SELECT actor_user_id,actor_service_id FROM identity_audit_events WHERE organization_id=$1 AND action='product.capabilities.refreshed'",[org.organizationId])).rows;
-   expect(events).toHaveLength(6);expect(events.every(r=>r.actor_user_id===null&&r.actor_service_id==='capability-preparer')).toBe(true);
+   expect(events).toHaveLength(7);expect(events.every(r=>r.actor_user_id===null&&r.actor_service_id==='capability-preparer')).toBe(true);
   }finally{
    await sql.end();for(const table of ['member_denial_access_receipts','member_denial_attempts','member_denial_jobs','member_access_commands','product_membership_commands','capability_attempts','capability_jobs','member_capability_snapshots','entitlement_policy_revisions','entitlement_policies','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
    await admin.query('DELETE FROM organizations WHERE id=ANY($1)',[orgs]);await admin.query('DELETE FROM users WHERE id=ANY($1)',[users]);await admin.query('DELETE FROM products WHERE id=$1',[product]);await admin.query(`DROP ROLE ${preparerRole}`);await admin.query(`DROP ROLE ${role}`);await admin.end();
