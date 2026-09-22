@@ -165,7 +165,7 @@ describe.skipIf(!databaseUrl)("durable suspended member bootstrap", () => {
       expect(await claim()).toBeNull();
     } finally {
       await sql.end();
-      for (const table of ["member_bootstrap_attempts", "member_bootstrap_jobs", "product_membership_commands", "product_memberships", "identity_audit_events", "product_instances", "memberships", "roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`, [orgIds]);
+      for (const table of ["member_denial_attempts", "member_denial_jobs", "member_bootstrap_attempts", "member_bootstrap_jobs", "product_membership_commands", "product_memberships", "identity_audit_events", "product_instances", "memberships", "roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`, [orgIds]);
       await admin.query("DELETE FROM organizations WHERE id=ANY($1)", [orgIds]); await admin.query("DELETE FROM users WHERE id=ANY($1)", [fixtureUsers]);
       for (const role of [serviceRole, workerRole]) await admin.query(`DROP ROLE ${role}`); await admin.end();
     }

@@ -467,3 +467,7 @@ Product-scope review found no unrelated tracked copied screens/assets or obsolet
 ### Dedicated usage page — 2026-09-22
 
 /workspace/usage now exposes permitted actual consumption with product/meter labels, exact quantities and UTC period/environment filters. It reuses inherited PageHeader/Card/Button/shell primitives. Role-aware navigation includes Usage and fixes Teams visibility for assigned-team managers. Server/page/navigation and12 desktop/mobile fixture checks pass; root inspected mobile rendering and repository typecheck/lint/build passed. Production OAuth remains unconfigured, so this is not an authenticated hosted acceptance claim.
+
+### Fenced denial orchestration — 2026-09-22
+
+Migration0048 and dispatcher integrate the existing lifecycle API denial intent with a shared monotonic access journal and existing durable jobs. Legacy provider methods cannot dispatch through this path. Receipt/readback, final binding validation and visible reconciliation failures are locally verified and independently reviewed. Localdevelopment/securityverification contain0048; hosted rollout is pending. The original empty development0048 journal was reset before release to correct trigger-creation ordering for non-superuser migration owners; no production0048 was applied. Activation, late-bootstrap recovery, real providers and hosted scheduling remain open.

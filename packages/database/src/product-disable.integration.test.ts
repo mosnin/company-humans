@@ -37,6 +37,7 @@ describe.skipIf(!databaseUrl)("product disable boundary",()=>{
       await expect(disableProductInstance(url.toString(),scope)).rejects.toThrow();
       expect((await admin.query("SELECT desired_enabled FROM product_instances WHERE id=$1",[instance])).rows[0].desired_enabled).toBe(true);
       expect((await admin.query("SELECT desired_enabled,desired_revision FROM product_memberships WHERE id=$1",[mapping])).rows[0]).toEqual({desired_enabled:true,desired_revision:1});
+      await admin.query("DELETE FROM member_denial_jobs WHERE command_id=$1",[collision]);
       await admin.query("DELETE FROM product_membership_commands WHERE id=$1",[collision]);
       await Promise.all(Array.from({length:6},()=>disableProductInstance(url.toString(),scope)));
       expect((await admin.query("SELECT desired_enabled,provisioning_status FROM product_instances WHERE id=$1",[instance])).rows[0]).toEqual({desired_enabled:false,provisioning_status:"active"});
@@ -72,7 +73,7 @@ describe.skipIf(!databaseUrl)("product disable boundary",()=>{
         expect(waiting).toBe(true);await admin.query("COMMIT");expect(await insertion).toBe("42501");
       } finally {await admin.query("ROLLBACK");await insertion;await runtime.end();}
     } finally {
-      for(const table of ["product_membership_commands","product_memberships","identity_audit_events","product_instances","memberships","roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgIds]);
+      for(const table of ["member_denial_attempts","member_denial_jobs","product_membership_commands","product_memberships","identity_audit_events","product_instances","memberships","roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgIds]);
       await admin.query("DELETE FROM organizations WHERE id=ANY($1)",[orgIds]);await admin.query("DELETE FROM users WHERE id=ANY($1)",[users]);await admin.query(`DROP ROLE ${role}`);await admin.end();
     }
   });

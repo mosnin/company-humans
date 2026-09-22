@@ -107,6 +107,10 @@
     "./usage-quarantine": {
       "types": "./dist/usage-quarantine.d.ts",
       "default": "./dist/usage-quarantine.js"
+    },
+    "./member-access-worker": {
+      "types": "./dist/member-access-worker.d.ts",
+      "default": "./dist/member-access-worker.js"
     }
   },
   "scripts": {

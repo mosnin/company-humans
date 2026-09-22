@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { Client } from "pg";
 import { describe,expect,it } from "vitest";
-import { assertProductAdapterV1,PRODUCT_ADAPTER_METHODS,createCanonicalId,type ProductAdapterV1 } from "@company-human/contracts";
+import { assertProductAdapterV1,assertProductMemberAccessAdapterV1,PRODUCT_ADAPTER_METHODS,createCanonicalId,type ProductAdapterV1,type MemberAccessCommand,type MemberAccessResult } from "@company-human/contracts";
 import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { requestProductMembership } from "./product-memberships.js";
@@ -42,7 +42,7 @@ describe.skipIf(!databaseUrl)('durable member denial worker',()=>{
     try {
       const first=await setup('first');await setup('unrequested',false);
       const read=()=>listApplicationMemberDiagnostics(service.toString(),owner,org.organizationId,first.instance);
-      const queued=await read();expect(queued.total).toBe(1);expect(queued.members[0]!.denial?.status).toBe('queued');
+      const queued=await read();expect(queued.total).toBe(1);expect(queued.members[0]!.denial?.status).toBe('pending');
       expect(queued.members[0]!.desiredEnabled).toBe(false);
       expect((await listApplicationMemberDiagnostics(service.toString(),owner,org.organizationId,first.instance,2)).members).toEqual([]);
       await expect(listApplicationMemberDiagnostics(service.toString(),owner,foreign.organizationId,first.instance)).rejects.toThrow('administration denied');
@@ -97,18 +97,8 @@ describe.skipIf(!databaseUrl)('durable member denial worker',()=>{
       await expect(sql.query("UPDATE member_denial_attempts SET outcome='permanent_failure' WHERE command_id=$1",[lease.commandId])).rejects.toThrow('immutable');
       await sql.query("SELECT set_config('company_human.organization_id',$1,false)",[foreign.organizationId]);
       expect((await sql.query('SELECT * FROM member_denial_jobs WHERE command_id=$1',[lease.commandId])).rowCount).toBe(0);
-      // Transport failure is bounded and does not leak raw provider detail.
-      await setup('transport');
-      expect(await dispatchMemberDenial(worker.toString(),org.organizationId,{productId:scalar,adapter:adapter(async()=>{throw new Error('secret-do-not-persist');})})).toBe('processed');
-      expect((await admin.query("SELECT failure_code FROM member_denial_jobs WHERE status='retry_wait' AND organization_id=$1",[org.organizationId])).rows).toEqual([{failure_code:'adapter_transport_failure'}]);
-      await admin.query("UPDATE member_denial_jobs SET status='failed' WHERE status='retry_wait' AND organization_id=$1",[org.organizationId]);
-      const invalid=await setup('invalid');
-      await dispatchMemberDenial(worker.toString(),org.organizationId,{productId:scalar,adapter:adapter(async()=>({status:'succeeded',value:{externalMemberId:'fixture-invalid',status:'active'}}))});
-      expect((await admin.query(`SELECT j.failure_code FROM member_denial_jobs j JOIN product_membership_commands c ON c.id=j.command_id WHERE c.product_membership_id=$1`,[invalid.mapping])).rows[0].failure_code).toBe('provider_access_not_denied');
-      const mismatch=await setup('mismatch');
-      await admin.query("UPDATE product_memberships SET external_member_id='known-fixture-member' WHERE id=$1",[mismatch.mapping]);
-      await dispatchMemberDenial(worker.toString(),org.organizationId,{productId:scalar,adapter:adapter(async()=>({status:'succeeded',value:{externalMemberId:'wrong-fixture-member',status:'removed'}}))});
-      expect((await admin.query(`SELECT j.failure_code FROM member_denial_jobs j JOIN product_membership_commands c ON c.id=j.command_id WHERE c.product_membership_id=$1`,[mismatch.mapping])).rows[0].failure_code).toBe('provider_member_mismatch');
+      // Legacy adapters must fail before claiming work or making provider calls.
+      await expect(dispatchMemberDenial(worker.toString(),org.organizationId,{productId:scalar,adapter:adapter(async()=>{throw new Error('must not call');})})).rejects.toThrow('fenced member access');
       // A newer remove supersedes suspension. Record the old receipt without
       // treating it as proof that the current command has completed.
       const revision=await setup('revision');const old=(await claimMemberDenial(worker.toString(),org.organizationId,scalar))!;
@@ -119,9 +109,8 @@ describe.skipIf(!databaseUrl)('durable member denial worker',()=>{
       expect(await claimMemberDenial(worker.toString(),org.organizationId,scalar)).toBeNull();
       await finishMemberDenial(worker.toString(),org.organizationId,old,{status:'succeeded',value:{externalMemberId:'fixture-revision',status:'suspended'}});
       expect((await admin.query('SELECT status FROM member_denial_jobs WHERE command_id=$1',[old.commandId])).rows[0].status).toBe('superseded');
-      let called=false;
-      await dispatchMemberDenial(worker.toString(),org.organizationId,{productId:scalar,adapter:adapter(async()=>{throw new Error('wrong method');},async input=>{called=true;expect(input.idempotencyKey).toBe(`${revision.mapping}:member:3`);return {status:'succeeded',value:{externalMemberId:'fixture-revision',status:'removed'}};})});
-      expect(called).toBe(true);
+      const removalLease=(await claimMemberDenial(worker.toString(),org.organizationId,scalar))!;
+      await finishMemberDenial(worker.toString(),org.organizationId,removalLease,{status:'succeeded',value:{externalMemberId:'fixture-revision',status:'removed'}});
       // Crash recovery uses the same command key and bounds five attempts.
       await setup('crashed');const crashed=(await claimMemberDenial(worker.toString(),org.organizationId,scalar))!;
       let current=crashed;
@@ -133,6 +122,72 @@ describe.skipIf(!databaseUrl)('durable member denial worker',()=>{
       expect((await admin.query('SELECT status,failure_code FROM member_denial_jobs WHERE command_id=$1',[crashed.commandId])).rows[0]).toEqual({status:'failed',failure_code:'retry_exhausted'});
       expect(await claimMemberDenial(worker.toString(),org.organizationId,scalar)).toBeNull();
       expect((await admin.query('SELECT count(*)::int AS n FROM member_denial_attempts WHERE command_id=$1',[crashed.commandId])).rows[0].n).toBe(5);
+      // Existing product-disable API atomically creates a fenced command and job.
+      const fenced=await setup('fenced',false);
+      await admin.query("UPDATE product_memberships SET external_member_id='fenced-member' WHERE id=$1",[fenced.mapping]);
+      await disableProductInstance(service.toString(),{actorUserId:owner,organizationId:org.organizationId,productInstanceId:fenced.instance});
+      const journal=(await admin.query('SELECT * FROM member_access_commands WHERE product_membership_id=$1',[fenced.mapping])).rows[0];
+      expect(journal.access_revision).toBe('1');expect(journal.external_member_id).toBe('fenced-member');
+      expect((await admin.query('SELECT status FROM member_denial_jobs WHERE command_id=$1',[journal.command_id])).rows[0].status).toBe('pending');
+      await sql.query("SELECT set_config('company_human.organization_id',$1,false)",[foreign.organizationId]);
+      expect((await sql.query('SELECT * FROM member_access_commands WHERE command_id=$1',[journal.command_id])).rowCount).toBe(0);
+      await expect(sql.query('UPDATE product_memberships SET access_revision=99 WHERE id=$1',[fenced.mapping])).rejects.toThrow('permission denied');
+      await expect(sql.query('DELETE FROM member_access_commands WHERE command_id=$1',[journal.command_id])).rejects.toThrow('permission denied');
+      let providerCurrent:MemberAccessCommand|null=null, calls=0, failReadback=true;
+      const fixture={contractVersion:2,capabilityContractVersion:1,usageLimitContractVersion:1,memberAccessContractVersion:1,
+        ...Object.fromEntries([...PRODUCT_ADAPTER_METHODS,'stageCapabilities','getStagedCapabilities','applyUsageLimit','getUsageLimitState'].map(name=>[name,async()=>{throw new Error('legacy method forbidden');}])),
+        async setMemberAccess(command:MemberAccessCommand):Promise<MemberAccessResult>{calls++;providerCurrent=command;return{status:'succeeded',value:command};},
+        async getMemberAccessOperation(){return providerCurrent?{status:'applied',value:providerCurrent}:{status:'unknown'};},
+        async getMemberAccess():Promise<MemberAccessResult>{if(failReadback)throw new Error('secret provider failure');return{status:'succeeded',value:providerCurrent!};}};
+      assertProductMemberAccessAdapterV1(fixture);
+      expect(await dispatchMemberDenial(worker.toString(),org.organizationId,{productId:scalar,adapter:fixture})).toBe('processed');
+      expect((await admin.query('SELECT status,failure_code FROM member_denial_jobs WHERE command_id=$1',[journal.command_id])).rows[0]).toMatchObject({status:'retry_wait',failure_code:'adapter_transport_failure'});
+      await admin.query("UPDATE member_denial_jobs SET next_attempt_at=now()-interval '1 second' WHERE command_id=$1",[journal.command_id]);
+      failReadback=false;
+      expect(await dispatchMemberDenial(worker.toString(),org.organizationId,{productId:scalar,adapter:fixture})).toBe('processed');
+      expect(calls).toBe(1); // persisted operation lookup reconciles the lost readback; no duplicate mutation
+      expect((await admin.query('SELECT status FROM member_denial_jobs WHERE command_id=$1',[journal.command_id])).rows[0].status).toBe('succeeded');
+      expect(providerCurrent).toMatchObject({access:'suspended',accessRevision:1,idempotencyKey:`${fenced.mapping}:member:2`,policy:null});
+      const appendDenial=async(revision:number,operation:string)=>{
+        const id=createCanonicalId('provisioningOperation');
+        await admin.query('UPDATE product_memberships SET desired_revision=$2 WHERE id=$1',[fenced.mapping,revision]);
+        await admin.query(`INSERT INTO product_membership_commands(id,organization_id,product_membership_id,desired_revision,operation,idempotency_key,actor_user_id)
+          VALUES($1,$2,$3,$4,$5,$6,$7)`,[id,org.organizationId,fenced.mapping,revision,operation,`${fenced.mapping}:member:${revision}`,owner]);
+      };
+      await appendDenial(3,'suspendMember');
+      const outstanding=(await claimMemberDenial(worker.toString(),org.organizationId,scalar,true))!;
+      await appendDenial(4,'removeMember');
+      const superseding=(await claimMemberDenial(worker.toString(),org.organizationId,scalar,true))!;
+      expect(outstanding.accessCommand?.accessRevision).toBe(2);
+      expect(superseding.accessCommand?.accessRevision).toBe(3);
+      expect(superseding.accessCommand?.access).toBe('removed');
+      await finishMemberDenial(worker.toString(),org.organizationId,superseding,{status:'succeeded',value:{externalMemberId:'fenced-member',status:'removed'}});
+      await finishMemberDenial(worker.toString(),org.organizationId,outstanding,{status:'succeeded',value:{externalMemberId:'fenced-member',status:'suspended'}});
+      expect((await admin.query('SELECT status FROM member_denial_jobs WHERE command_id=$1',[outstanding.commandId])).rows[0].status).toBe('superseded');
+      // No remote call is made when bootstrap has not supplied a binding; the failure is visible.
+      const unbound=await setup('unbound');const priorCalls=calls;
+      expect(await dispatchMemberDenial(worker.toString(),org.organizationId,{productId:scalar,adapter:fixture})).toBe('processed');
+      expect(calls).toBe(priorCalls);
+      expect((await admin.query(`SELECT j.status,j.failure_code FROM member_denial_jobs j JOIN product_membership_commands c ON c.id=j.command_id WHERE c.product_membership_id=$1`,[unbound.mapping])).rows[0]).toEqual({status:'failed',failure_code:'provider_binding_reconciliation_required'});
+      for(const change of ['organization','member','revision']){
+        const race=await setup(`binding-${change}`,false);
+        await admin.query("UPDATE product_memberships SET external_member_id='race-member' WHERE id=$1",[race.mapping]);
+        await disableProductInstance(service.toString(),{actorUserId:owner,organizationId:org.organizationId,productInstanceId:race.instance});
+        const raced=(await claimMemberDenial(worker.toString(),org.organizationId,scalar,true))!;
+        if(change==='organization'){
+          // Privileged binding-owner fixture models a provider reconnection between claim and receipt.
+          await admin.query('BEGIN');
+          await admin.query("SELECT set_config('company_human.organization_id',$1,true),set_config('company_human.user_id',$2,true)",[org.organizationId,owner]);
+          await admin.query('SET LOCAL ROLE company_human_activation');
+          expect((await admin.query("UPDATE product_instances SET external_organization_id='changed-org' WHERE id=$1",[race.instance])).rowCount).toBe(1);
+          await admin.query('COMMIT');
+        }
+        if(change==='member')await admin.query("UPDATE product_memberships SET external_member_id='changed-member' WHERE id=$1",[race.mapping]);
+        if(change==='revision')await admin.query("UPDATE product_memberships SET access_revision=access_revision+1 WHERE id=$1",[race.mapping]);
+        await finishMemberDenial(worker.toString(),org.organizationId,raced,{status:'succeeded',value:{externalMemberId:'race-member',status:'suspended'}});
+        const finished=(await admin.query('SELECT status,failure_code FROM member_denial_jobs WHERE command_id=$1',[raced.commandId])).rows[0];
+        expect(finished).toEqual(change==='revision'?{status:'superseded',failure_code:'superseded_revision'}:{status:'failed',failure_code:'provider_binding_reconciliation_required'});
+      }
     } finally {
       await sql.end();
       for(const table of ['member_denial_attempts','member_denial_jobs','product_membership_commands','product_memberships','identity_audit_events','product_instances','memberships','roles']) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgIds]);
