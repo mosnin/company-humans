@@ -3,3 +3,4 @@ export { REFERENCE_PRODUCTS, referenceProductId, seedReferenceProducts } from ".
 export { AuthUserChangeSchema, syncAuthUser, findCanonicalUser } from "./auth-users.js";
 export { createOrganization, listOrganizationsForUser } from "./organizations.js";
 export { listVisibleOrganizations } from "./rls.js";
+export * from "./usage-ingestion.js";

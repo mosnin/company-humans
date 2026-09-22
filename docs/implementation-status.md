@@ -441,3 +441,5 @@ Cross-tab invitation return is implemented with a 30-minute application expiry a
 ### Production deployment checkpoint — 2026-09-22
 
 Convex production sensible-dinosaur-165 received the Google/email implementation and authEmailRequestLimits index. Vercel deployment dpl_5LCijBopFrSPLAZyDL3TZsYPq1sp is READY and aliased to https://company-humans.vercel.app; its live /api/health reports c8319981967059ccdc9293ddfa923b8e3eef2a94. Live anonymous Chromium confirmed unavailable providers, no GitHub button, email confirmation rendering and rejection of a missing token without page errors. /api/organizations returned 401 and the Convex identity query returned null. Google consent and real email delivery remain unverified. CI 35691705991 was still running when this checkpoint was recorded.
+
+CH-20 preparation is in progress under the user's direction to continue independent work despite provider blockers: canonical meter/event contracts, migration 0044 and signed idempotent storage are implemented. This does not mark Phase 03 or CH-20 complete. Public ingestion/key management, quarantine resolution, aggregates, hard stops and actual Scalar usage are still required.

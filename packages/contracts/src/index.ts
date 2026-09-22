@@ -13,3 +13,4 @@ export * from "./usage-limit-adapter.js";
 export * from "./capability-adapter.js";
 
 export * from "./adapter-health.js";
+export * from "./usage-events.js";

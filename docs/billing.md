@@ -13,3 +13,7 @@ Product-instance and member meter limits now have exact decimal, versioned confi
 The authenticated usage-limit mutation endpoint now persists this desired configuration. Its response explicitly reports providerEnforcementConfirmed=false. Saving does not evaluate usage or enforce a provider hard stop.
 
 Organization and member usage-limit administration now exposes this configuration with exact quantities, UTC windows, immutable units and revision conflict handling. It displays parent organization caps separately and explicitly states enforcement is unconfirmed. It does not calculate remaining capacity or authorize unlimited usage when unconfigured.
+
+### Usage ingestion storage (CH-20 preparation)
+
+The signed usage contract and restricted transactional ingestion library now exist. Valid canonical meter/version/unit events are accepted; unknown or mismatched meters are retained in quarantine. Identical retries return the existing event; changed retries fail with an idempotency conflict. Original signed JSON is preserved even when numeric storage normalizes decimal formatting. There is no public ingestion endpoint or credential registry yet, and no aggregation, valuation, invoice or charge is produced. Source cost and customer-rate version remain explicit nullable provenance until real providers/pricing supply them.
