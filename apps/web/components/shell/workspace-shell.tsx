@@ -15,8 +15,9 @@ export function WorkspaceShell({ organizationName, capabilities, children }: { o
   const navigation = [
     { label: "Workspace", href: "/workspace", visible: true },
     { label: "Apps", href: "/workspace/apps", visible: true },
+    { label: "Usage", href: "/workspace/usage", visible: capabilities.some(capability => ["usage.read.own", "usage.read.team", "usage.read.all"].includes(capability)) },
     { label: "People", href: "/workspace/people", visible: capabilities.includes("members.manage") },
-    { label: "Teams", href: "/workspace/teams", visible: capabilities.includes("teams.manage.all") || capabilities.includes("teams.create") },
+    { label: "Teams", href: "/workspace/teams", visible: capabilities.includes("teams.manage.all") || capabilities.includes("teams.manage.assigned") || capabilities.includes("teams.create") },
     { label: "Applications", href: "/workspace/applications", visible: capabilities.includes("applications.manage") },
     { label: "Audit", href: "/workspace/audit", visible: capabilities.includes("audit.read.all") },
     { label: "Permissions", href: "/workspace/permissions", visible: capabilities.includes("roles.manage") },

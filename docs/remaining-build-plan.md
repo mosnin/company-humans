@@ -1,15 +1,15 @@
 # Company Human — remaining phased build plan
 
-Updated 2026-09-21 against application commit `3ee0e1a`, the current working tree, recorded verification and the canonical Notion roadmap fetched for this review. This plan replaces the previous execution-plan snapshot; it preserves the product specification and phase numbering. Destination: `mosnin/company-humans`. Source `company-os-web` remains untouched.
+Updated2026-09-22 against committed metering checkpoint ec564ab and the current Usage page. Canonical Notion phases and product requirements are unchanged. Destination:`mosnin/company-humans`; source `company-os-web` remains untouched. Dated implementation evidence lives in implementation-status.md.
 
 ## Current position and evidence
 
 - **Phase 00: verified.** Reuse the scaffold, contracts, canonical IDs, migrations, seeds and CI.
 - **Phase 01: in progress.** Identity, membership, permissions and tenant protections exist; real Convex OAuth and authenticated two-organization acceptance remain open.
 - **Phase 02: in progress.** Catalog/setup intent, provisioning journals, suspended member binding, capability and limit delivery machinery, diagnostics and durable health collection exist. Real Scalar access, final activation, reconciliation and hosted worker operation remain incomplete.
-- **Phases 03–15: unfinished.** Phase 16 is conditional expansion.
-- Dedicated Convex, PostgreSQL and Vercel resources already exist. Do not create replacement projects. The last recorded production web baseline is `8d72e92`; current branch code is newer and still needs deployment acceptance.
-- Latest verified CI: **35662114990 succeeded at 3d26a8b**. Evidence: 233 automated checks, 80 fixture browser checks, 42 migrations, production build and four real anonymous-runtime browser checks against an isolated Convex backend. Health administration is committed. Real OAuth and live provider acceptance remain open.
+- **Phase03: in progress.** Signed immutable usage ingestion, scoped exact aggregation, quarantine recovery and usage presentation exist. Live Scalar emission, budget reservations/enforcement, durable billing windows and financial projections remain open. Phases04–15 are unfinished;16 is conditional.
+- Dedicated Convex, PostgreSQL and Vercel resources already exist. Do not create replacement projects. The last recorded production web baseline is `c831998`; current branch code is newer and still needs deployment acceptance.
+- Latest verified CI:**35747591915 succeeded at ec564ab**:308 automated tests,84 fixture browser checks,4 real anonymous-runtime checks and signed HTTP/restricted-database concurrent ingestion. Hosted verification metering tests passed; production migrations through0047 are applied. Real Google/email and live provider acceptance remain open.
 - Browser fixtures and adapter test doubles do not establish live OAuth, native product access, hard stops or payouts. No phase is closed by this plan.
 
 ## First usable release
@@ -20,7 +20,7 @@ This is the next delivery milestone across Phases 01–03. Complete it before br
 
 ## Immediate bounded queue
 
-1. **Verify hosted health-page acceptance.** The display and permission tests are implemented and locally verified. Check CI and later authenticated runtime acceptance; scheduling, recovery and live Scalar observations remain outstanding. Do not rebuild the display.
+1. **Complete authenticated health and usage acceptance.** Both displays and permission tests exist and pass locally. Verify them with real authenticated users; scheduling and real Scalar health/usage observations remain outstanding.
 2. **Complete real identity acceptance.** Configure OAuth on the existing dedicated Convex project, use the verified isolated local backend with separate OAuth configuration, deploy the tested revision and run two-account/two-organization invite, role, switching and suspension journeys.
 3. **Resolve the audited Scalar control gaps.** Use the completed source assessment to establish the real provider contract and test organization. Required provider-side changes must be scoped and documented; another generic worker cannot supply missing Scalar enforcement.
 4. **Finish suspended-to-active orchestration.** Reuse existing workers to apply current capabilities and finite limits, verify acknowledgements, fence activation against revoked membership/policy, and reconcile ambiguous outcomes. Implement safe resume/restore.
@@ -49,7 +49,7 @@ Audit cleanup belongs to the phase touching that code: classify copied source as
 
 **Tracker:** CH-6–CH-12. **Status:** In progress.
 
-1. Configure the selected OAuth provider's application and secrets for dedicated Convex Auth; verify callback, verified email, session issuance, canonical user synchronization and logout/revocation. Clerk remains excluded.
+1. Configure Google OAuth and email magic-link delivery for dedicated Convex Auth; verify callback, verified email, session issuance, canonical user synchronization and logout/revocation. Clerk remains excluded.
 2. Establish an isolated nonproduction auth/database configuration; resolve the additional Convex deployment quota or document a supported local test arrangement. Never give arbitrary previews production credentials.
 3. Deploy the current verified identity revision and verify its exact source and migrations.
 4. Complete any missing organization creation, switching, team/role assignment, invitation acceptance/expiry/revocation, suspension/removal and session feedback exposed by real browser testing.

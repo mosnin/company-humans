@@ -41,7 +41,7 @@ it.skipIf(!url)("aggregates exact occurrence windows with deterministic gauges a
   await expect(aggregateUsageInTransaction(db,owner,window)).rejects.toThrow('restricted reader');
   await db.query('SET LOCAL ROLE company_human_app');
   const rows=await aggregateUsageInTransaction(db,owner,window);
-  expect(rows.find(r=>r.meterKey==='leads'&&r.meterVersion===1)).toMatchObject({quantity:'1000000000008.299999',eventCount:'4'});
+  expect(rows.find(r=>r.meterKey==='leads'&&r.meterVersion===1)).toMatchObject({quantity:'1000000000008.299999',eventCount:'4',productName:'Usage',meterName:'leads'});
   expect(rows.find(r=>r.meterVersion===2)).toMatchObject({quantity:'7.000000',unit:'credit'});
   expect(rows.find(r=>r.meterKey==='capacity')).toMatchObject({quantity:'3.000000',aggregation:'maximum'});
   expect(rows.find(r=>r.meterKey==='storage')).toMatchObject({quantity:'4.000000',aggregation:'last'});
