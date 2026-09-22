@@ -5,6 +5,7 @@ import { authTables } from "@convex-dev/auth/server";
 // Convex stores authentication state only. Canonical tenant data remains in PostgreSQL.
 export default defineSchema({
   ...authTables,
+  authEmailRequestLimits: defineTable({ key: v.string(), windowStart: v.number(), count: v.number() }).index("key", ["key"]),
   users: defineTable({
     name: v.optional(v.string()),
     email: v.optional(v.string()),

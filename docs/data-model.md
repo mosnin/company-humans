@@ -109,3 +109,5 @@ Migrations 0041–0042 add application_health_observations keyed by UUID, with o
 ## Contributor apps — 2026-09-22
 
 Migration 0043 adds contributor self-read policy and limited column grants on product_memberships. No new table or external provider state is introduced.
+
+Convex authentication adds `authEmailRequestLimits`, an internal table keyed by normalized email or the deployment-wide bucket. It stores hourly request counts and window start times. Only the authentication mutation accesses it; no public read/write function is exposed. It contains authentication rate-limit state, not canonical organization or commercial data.

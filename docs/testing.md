@@ -379,3 +379,7 @@ Magic links expire after 15 minutes, preserve the invitation return route, and o
 Production delivery, Google consent, token replay/expiry in the running backend, and the authenticated workspace/invitation journey remain unverified. No provider credentials were fabricated or copied from another product.
 
 Validation: 157 web tests passed, repository typecheck/lint and production build passed. Actual Chromium against the production build displayed the email confirmation and rejected a missing token without page errors. This does not verify real email delivery or Google consent.
+
+### Email authentication lifecycle verification
+
+Six additional tests run the actual Convex Auth actions/mutations, Company Human callback, token storage and session creation inside convex-test. Only outbound Resend delivery is intercepted. They prove verified identity after redemption, invitation return in the issued URL, one-use redemption, expiry, email substitution denial, old-link invalidation on resend, recipient and global request limits, transactional rollback on denial, and hourly capacity reset. All 163 web tests pass. This is integration-harness evidence, not live provider delivery or a hosted authenticated browser journey.

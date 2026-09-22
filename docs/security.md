@@ -194,3 +194,7 @@ Local Convex development state may contain deployment credentials and database c
 ## Contributor apps — 2026-09-22
 
 Migration 0043 grants the application read role only public assignment-state columns and restricts rows to the current user's active membership. The Apps page uses this read role, not administrative service credentials. Provider IDs and mutation authority remain unavailable.
+
+### Email request limits
+
+Convex reserves email-send capacity transactionally in the authentication mutation before creating a token or calling Resend. Initial limits are five requests per normalized email per hour and 1,000 per deployment per hour. They apply to direct API requests as well as the form. Verification itself does not consume send capacity. Failed delivery still consumes a reservation; a rejected reservation rolls back and cannot invalidate the current valid link. These are initial abuse ceilings, not tenant commercial entitlements. A distributed attack can exhaust the global ceiling; adaptive abuse protection and operational alerting remain launch work.
