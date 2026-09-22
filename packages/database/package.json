@@ -103,6 +103,10 @@
     "./usage-aggregation": {
       "types": "./dist/usage-aggregation.d.ts",
       "default": "./dist/usage-aggregation.js"
+    },
+    "./usage-quarantine": {
+      "types": "./dist/usage-quarantine.d.ts",
+      "default": "./dist/usage-quarantine.js"
     }
   },
   "scripts": {

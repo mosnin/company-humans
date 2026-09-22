@@ -208,3 +208,5 @@ The usage HTTP endpoint now resolves expiring/revocable signing scopes from serv
 Usage reporting uses verified canonical user identity, a restricted reader connection and database RLS. GET /api/organizations/[organizationId]/usage rejects unknown or duplicate query keys and invalid scopes/windows, returns no-store on every response and hides database errors. Read permission does not expose source envelopes or internal provider cost.
 
 Human usage provenance is enforced in both the event parser and database. Signed events cannot attribute a nonexistent or different user to a membership, use a foreign tenant membership/team, or bypass this check with direct SQL under the ingestion role. Historical suspended memberships remain valid attribution references.
+
+Quarantine release requires budgets.manage in the event organization. The service role cannot insert release receipts directly; a narrowly owned SECURITY DEFINER function with fixed search_path performs validation and append. Customer readers receive event/organization references only, subject to their usage scope. POST release also requires same-origin and verified canonical actor identity.

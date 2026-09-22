@@ -21,3 +21,5 @@ The signed usage contract and restricted transactional ingestion library now exi
 ### Scoped usage windows (CH-21 preparation)
 
 Exact decimal usage aggregates now support half-open occurrence windows and organization, product, instance, team and member breakdowns. Product, meter version and unit remain separate. Sum, maximum and deterministic last-value meters are supported; late reports appear on the next read. Only accepted events count. This is a live read projection, not a durable billing snapshot or budget reservation. The authenticated usage API labels results permitted-usage: contributors see their authorized subset, managers their managed teams and finance/admin their authorized organization totals. No invoice, charge or live provider enforcement is claimed.
+
+Quarantined events can now be released after an exact product/meter/version/unit is registered. A budgets.manage-authorized action appends a release receipt; it never changes the source event. Aggregation includes the released event once. Historical valuation and billing snapshots remain unimplemented.

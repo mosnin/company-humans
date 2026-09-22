@@ -60,7 +60,7 @@ export async function aggregateUsageInTransaction(client: Client, userId: string
     FROM public.usage_events e JOIN public.meter_definitions m
       ON m.product_id=e.product_id AND m.meter_key=e.meter_key AND m.version=e.meter_version AND m.unit=e.unit
     WHERE e.organization_id=$1 AND e.environment=$2 AND e.occurred_at >= $3::timestamptz AND e.occurred_at < $4::timestamptz
-      AND e.disposition='accepted' AND ($6::text IS NULL OR e.product_instance_id=$6)
+      AND (e.disposition='accepted' OR EXISTS(SELECT 1 FROM public.usage_quarantine_releases r WHERE r.event_id=e.event_id AND r.organization_id=e.organization_id)) AND ($6::text IS NULL OR e.product_instance_id=$6)
       AND ($7::text IS NULL OR e.membership_id=$7) AND ($8::text IS NULL OR e.team_id=$8)
   ), ranked AS (
     SELECT *,row_number() OVER (PARTITION BY product_id,meter_key,meter_version,unit,instance_id,member_id,attributed_team_id
