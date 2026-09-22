@@ -99,6 +99,10 @@
     "./usage-ingestion": {
       "types": "./dist/usage-ingestion.d.ts",
       "default": "./dist/usage-ingestion.js"
+    },
+    "./usage-aggregation": {
+      "types": "./dist/usage-aggregation.d.ts",
+      "default": "./dist/usage-aggregation.js"
     }
   },
   "scripts": {

@@ -445,3 +445,7 @@ Convex production sensible-dinosaur-165 received the Google/email implementation
 CH-20 preparation is in progress under the user's direction to continue independent work despite provider blockers: canonical meter/event contracts, migration 0044 and signed idempotent storage are implemented. This does not mark Phase 03 or CH-20 complete. Public ingestion/key management, quarantine resolution, aggregates, hard stops and actual Scalar usage are still required.
 
 CH-20 endpoint: POST /api/usage/events now verifies signed service events against operator-configured scoped credentials and uses the restricted ingestion transaction. No live credentials are provisioned. Real Scalar emission, quarantine recovery and production acceptance remain open; later billing, budget and reporting features are not claimed.
+
+### Usage aggregation preparation — 2026-09-22
+
+CH-21 has an implemented, locally tested read projection and authenticated endpoint. It aggregates exact quantities across explicit occurrence windows with own/team/all RLS and preserves product/meter/version/unit boundaries. Migration0045 is applied only to local security verification. Durable billing windows, real Scalar emission, quarantine recovery and budget enforcement remain open. Phase03 remains in progress, with Phase01/02 provider acceptance still open. Notion write access is unavailable; no tracker task was marked Done.
