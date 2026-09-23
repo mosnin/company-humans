@@ -28,6 +28,7 @@ function rowFor(source = body) {
     source_system: source.source.system, source_event_id: source.source.eventId,
     source_operation_id: source.source.operationId!, idempotency_key: source.idempotencyKey,
     membership_id: source.payload.membershipId as null, team_id: source.payload.teamId as null,
+    actor_user_id: source.actor.type === "human" ? source.actor.userId : null,
     capability_key: source.payload.capabilityKey as string, meter_key: source.payload.meterKey as string,
     meter_version: source.payload.meterVersion as number, quantity: "1.000000", unit: source.payload.unit as string,
     occurred_at: "2026-09-23T12:00:01.123456Z", reported_at: "2026-09-23T12:00:03.000001Z",
@@ -49,6 +50,7 @@ describe("stored signed usage evidence", () => {
       ["environment", "production"], ["source_system", "marketer"], ["source_event_id", "other"],
       ["source_operation_id", "other"], ["idempotency_key", "other"],
       ["membership_id", createCanonicalId("membership")], ["team_id", createCanonicalId("team")],
+      ["actor_user_id", createCanonicalId("user")],
       ["capability_key", "other"], ["meter_key", "other"], ["meter_version", 2],
       ["quantity", "2.000000"], ["unit", "other"],
       ["occurred_at", "2026-09-23T12:00:02.123456Z"],
@@ -62,6 +64,12 @@ describe("stored signed usage evidence", () => {
   it("rejects forged accepted rows, mismatched or absent authority, and missing operation identity", () => {
     expect(() => verifyStoredUsageRow({ ...rowFor(), signature: {} }, authority)).toThrow(StoredUsageVerificationError);
     expect(() => verifyStoredUsageRow({ ...rowFor(), envelope: { ...rowFor().envelope, idempotencyKey: "tampered" } }, authority))
+      .toThrow(StoredUsageVerificationError);
+    expect(() => verifyStoredUsageRow({ ...rowFor(), envelope: { ...rowFor().envelope,
+      source: { ...rowFor().envelope.source, hidden: "unsigned" } } }, authority))
+      .toThrow(StoredUsageVerificationError);
+    expect(() => verifyStoredUsageRow({ ...rowFor(), envelope: { ...rowFor().envelope,
+      actor: { ...rowFor().envelope.actor, hidden: "unsigned" } } }, authority))
       .toThrow(StoredUsageVerificationError);
     expect(() => verifyStoredUsageRow(rowFor(), { ...authority, key: new Uint8Array(32).fill(2) }))
       .toThrow(StoredUsageVerificationError);

@@ -58,14 +58,28 @@ it.skipIf(!databaseUrl || !enabled)("rechecks persisted signatures, projections,
     await admin.query("INSERT INTO meter_definitions(product_id,meter_key,version,unit,aggregation,display_name) VALUES($1,'leads',1,'lead','sum','Leads')", [productId]);
     const accepted = usage(createCanonicalId("event"), `accepted-${suffix}`);
     const quarantined = usage(createCanonicalId("event"), `quarantined-${suffix}`, "unknown-leads");
+    const humanBase = usage(createCanonicalId("event"), `human-${suffix}`);
+    const human = { ...humanBase,
+      actor: { type: "human" as const, userId: actor, membershipId },
+      payload: { ...humanBase.payload, membershipId } };
+    const signedAccepted = signEventEnvelope(accepted, authority.keyId, key);
     await admin.query("BEGIN");
     await admin.query("SET LOCAL ROLE company_human_usage_ingest");
-    expect((await ingestUsageEvent(admin, signEventEnvelope(accepted, authority.keyId, key), authority)).disposition).toBe("accepted");
+    expect((await ingestUsageEvent(admin, signedAccepted, authority)).disposition).toBe("accepted");
     expect((await ingestUsageEvent(admin, signEventEnvelope(quarantined, authority.keyId, key), authority)).disposition).toBe("quarantined");
+    expect((await ingestUsageEvent(admin, signEventEnvelope(human, authority.keyId, key), authority)).disposition).toBe("accepted");
+    await expect(ingestUsageEvent(admin, { ...signedAccepted, source: { ...signedAccepted.source, hidden: "unsigned" } }, authority))
+      .rejects.toThrow("Invalid event signature");
+    await expect(ingestUsageEvent(admin, { ...signedAccepted, actor: { ...signedAccepted.actor, hidden: "unsigned" } }, authority))
+      .rejects.toThrow("Invalid event signature");
     await admin.query("COMMIT");
     const verified = await readVerifiedUsageEvidence(runtimeUrl.toString(), { eventId: accepted.eventId, actorUserId: actor }, authority);
     expect(verified).toMatchObject({ eventId: accepted.eventId, actualQuantity: "1.25", signatureVerified: true,
       authorizesUsage: false, providerEnforcementConfirmed: false });
+    expect((await readVerifiedUsageEvidence(runtimeUrl.toString(), { eventId: human.eventId, actorUserId: actor }, authority))
+      .membershipId).toBe(membershipId);
+    expect((await admin.query("SELECT actor_user_id FROM usage_events WHERE event_id=$1", [human.eventId])).rows[0]?.actor_user_id)
+      .toBe(actor);
     await expect(readVerifiedUsageEvidence(runtimeUrl.toString(), { eventId: accepted.eventId, actorUserId: actor },
       { ...authority, organizationId: otherOrganizationId })).rejects.toThrow(StoredUsageVerificationError);
     await expect(readVerifiedUsageEvidence(runtimeUrl.toString(), { eventId: accepted.eventId, actorUserId: actor },
@@ -90,6 +104,7 @@ it.skipIf(!databaseUrl || !enabled)("rechecks persisted signatures, projections,
     await expect(readVerifiedUsageEvidence(databaseUrl!, { eventId: accepted.eventId, actorUserId: actor }, authority))
       .rejects.toThrow(/Restricted read-only/);
   } finally {
+    await admin.query("ROLLBACK");
     await admin.query(`DROP ROLE IF EXISTS ${runtimeRole}`);
     await admin.end();
   }

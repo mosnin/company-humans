@@ -46,6 +46,12 @@ describe("signed version 1 envelopes", () => {
     expect(() => verifyEventEnvelope({ ...signed, payload: { quantity: 2 } }, () => key)).toThrow("Invalid event signature");
     expect(() => verifyEventEnvelope(signed, () => wrongKey)).toThrow("Invalid event signature");
     expect(() => verifyEventEnvelope(signed, () => undefined)).toThrow("Invalid event signature");
+    expect(() => verifyEventEnvelope({ ...signed, source: { ...signed.source, hidden: "unsigned" } }, () => key))
+      .toThrow("Invalid event signature");
+    expect(() => verifyEventEnvelope({ ...signed, actor: { ...signed.actor, hidden: "unsigned" } }, () => key))
+      .toThrow("Invalid event signature");
+    expect(EventEnvelopeV1Schema.safeParse({ ...event(), source: { ...event().source, hidden: "unexpected" } }).success).toBe(false);
+    expect(EventEnvelopeV1Schema.safeParse({ ...event(), actor: { ...actor, hidden: "unexpected" } }).success).toBe(false);
   });
 
   it("keeps legacy event signatures and binds an optional source operation to the signature", () => {
@@ -67,6 +73,10 @@ describe("signed version 1 envelopes", () => {
     const signed = signAuditEnvelope(audit(), "test-key", key);
     expect(verifyAuditEnvelope(signed, () => key)).toEqual(signed);
     expect(() => verifyAuditEnvelope({ ...signed, action: "member.removed" }, () => key)).toThrow("Invalid audit signature");
+    expect(() => verifyAuditEnvelope({ ...signed, actor: { ...signed.actor, hidden: "unsigned" } }, () => key))
+      .toThrow("Invalid audit signature");
+    expect(() => verifyAuditEnvelope({ ...signed, target: { ...signed.target, hidden: "unsigned" } }, () => key))
+      .toThrow("Invalid audit signature");
     expect(() => signEventEnvelope(event(), "test-key", new Uint8Array(8))).toThrow("at least 32 bytes");
   });
 

@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { AuditEnvelopeV1Schema, EventEnvelopeV1Schema, SignedAuditEnvelopeV1Schema, SignedEventEnvelopeV1Schema, type AuditEnvelopeV1, type EventEnvelopeV1, type SignedAuditEnvelopeV1, type SignedEventEnvelopeV1 } from "./envelopes.js";
+import { AuditEnvelopeV1Schema, EnvelopeSignatureV1Schema, EventEnvelopeV1Schema, SignedAuditEnvelopeV1Schema, SignedEventEnvelopeV1Schema, type AuditEnvelopeV1, type EventEnvelopeV1, type SignedAuditEnvelopeV1, type SignedEventEnvelopeV1 } from "./envelopes.js";
 
 function canonicalJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
@@ -26,6 +26,20 @@ function equalDigest(actual: string, expected: string): boolean {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
+/** Authenticate the exact parsed JSON body before any schema can strip or
+ * normalize fields. A valid digest over a body that fails its schema remains
+ * invalid, including unknown nested source and actor fields.
+ */
+function verifyRawEnvelope(domain: "event" | "audit", input: unknown, keyFor: (keyId: string) => Uint8Array | undefined): void {
+  if (input === null || typeof input !== "object" || Array.isArray(input))
+    throw new Error("Invalid signed envelope");
+  const { signature: rawProof, ...body } = input as Record<string, unknown>;
+  const proof = EnvelopeSignatureV1Schema.parse(rawProof);
+  const key = keyFor(proof.keyId);
+  if (!key || !equalDigest(proof.digest, signature(domain, body, key)))
+    throw new Error(`Invalid ${domain} signature`);
+}
+
 export function signEventEnvelope(body: EventEnvelopeV1, keyId: string, key: Uint8Array): SignedEventEnvelopeV1 {
   const validated = EventEnvelopeV1Schema.parse(body);
   return SignedEventEnvelopeV1Schema.parse({
@@ -35,10 +49,8 @@ export function signEventEnvelope(body: EventEnvelopeV1, keyId: string, key: Uin
 }
 
 export function verifyEventEnvelope(input: unknown, keyFor: (keyId: string) => Uint8Array | undefined): SignedEventEnvelopeV1 {
+  verifyRawEnvelope("event", input, keyFor);
   const validated = SignedEventEnvelopeV1Schema.parse(input);
-  const { signature: proof, ...body } = validated;
-  const key = keyFor(proof.keyId);
-  if (!key || !equalDigest(proof.digest, signature("event", body, key))) throw new Error("Invalid event signature");
   return validated;
 }
 
@@ -51,9 +63,7 @@ export function signAuditEnvelope(body: AuditEnvelopeV1, keyId: string, key: Uin
 }
 
 export function verifyAuditEnvelope(input: unknown, keyFor: (keyId: string) => Uint8Array | undefined): SignedAuditEnvelopeV1 {
+  verifyRawEnvelope("audit", input, keyFor);
   const validated = SignedAuditEnvelopeV1Schema.parse(input);
-  const { signature: proof, ...body } = validated;
-  const key = keyFor(proof.keyId);
-  if (!key || !equalDigest(proof.digest, signature("audit", body, key))) throw new Error("Invalid audit signature");
   return validated;
 }

@@ -7,10 +7,10 @@ const SlugSchema = z.string().regex(/^[a-z][a-z0-9._-]*$/);
 const OpaqueReferenceSchema = z.string().min(1).max(256);
 
 export const ActorV1Schema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("human"), userId: UserIdSchema, membershipId: MembershipIdSchema.optional() }),
-  z.object({ type: z.literal("agent"), id: OpaqueReferenceSchema }),
-  z.object({ type: z.literal("service"), id: OpaqueReferenceSchema }),
-  z.object({ type: z.literal("integration"), id: OpaqueReferenceSchema }),
+  z.object({ type: z.literal("human"), userId: UserIdSchema, membershipId: MembershipIdSchema.optional() }).strict(),
+  z.object({ type: z.literal("agent"), id: OpaqueReferenceSchema }).strict(),
+  z.object({ type: z.literal("service"), id: OpaqueReferenceSchema }).strict(),
+  z.object({ type: z.literal("integration"), id: OpaqueReferenceSchema }).strict(),
 ]);
 
 export const EventEnvelopeV1Schema = z.object({
@@ -22,7 +22,7 @@ export const EventEnvelopeV1Schema = z.object({
     system: SlugSchema,
     eventId: OpaqueReferenceSchema,
     operationId: OpaqueReferenceSchema.regex(/^[^\u0000-\u001f\u007f]+$/u).optional(),
-  }),
+  }).strict(),
   productId: ProductIdSchema.optional(),
   actor: ActorV1Schema,
   environment: z.enum(["test", "production"]),
@@ -38,7 +38,7 @@ export const AuditEnvelopeV1Schema = z.object({
   organizationId: OrganizationIdSchema,
   actor: ActorV1Schema,
   action: SlugSchema,
-  target: z.object({ type: SlugSchema, id: OpaqueReferenceSchema }),
+  target: z.object({ type: SlugSchema, id: OpaqueReferenceSchema }).strict(),
   beforeRef: OpaqueReferenceSchema.optional(),
   afterRef: OpaqueReferenceSchema.optional(),
   requestId: OpaqueReferenceSchema,

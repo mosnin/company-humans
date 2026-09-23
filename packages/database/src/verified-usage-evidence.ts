@@ -17,7 +17,7 @@ export interface UsageVerificationAuthority extends UsageSigningAuthority {
 type StoredUsageRow = {
   event_id: string; organization_id: string; product_id: string; product_instance_id: string;
   environment: string; source_system: string; source_event_id: string; source_operation_id: string | null;
-  idempotency_key: string; membership_id: string | null; team_id: string | null;
+  idempotency_key: string; membership_id: string | null; team_id: string | null; actor_user_id: string | null;
   capability_key: string | null; meter_key: string; meter_version: number; quantity: string; unit: string;
   occurred_at: string; reported_at: string;
   disposition: string; envelope: unknown; signature: unknown; released: boolean;
@@ -84,6 +84,7 @@ export function verifyStoredUsageRow(row: StoredUsageRow, authority: UsageVerifi
       [row.source_event_id, event.source.eventId], [row.source_operation_id, sourceOperationId],
       [row.idempotency_key, event.idempotencyKey], [row.membership_id, payload.membershipId],
       [row.team_id, payload.teamId], [row.capability_key, payload.capabilityKey],
+      [row.actor_user_id, event.actor.type === "human" ? event.actor.userId : null],
       [row.meter_key, payload.meterKey], [row.meter_version, payload.meterVersion],
       [row.unit, payload.unit],
       [row.occurred_at, utcMicroseconds(event.occurredAt)],
@@ -161,7 +162,7 @@ export async function readVerifiedUsageEvidence(
       throw new StoredUsageVerificationError("Usage verification permission denied");
     const rows = await client.query<StoredUsageRow>(`SELECT e.event_id,e.organization_id,e.product_id,e.product_instance_id,
       e.environment,e.source_system,e.source_event_id,e.source_operation_id,e.idempotency_key,
-      e.membership_id,e.team_id,e.capability_key,e.meter_key,e.meter_version,e.quantity::text AS quantity,
+      e.membership_id,e.team_id,e.actor_user_id,e.capability_key,e.meter_key,e.meter_version,e.quantity::text AS quantity,
       e.unit,to_char(e.occurred_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS occurred_at,
       to_char(e.reported_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS reported_at,
       e.disposition,e.envelope,e.signature,
