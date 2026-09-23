@@ -60,7 +60,7 @@ The suspended-member bootstrap worker checks the current ready catalog, target r
 
 ## Native workspace module configuration
 
-Migration 0077 stores per-organization revisions for Work, CRM, Referrals, Earnings, Leaderboard, Team, Context, and Creator. An active member can read the effective settings; an actor with `organization.manage` can append a revision. Work defaults on and the other modules default off until configured. This is presentation configuration only. Connected products remain separate product instances and require their own provisioning and authorization. The first Work route and its navigation now consume the Work setting; the other modules and an administration UI do not yet consume it, so full role-aware navigation remains incomplete.
+Migration 0077 stores per-organization revisions for Work, CRM, Referrals, Earnings, Leaderboard, Team, Context, and Creator. An active member can read the effective settings; an actor with `organization.manage` can append a revision. Work defaults on and the other modules default off until configured. This is presentation configuration only. Connected products remain separate product instances and require their own provisioning and authorization. The first Work route and its navigation consume the Work setting. Workspace settings exposes a revision-fenced Work control to organization managers; the seven unfinished native experiences are visible as unavailable and cannot be enabled through that public API. Full role/module/entitlement-aware navigation remains incomplete.
 
 ## Member request eligibility
 

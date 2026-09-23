@@ -22,6 +22,7 @@ export function WorkspaceShell({ organizationName, capabilities, workEnabled = f
     { label: "Applications", href: "/workspace/applications", visible: capabilities.includes("applications.manage") },
     { label: "Audit", href: "/workspace/audit", visible: capabilities.includes("audit.read.all") },
     { label: "Permissions", href: "/workspace/permissions", visible: capabilities.includes("roles.manage") },
+    { label: "Workspace settings", href: "/workspace/modules", visible: capabilities.includes("organization.manage") },
   ].filter(item => item.visible);
   return <div className="flex h-dvh flex-col bg-bar text-ink">
     <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 rounded-8 bg-raised px-4 py-2">Skip to content</a>

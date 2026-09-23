@@ -27,3 +27,10 @@ it('shows Work only when the native module and assignment read are both availabl
   const denied = renderToStaticMarkup(<WorkspaceShell organizationName="Example" capabilities={['members.manage']} workEnabled><p>Page</p></WorkspaceShell>);
   expect(denied).not.toContain('href="/workspace/work"');
 });
+
+it('shows workspace module settings only to organization managers', () => {
+  const manager = renderToStaticMarkup(<WorkspaceShell organizationName="Example" capabilities={['organization.manage']}><p>Page</p></WorkspaceShell>);
+  expect(manager).toContain('href="/workspace/modules"');
+  const contributor = renderToStaticMarkup(<WorkspaceShell organizationName="Example" capabilities={['assignments.read.own']} workEnabled><p>Page</p></WorkspaceShell>);
+  expect(contributor).not.toContain('href="/workspace/modules"');
+});

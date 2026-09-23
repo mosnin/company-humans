@@ -15,6 +15,7 @@ import { createRoot } from "react-dom/client";
 import { ROLE_CAPABILITIES } from "@company-human/contracts";
 import { WorkspaceShell } from "@/components/shell/workspace-shell";
 import { WorkBoard } from "@/components/work/work-board";
+import { WorkspaceModuleControls } from "@/components/administration/workspace-module-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { InvitePerson, PeopleTable } from "@/components/administration/people";
 import { TeamsEditor } from "@/components/administration/teams";
@@ -62,4 +63,10 @@ createRoot(document.getElementById("root")!).render(<WorkspaceShell organization
   {screen === "permissions" && <PermissionsEditor organizationId={org} actorRoleId={`ch_role_${"a".repeat(32)}`} owner heldCapabilities={ROLE_CAPABILITIES.owner} policies={[{ id: `ch_role_${"b".repeat(32)}`, key: "contributor", capabilities: [...ROLE_CAPABILITIES.contributor] }]} />}
   {screen === "work-own" && <WorkBoard organizationId={org} view="mine" canManage={false} candidates={[]} todayEndIso="2026-09-23T23:59:59.999Z" offset={0} nextOffset={null} items={[{id:`ch_hwrk_${"a".repeat(32)}`,title:"Call the lead",objective:"Confirm the team's needs",dueAt:"2026-09-23T15:00:00.000Z",priority:"high",expectedOutcome:"A qualified conversation",evidenceRequired:true,assigneeDisplayName:"You",completion:null}]} />}
   {screen === "work-team" && <WorkBoard organizationId={org} view="team" canManage todayEndIso="2026-09-23T23:59:59.999Z" offset={0} nextOffset={null} candidates={[{membershipId:member.id,displayName:member.name,teamId:`ch_team_${"a".repeat(32)}`,teamName:"Sales"}]} items={[{id:`ch_hwrk_${"b".repeat(32)}`,title:"Call the lead",objective:"Confirm the team's needs",dueAt:"2026-09-23T15:00:00.000Z",priority:"high",expectedOutcome:"A qualified conversation",evidenceRequired:true,assigneeDisplayName:member.name,completion:{outcome:"Asked for a proposal",evidence:"Call notes",completedAt:"2026-09-23T16:00:00.000Z"}}]} />}
+  {screen === "modules" && <WorkspaceModuleControls organizationId={org} settings={[
+    {moduleKey:"work",enabled:true,revision:0},{moduleKey:"crm",enabled:false,revision:0},
+    {moduleKey:"referrals",enabled:false,revision:0},{moduleKey:"earnings",enabled:false,revision:0},
+    {moduleKey:"leaderboard",enabled:false,revision:0},{moduleKey:"team",enabled:false,revision:0},
+    {moduleKey:"context",enabled:false,revision:0},{moduleKey:"creator",enabled:false,revision:0},
+  ]} />}
 </WorkspaceShell>);
