@@ -259,3 +259,5 @@ Migration 0067 grants a dedicated non-login operator only the catalog and immuta
 ### Usage team provenance
 
 The database now guards a human usage event that names a team with a restricted, non-login function owner and private assignment intervals. The guard runs on direct inserts as well as the signed ingestion path. Quarantine release rechecks legacy rows. The API returns a redacted 422 for a disproven interval while keeping idempotency conflicts separate. This is attribution validation, not proof that providers bind operations to teams or enforce team budgets.
+
+After 0069 release verification, the separate hosted migration-role passwords were rotated. New restricted migration connections and no-pending replays succeeded in both hosted databases. The local connection files remain ignored and owner-readable only; web runtime credentials are separate.
