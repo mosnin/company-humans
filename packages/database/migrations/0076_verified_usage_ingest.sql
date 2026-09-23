@@ -205,20 +205,39 @@ GRANT CREATE ON SCHEMA company_human_private TO company_human_verified_usage_wri
 ALTER FUNCTION company_human_private.ingest_verified_usage_v1(text,jsonb)
   OWNER TO company_human_verified_usage_writer;
 REVOKE CREATE ON SCHEMA company_human_private FROM company_human_verified_usage_writer;
--- PostgreSQL 16+ can self-grant SET membership to CREATEROLE at creation.
--- It is needed only until function ownership transfers, and must not survive.
+-- PostgreSQL 16+ can create two edges for a CREATEROLE migrator: a temporary
+-- SET edge and an ADMIN-only edge (INHERIT=false, SET=false). Remove the
+-- temporary edge. The narrowly scoped ADMIN-only edge may remain because
+-- PostgreSQL does not remove it with the SET self-grant. It confers no runtime
+-- writer access. Reject every edge involving any other role or access mode.
 DO $remove_temporary_membership$ BEGIN
   IF EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members AS membership
     JOIN pg_catalog.pg_roles AS writer ON writer.oid = membership.roleid
     JOIN pg_catalog.pg_roles AS migrator ON migrator.oid = membership.member
     WHERE writer.rolname = 'company_human_verified_usage_writer'
-      AND migrator.rolname = current_user) THEN
+      AND migrator.rolname = current_user
+      AND (membership.set_option OR membership.inherit_option)) THEN
     EXECUTE format('REVOKE company_human_verified_usage_writer FROM %I', current_user);
   END IF;
   IF EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members AS membership
     JOIN pg_catalog.pg_roles AS writer ON writer.rolname = 'company_human_verified_usage_writer'
-    WHERE membership.roleid = writer.oid OR membership.member = writer.oid) THEN
-    RAISE EXCEPTION 'Verified usage writer role retains a membership edge';
+    WHERE (membership.roleid = writer.oid OR membership.member = writer.oid)
+      AND NOT (membership.roleid = writer.oid
+        AND membership.member = (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = current_user)
+        AND membership.admin_option AND NOT membership.inherit_option AND NOT membership.set_option)) THEN
+    RAISE EXCEPTION 'Verified usage writer role retains an unsafe membership edge';
+  END IF;
+  IF (SELECT count(*) FROM pg_catalog.pg_auth_members AS membership
+    JOIN pg_catalog.pg_roles AS writer ON writer.oid = membership.roleid
+    JOIN pg_catalog.pg_roles AS migrator ON migrator.oid = membership.member
+    WHERE writer.rolname = 'company_human_verified_usage_writer'
+      AND migrator.rolname = current_user) > 1 THEN
+    RAISE EXCEPTION 'Verified usage writer role has duplicate migrator grants';
+  END IF;
+  IF NOT (SELECT rolsuper FROM pg_catalog.pg_roles WHERE rolname = current_user)
+    AND (pg_catalog.pg_has_role(current_user, 'company_human_verified_usage_writer', 'SET')
+      OR pg_catalog.pg_has_role(current_user, 'company_human_verified_usage_writer', 'USAGE')) THEN
+    RAISE EXCEPTION 'Migrator retains verified usage writer access';
   END IF;
 END $remove_temporary_membership$;
 

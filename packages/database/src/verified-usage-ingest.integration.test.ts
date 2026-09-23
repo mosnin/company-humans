@@ -1,5 +1,11 @@
 import { Client } from "pg";
 import { readFile } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { createServer } from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { AddressInfo } from "node:net";
 import { expect, it } from "vitest";
 import { createCanonicalId, type EventEnvelopeV1 } from "@company-human/contracts";
 import { canonicalEventEnvelopeV1, signEventEnvelope } from "@company-human/contracts/signing";
@@ -22,14 +28,28 @@ it.skipIf(!url || !enabled)("stages a private signed usage verifier without runt
   await db.connect();
   await db.query("BEGIN");
   try {
-    const role = await db.query<{rolcanlogin:boolean;rolinherit:boolean;rolsuper:boolean;rolbypassrls:boolean;rolcreaterole:boolean;rolcreatedb:boolean;rolreplication:boolean;edges:string}>(`
+    const role = await db.query<{rolcanlogin:boolean;rolinherit:boolean;rolsuper:boolean;rolbypassrls:boolean;rolcreaterole:boolean;rolcreatedb:boolean;rolreplication:boolean;edges:string;unsafe_edges:string;migrator_super:boolean;can_set:boolean;can_use:boolean}>(`
       SELECT writer.rolcanlogin,writer.rolinherit,writer.rolsuper,writer.rolbypassrls,
         writer.rolcreaterole,writer.rolcreatedb,writer.rolreplication,
         (SELECT count(*)::text FROM pg_catalog.pg_auth_members AS edge
-          WHERE edge.roleid=writer.oid OR edge.member=writer.oid) AS edges
-      FROM pg_catalog.pg_roles AS writer WHERE writer.rolname='company_human_verified_usage_writer'`);
-    expect(role.rows).toEqual([{rolcanlogin:false,rolinherit:false,rolsuper:false,
-      rolbypassrls:false,rolcreaterole:false,rolcreatedb:false,rolreplication:false,edges:"0"}]);
+          WHERE edge.roleid=writer.oid OR edge.member=writer.oid) AS edges,
+        (SELECT count(*)::text FROM pg_catalog.pg_auth_members AS edge
+          WHERE (edge.roleid=writer.oid OR edge.member=writer.oid)
+            AND NOT (edge.roleid=writer.oid AND edge.member=migrator.oid AND edge.admin_option
+              AND NOT edge.inherit_option AND NOT edge.set_option)) AS unsafe_edges,
+        migrator.rolsuper AS migrator_super,
+        pg_catalog.pg_has_role(migrator.rolname,writer.rolname,'SET') AS can_set,
+        pg_catalog.pg_has_role(migrator.rolname,writer.rolname,'USAGE') AS can_use
+      FROM pg_catalog.pg_roles AS writer CROSS JOIN pg_catalog.pg_roles AS migrator
+      WHERE writer.rolname='company_human_verified_usage_writer' AND migrator.rolname=current_user`);
+    expect(role.rows).toHaveLength(1);
+    expect(role.rows[0]).toMatchObject({rolcanlogin:false,rolinherit:false,rolsuper:false,
+      rolbypassrls:false,rolcreaterole:false,rolcreatedb:false,rolreplication:false,unsafe_edges:"0"});
+    expect(Number(role.rows[0]!.edges)).toBeLessThanOrEqual(1);
+    if (!role.rows[0]!.migrator_super) {
+      expect(role.rows[0]!.can_set).toBe(false);
+      expect(role.rows[0]!.can_use).toBe(false);
+    }
     const runtimeRoles = await db.query<{rolname:string}>(`SELECT rolname FROM pg_catalog.pg_roles
       WHERE rolname LIKE 'company_human_%' AND rolname <> 'company_human_verified_usage_writer'`);
     for (const runtime of runtimeRoles.rows) {
@@ -164,5 +184,57 @@ it.skipIf(!url || !enabled)("fails closed when pgcrypto was installed outside pu
   } finally {
     await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
     await admin.end();
+  }
+});
+
+it.skipIf(!url || !enabled)("migrates as a non-super CREATEROLE user without writer access", async () => {
+  const target = new URL(url!);
+  if (!["127.0.0.1", "localhost", "::1"].includes(target.hostname)
+    || !target.pathname.slice(1).startsWith("company_human_0076_")) {
+    throw new Error("Non-super migration test requires a disposable loopback company_human_0076_ database");
+  }
+  const directory = await mkdtemp(join(tmpdir(), "company-human-0076-pg-"));
+  const data = join(directory,"data");
+  const bind = await new Promise<number>((resolve,reject) => {
+    const server = createServer();
+    server.once("error",reject);
+    server.listen(0,"127.0.0.1",() => {
+      const port = (server.address() as AddressInfo).port;
+      server.close(error => error ? reject(error) : resolve(port));
+    });
+  });
+  let started = false;
+  try {
+    execFileSync("initdb",["-D",data,"-A","trust","--no-instructions"],{stdio:"ignore"});
+    execFileSync("pg_ctl",["-D",data,"-o",`-h 127.0.0.1 -p ${bind}`,"-w","start"],{stdio:"ignore"});
+    started = true;
+    const admin = new Client({ connectionString:`postgresql://127.0.0.1:${bind}/postgres` });
+    await admin.connect();
+    try {
+      await admin.query("CREATE ROLE ch_0076_migrator LOGIN CREATEROLE");
+      await admin.query("CREATE DATABASE company_human_0076_non_super OWNER ch_0076_migrator");
+    } finally { await admin.end(); }
+    const migrated = new Client({ connectionString:`postgresql://ch_0076_migrator@127.0.0.1:${bind}/company_human_0076_non_super` });
+    expect(await runMigrations(`postgresql://ch_0076_migrator@127.0.0.1:${bind}/company_human_0076_non_super`))
+      .toContain("0076_verified_usage_ingest.sql");
+    await migrated.connect();
+    try {
+      const result = await migrated.query<{rolsuper:boolean;rolcreaterole:boolean;edges:string;unsafe_edges:string;can_set:boolean;can_use:boolean}>(`
+        SELECT migrator.rolsuper,migrator.rolcreaterole,
+          (SELECT count(*)::text FROM pg_catalog.pg_auth_members AS edge
+            WHERE edge.roleid=writer.oid OR edge.member=writer.oid) AS edges,
+          (SELECT count(*)::text FROM pg_catalog.pg_auth_members AS edge
+            WHERE (edge.roleid=writer.oid OR edge.member=writer.oid)
+              AND NOT (edge.roleid=writer.oid AND edge.member=migrator.oid AND edge.admin_option
+                AND NOT edge.inherit_option AND NOT edge.set_option)) AS unsafe_edges,
+          pg_catalog.pg_has_role(migrator.rolname,writer.rolname,'SET') AS can_set,
+          pg_catalog.pg_has_role(migrator.rolname,writer.rolname,'USAGE') AS can_use
+        FROM pg_catalog.pg_roles AS migrator CROSS JOIN pg_catalog.pg_roles AS writer
+        WHERE migrator.rolname='ch_0076_migrator' AND writer.rolname='company_human_verified_usage_writer'`);
+      expect(result.rows).toEqual([{rolsuper:false,rolcreaterole:true,edges:"1",unsafe_edges:"0",can_set:false,can_use:false}]);
+    } finally { await migrated.end(); }
+  } finally {
+    if (started) execFileSync("pg_ctl",["-D",data,"-m","immediate","-w","stop"],{stdio:"ignore"});
+    await rm(directory,{recursive:true,force:true});
   }
 });
