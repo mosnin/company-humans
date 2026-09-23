@@ -25,7 +25,7 @@ it.skipIf(!url)("persists signed usage once, quarantines unknown meters and enfo
     await client.query("INSERT INTO teams(id,organization_id,name) VALUES($1,$2,'Foreign team')",[foreignTeam,otherOrg]);
     const key = new Uint8Array(32).fill(7);
     const authority = { keyId:"test-key", key, organizationId:org, productId:product, productInstanceId:instance, environment:"test" as const, sourceSystem:"scalar" };
-    const body: EventEnvelopeV1 = { schemaVersion:1,eventId:createCanonicalId("event"),organizationId:org,productId:product,eventType:"usage.recorded",source:{system:"scalar",eventId:"source-1"},actor:{type:"service",id:"scalar-enrichment"},environment:"test",occurredAt:"2026-01-01T00:00:00Z",reportedAt:"2026-01-02T00:00:00Z",idempotencyKey:"operation-1",payload:{productInstanceId:instance,membershipId:null,teamId:null,meterKey:"enriched-leads",meterVersion:1,quantity:"1.000000",unit:"lead",sourceCost:{amount:"1.25",currency:"USD",providerReference:"provider-1"},customerRateVersion:"rate-v1",metadata:{}} };
+    const body: EventEnvelopeV1 = { schemaVersion:1,eventId:createCanonicalId("event"),organizationId:org,productId:product,eventType:"usage.recorded",source:{system:"scalar",eventId:"source-1"},actor:{type:"service",id:"scalar-enrichment"},environment:"test",occurredAt:"2026-01-01T00:00:00Z",reportedAt:"2026-01-02T00:00:00Z",idempotencyKey:"operation-1",payload:{productInstanceId:instance,membershipId:null,teamId:null,meterKey:"enriched-leads",capabilityKey:"outbound-enrichment",meterVersion:1,quantity:"1.000000",unit:"lead",sourceCost:{amount:"1.25",currency:"USD",providerReference:"provider-1"},customerRateVersion:"rate-v1",metadata:{}} };
     const signed = signEventEnvelope(body,authority.keyId,key);
     await expect(ingestUsageEvent(client,signed,authority)).rejects.toThrow("restricted role");
     await client.query("SET LOCAL ROLE company_human_usage_ingest");
@@ -34,6 +34,8 @@ it.skipIf(!url)("persists signed usage once, quarantines unknown meters and enfo
     await expect(ingestUsageEvent(client,{...signed,payload:{...body.payload,quantity:"2"}},authority)).rejects.toThrow("signature");
     await expect(ingestUsageEvent(client,signEventEnvelope({...body,payload:{...body.payload,quantity:"2"}},authority.keyId,key),authority)).rejects.toThrow("idempotency conflict");
     await expect(ingestUsageEvent(client,signed,{...authority,organizationId:otherOrg})).rejects.toThrow("scope denied");
+    await expect(ingestUsageEvent(client,{...signed,payload:{...body.payload,capabilityKey:"other-capability"}},authority)).rejects.toThrow("signature");
+    await expect(ingestUsageEvent(client,signEventEnvelope({...body,payload:{...body.payload,capabilityKey:"other-capability"}},authority.keyId,key),authority)).rejects.toThrow("idempotency conflict");
     const unknown = signEventEnvelope({...body,eventId:createCanonicalId("event"),source:{system:"scalar",eventId:"source-2"},idempotencyKey:"operation-2",payload:{...body.payload,meterKey:"unregistered"}},authority.keyId,key);
     expect((await ingestUsageEvent(client,unknown,authority)).disposition).toBe("quarantined");
     const humanBody: EventEnvelopeV1 = {...body,eventId:createCanonicalId("event"),source:{system:"scalar",eventId:"human-1"},idempotencyKey:"human-1",actor:{type:"human",userId:user,membershipId:member},payload:{...body.payload,membershipId:member}};

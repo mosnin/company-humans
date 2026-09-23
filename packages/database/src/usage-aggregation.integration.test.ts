@@ -23,10 +23,10 @@ it.skipIf(!url)("aggregates exact occurrence windows with deterministic gauges a
   for (const [id,organization] of [[instance,org],[instance2,org],[foreignInstance,foreign]]) await db.query("INSERT INTO product_instances(id,organization_id,product_id,instance_key,mode,created_by_user_id) VALUES($1,$2,$3,replace($1,'_','-'),'connected',$4)",[id,organization,product,owner]);
   for (const [key,version,unit,aggregation] of [['leads',1,'lead','sum'],['leads',2,'credit','sum'],['capacity',1,'hour','maximum'],['storage',1,'byte','last']]) await db.query("INSERT INTO meter_definitions(product_id,meter_key,version,unit,aggregation,display_name) VALUES($1,$2,$3,$4,$5,$2)",[product,key,version,unit,aggregation]);
   let sequence=0;
-  const insert=async(quantity:string, options:Partial<{key:string;version:number;unit:string;membership:string|null;team:string|null;instance:string;org:string;environment:string;occurred:string;reported:string;disposition:string;eventId:string}>={})=>{
+  const insert=async(quantity:string, options:Partial<{key:string;version:number;unit:string;membership:string|null;team:string|null;capability:string|null;instance:string;org:string;environment:string;occurred:string;reported:string;disposition:string;eventId:string}>={})=>{
    const n=String(++sequence), eventId=options.eventId??createCanonicalId("event");
    await db.query(`INSERT INTO usage_events(event_id,organization_id,product_id,product_instance_id,environment,source_system,source_event_id,idempotency_key,membership_id,team_id,meter_key,meter_version,quantity,unit,occurred_at,reported_at,disposition,envelope,signature)
-     VALUES($1,$2,$3,$4,$5,'fixture',$6,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'{}','{}')`,[eventId,options.org??org,product,options.instance??instance,options.environment??'test',n,options.membership===undefined?member:options.membership,options.team===undefined?team:options.team,options.key??'leads',options.version??1,quantity,options.unit??'lead',options.occurred??'2026-01-02T00:00:00Z',options.reported??'2026-01-03T00:00:00Z',options.disposition??'accepted']);
+     VALUES($1,$2,$3,$4,$5,'fixture',$6,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'{}')`,[eventId,options.org??org,product,options.instance??instance,options.environment??'test',n,options.membership===undefined?member:options.membership,options.team===undefined?team:options.team,options.key??'leads',options.version??1,quantity,options.unit??'lead',options.occurred??'2026-01-02T00:00:00Z',options.reported??'2026-01-03T00:00:00Z',options.disposition??'accepted',JSON.stringify({payload:{capabilityKey:options.capability??null}})]);
   };
   await insert('0.1');await insert('0.2');await insert('999999999999.999999',{instance:instance2,membership:ownMember,team:otherTeam});
   await insert('8',{membership:null,team:null});await insert('7',{version:2,unit:'credit'});
@@ -65,5 +65,38 @@ it.skipIf(!url)("aggregates exact occurrence windows with deterministic gauges a
   await db.query('RESET ROLE');await db.query("UPDATE memberships SET status='suspended' WHERE id=$1",[member]);await db.query('SET LOCAL ROLE company_human_app');
   expect(await aggregateUsageInTransaction(db,contributor,window)).toEqual([]);
   await expect(aggregateUsageInTransaction(db,owner,{...window,until:window.from})).rejects.toThrow('Invalid usage window');
+  await db.query('RESET ROLE');
+  await db.query("INSERT INTO meter_definitions(product_id,meter_key,version,unit,aggregation,display_name) VALUES($1,'capability-test',1,'unit','sum','Capability test')",[product]);
+  await insert('2',{key:'capability-test',unit:'unit',capability:'outbound-enrichment',membership:ownMember,team:null});
+  await insert('3',{key:'capability-test',unit:'unit',capability:'image-generation',membership:ownMember,team:null});
+  await insert('1',{key:'capability-test',unit:'unit',capability:null,membership:ownMember,team:null});
+  await db.query('SET LOCAL ROLE company_human_app');
+  const combined=(await aggregateUsageInTransaction(db,owner,window)).find(r=>r.meterKey==='capability-test');
+  expect(combined).toMatchObject({quantity:'6.000000',eventCount:'3',capabilityKey:null});
+  const capabilityRows=(await aggregateUsageInTransaction(db,owner,{...window,breakdown:'capability'}))
+    .filter(r=>r.meterKey==='capability-test');
+  expect(capabilityRows.map(r=>[r.capabilityKey,r.quantity])).toEqual([
+    [null,'1.000000'],['image-generation','3.000000'],['outbound-enrichment','2.000000'],
+  ]);
+  expect((await aggregateUsageInTransaction(db,owner,{...window,breakdown:'capability',capabilityKey:'outbound-enrichment'}))
+    .filter(r=>r.meterKey==='capability-test')).toMatchObject([{capabilityKey:'outbound-enrichment',quantity:'2.000000'}]);
+  await expect(aggregateUsageInTransaction(db,owner,{...window,capabilityKey:'outbound-enrichment'}))
+    .rejects.toThrow('Capability filter requires capability breakdown');
+  await db.query('RESET ROLE');
+  await db.query("INSERT INTO meter_definitions(product_id,meter_key,version,unit,aggregation,display_name) VALUES($1,'capability-peak',1,'unit','maximum','Capability peak'),($1,'capability-latest',1,'unit','last','Capability latest')",[product]);
+  await insert('5',{key:'capability-peak',unit:'unit',capability:'outbound-enrichment',membership:ownMember,team:null});
+  await insert('8',{key:'capability-peak',unit:'unit',capability:'image-generation',membership:ownMember,team:null});
+  await insert('2',{key:'capability-latest',unit:'unit',capability:'outbound-enrichment',membership:ownMember,team:null,occurred:'2026-01-02T00:00:00Z'});
+  await insert('3',{key:'capability-latest',unit:'unit',capability:'image-generation',membership:ownMember,team:null,occurred:'2026-01-03T00:00:00Z'});
+  await db.query('SET LOCAL ROLE company_human_app');
+  const combinedGauges=await aggregateUsageInTransaction(db,owner,window);
+  expect(combinedGauges.find(r=>r.meterKey==='capability-peak')).toMatchObject({quantity:'8.000000',capabilityKey:null});
+  expect(combinedGauges.find(r=>r.meterKey==='capability-latest')).toMatchObject({quantity:'3.000000',capabilityKey:null});
+  const splitGauges=await aggregateUsageInTransaction(db,owner,{...window,breakdown:'capability'});
+  expect(splitGauges.filter(r=>r.meterKey==='capability-peak').map(r=>[r.capabilityKey,r.quantity]))
+    .toEqual([['image-generation','8.000000'],['outbound-enrichment','5.000000']]);
+  expect(splitGauges.filter(r=>r.meterKey==='capability-latest').map(r=>[r.capabilityKey,r.quantity]))
+    .toEqual([['image-generation','3.000000'],['outbound-enrichment','2.000000']]);
+  await expect(aggregateUsageInTransaction(db,owner,{...window,capabilityKey:'not valid'})).rejects.toThrow();
  } finally {await db.query('ROLLBACK');await db.end();}
 });

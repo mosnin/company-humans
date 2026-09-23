@@ -12,7 +12,8 @@ export const MeterDefinitionV1Schema = z.object({
 export const UsagePayloadV1Schema = z.object({
   productInstanceId: ProductInstanceIdSchema,
   membershipId: MembershipIdSchema.nullable(), teamId: TeamIdSchema.nullable(),
-  meterKey: ProductCapabilityKeySchema, meterVersion: z.number().int().positive().max(2147483647),
+  meterKey: ProductCapabilityKeySchema, capabilityKey: ProductCapabilityKeySchema.nullable().default(null),
+  meterVersion: z.number().int().positive().max(2147483647),
   quantity: LimitQuantitySchema, unit: ProductCapabilityKeySchema,
   sourceCost: z.object({ amount: LimitQuantitySchema, currency: z.string().regex(/^[A-Z]{3}$/), providerReference: z.string().min(1).max(256) }).strict().nullable(),
   customerRateVersion: z.string().min(1).max(128).nullable(),

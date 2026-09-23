@@ -32,6 +32,13 @@ it("binds authenticated identity, exact window and canonical filters to the rest
   expect(resolveAccessContext).toHaveBeenCalledWith("postgresql://restricted-fixture", user, org);
   expect(aggregateUsage).toHaveBeenCalledWith("postgresql://restricted-fixture", user, { organizationId: org, ...query, ...filters });
 });
+it("passes a reported capability breakdown and exact key to the restricted reader", async () => {
+  const capabilityQuery = { ...query, breakdown: "capability", capabilityKey: "lead-enrichment" };
+  const result = await GET(request(capabilityQuery), context);
+  expect(result.status).toBe(200);
+  expect(aggregateUsage).toHaveBeenCalledWith("postgresql://restricted-fixture", user,
+    { organizationId: org, ...capabilityQuery });
+});
 it.each([["unauthenticated", 401], ["forbidden", 403], ["unavailable", 503]] as const)("rejects %s without querying usage", async (status, code) => {
   vi.mocked(resolveAuthenticatedUser).mockResolvedValue({ status });
   const result = await GET(request(), context);
@@ -42,7 +49,8 @@ it.each([
   { ...query, actorUserId: user }, { ...query, environment: "all" }, { ...query, breakdown: "raw" },
   { ...query, from: "2026-01-01T00:00:00.123456789Z" }, { ...query, from: "2026-01-01" }, { ...query, from: "2026-02-30T00:00:00Z" },
   { ...query, until: query.from }, { ...query, from: query.until, until: query.from },
-  { ...query, membershipId: "not-canonical" }, { ...query, teamId: "" },
+  { ...query, membershipId: "not-canonical" }, { ...query, teamId: "" }, { ...query, capabilityKey: "not valid" },
+  { ...query, capabilityKey: "outbound-enrichment" },
   { environment: "test", from: query.from, until: query.until },
 ])("rejects malformed or unsupported query %#", async (params) => {
   const result = await GET(request(params), context);
