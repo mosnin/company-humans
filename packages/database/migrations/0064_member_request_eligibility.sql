@@ -162,7 +162,8 @@ BEGIN
  IF current_product IS DISTINCT FROM product THEN
    RAISE EXCEPTION 'Product instance changed during member request' USING ERRCODE='42501';
  END IF;
- IF pg_has_role(session_user,'company_human_service','member')
+ IF NULLIF(current_setting('company_human.user_id',true),'') IS NOT NULL
+   AND pg_has_role(session_user,'company_human_service','member')
    AND NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname=session_user AND rolsuper) THEN
   SELECT m.id INTO actor_member FROM public.memberships m
    WHERE m.organization_id=NEW.organization_id

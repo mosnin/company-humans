@@ -105,6 +105,7 @@ it.skipIf(!databaseUrl)('direct service membership requests require a ready cata
   await admin.query("UPDATE products SET catalog_status='draft' WHERE id=$1",[product]);
   const afterEdit=service.query(`/* member request wait after edit */ INSERT INTO product_memberships(id,organization_id,product_instance_id,membership_id,created_by_user_id)
    VALUES($1,$2,$3,$4,$5)`,[createCanonicalId('productMembership'),a.organizationId,instance,member,actor]);
+  void afterEdit.catch(()=>{});
   const observedEditWait=await waited('member request wait after edit');
   await admin.query('COMMIT');
   expect(observedEditWait).toBe(true);
@@ -128,6 +129,7 @@ it.skipIf(!databaseUrl)('direct service membership requests require a ready cata
   await admin.query("DELETE FROM role_permissions WHERE organization_id=$1 AND role_id=$2 AND permission_key='product.use'",[a.organizationId,ownerRole]);
   const afterRevocation=service.query(`/* member request wait after revocation */ INSERT INTO product_memberships(id,organization_id,product_instance_id,membership_id,created_by_user_id)
    VALUES($1,$2,$3,$4,$5)`,[createCanonicalId('productMembership'),a.organizationId,instance,a.ownerMembershipId,actor]);
+  void afterRevocation.catch(()=>{});
   const observedRevocationWait=await waited('member request wait after revocation');
   await admin.query('COMMIT');
   expect(observedRevocationWait).toBe(true);
@@ -149,6 +151,7 @@ it.skipIf(!databaseUrl)('direct service membership requests require a ready cata
   await statusSql.query("UPDATE organizations SET status='suspended' WHERE id=$1",[a.organizationId]);
   const afterOrgSuspension=service.query(`/* member request wait after org suspension */ INSERT INTO product_memberships(id,organization_id,product_instance_id,membership_id,created_by_user_id)
    VALUES($1,$2,$3,$4,$5)`,[createCanonicalId('productMembership'),a.organizationId,orgFirst,member,actor]);
+  void afterOrgSuspension.catch(()=>{});
   const observedOrgWait=await waited('member request wait after org suspension');
   await statusSql.query('COMMIT');
   expect(observedOrgWait).toBe(true);
@@ -169,6 +172,7 @@ it.skipIf(!databaseUrl)('direct service membership requests require a ready cata
   await admin.query("UPDATE memberships SET status='suspended' WHERE id=$1",[a.ownerMembershipId]);
   const afterActorSuspension=service.query(`/* member request wait after actor suspension */ INSERT INTO product_memberships(id,organization_id,product_instance_id,membership_id,created_by_user_id)
    VALUES($1,$2,$3,$4,$5)`,[createCanonicalId('productMembership'),a.organizationId,actorFirst,member,actor]);
+  void afterActorSuspension.catch(()=>{});
   const observedActorWait=await waited('member request wait after actor suspension');
   await admin.query('COMMIT');
   expect(observedActorWait).toBe(true);
@@ -189,6 +193,9 @@ it.skipIf(!databaseUrl)('direct service membership requests require a ready cata
   await admin.query('DELETE FROM organizations WHERE id=ANY($1)',[[a.organizationId,b.organizationId]]);
   await admin.query('DELETE FROM products WHERE id=$1',[product]);
   await admin.query('DELETE FROM users WHERE id=ANY($1)',[[actor,target,otherActor]]);
-  await admin.query(`DROP ROLE ${role}`);await admin.query(`DROP OWNED BY ${statusRole}`);await admin.query(`DROP ROLE ${statusRole}`);await observer.end();await admin.end();
+  await admin.query(`DROP ROLE ${role}`);
+  await admin.query(`REVOKE SELECT(id,status),UPDATE(status) ON organizations FROM ${statusRole}`);
+  await admin.query(`REVOKE USAGE ON SCHEMA public FROM ${statusRole}`);
+  await admin.query(`DROP ROLE ${statusRole}`);await observer.end();await admin.end();
  }
 },60000);
