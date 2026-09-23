@@ -6,4 +6,5 @@ export { listVisibleOrganizations } from "./rls.js";
 export * from "./usage-ingestion.js";
 export * from "./usage-aggregation.js";
 export * from "./usage-quarantine.js";
+export * from "./budget-consumption-snapshot.js";
 export * from "./meter-declaration-verifier.js";

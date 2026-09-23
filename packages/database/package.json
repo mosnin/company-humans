@@ -108,6 +108,10 @@
       "types": "./dist/budget-policies.d.ts",
       "default": "./dist/budget-policies.js"
     },
+    "./budget-consumption-snapshot": {
+      "types": "./dist/budget-consumption-snapshot.d.ts",
+      "default": "./dist/budget-consumption-snapshot.js"
+    },
     "./usage-quarantine": {
       "types": "./dist/usage-quarantine.d.ts",
       "default": "./dist/usage-quarantine.js"
