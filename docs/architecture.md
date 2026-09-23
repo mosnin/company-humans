@@ -58,6 +58,10 @@ An access-relevant product catalog edit or retirement now appends a fenced denia
 
 The suspended-member bootstrap worker checks the current ready catalog, target role requirements and policy block before it calls a provider. It rechecks them when the result arrives. A result from an ineligible in-flight call remains in immutable attempt/job history but does not bind a canonical member identity. Reconciliation of any remote identity created during that call is still required; activation remains closed.
 
+## Native workspace module configuration
+
+Migration 0077 stores per-organization revisions for Work, CRM, Referrals, Earnings, Leaderboard, Team, Context, and Creator. An active member can read the effective settings; an actor with `organization.manage` can append a revision. Work defaults on and the other modules default off until configured. This is presentation configuration only. Connected products remain separate product instances and require their own provisioning and authorization. No route uses these settings yet, so role-aware navigation and the Human Work experience remain incomplete.
+
 ## Member request eligibility
 
 Migration 0064 makes new organization-sponsored member intent conditional on a ready product with structurally valid catalog metadata, an instance mode listed by that product and support for `provision`, an active organization, requesting administrator and target member, and every required grant on the target member's current tenant role. The restricted service checks this before creating the mapping, and a restrictive PostgreSQL insert policy independently rejects direct service SQL. Catalog, organization authorization, organization status and member lifecycle edits share ordered locks with inserts; eligibility is re-read after lock waits. An existing blocked or disabled mapping requires explicit reconciliation. The admin candidate list projects the same eligibility boundary. A successful request still records pending intent only; no connected product access follows from it.

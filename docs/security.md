@@ -8,6 +8,8 @@ Each request queries Convex with its session token and checks the current sessio
 
 The selected organization cookie is a preference only. Server-rendered workspace pages and APIs resolve active membership on each request. Navigation visibility is never an authorization boundary. Deleted users, suspended/removed memberships, and inactive organizations cannot resolve tenant access.
 
+Native workspace module revisions use forced tenant RLS. The application role can read only organization, key, revision and enabled columns for an active membership in the selected organization. The service role may append only under `organization.manage` and matching actor context; a database guard locks and rechecks current organization, user, membership and grant before insert. Revisions and their audit events are immutable and serialized per module. Module visibility is not a connected-product grant or authorization substitute for a future native route.
+
 ## Database credentials
 
 - `DATABASE_URL`: migration owner; isolated integration-test fixture setup. Never a web runtime credential.

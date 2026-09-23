@@ -123,6 +123,10 @@
     "./member-activation-readiness": {
       "types": "./dist/member-activation-readiness.d.ts",
       "default": "./dist/member-activation-readiness.js"
+    },
+    "./workspace-modules": {
+      "types": "./dist/workspace-modules.d.ts",
+      "default": "./dist/workspace-modules.js"
     }
   },
   "scripts": {
