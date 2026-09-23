@@ -2,9 +2,9 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { createCanonicalId, type EventEnvelopeV1 } from "@company-human/contracts";
 import { signEventEnvelope } from "@company-human/contracts/signing";
-import { storeSignedUsage } from "@company-human/database/usage-ingestion";
+import { InvalidUsageTeamAttributionError, storeSignedUsage } from "@company-human/database/usage-ingestion";
 import { POST } from "./route";
-vi.mock("@company-human/database/usage-ingestion", () => ({ storeSignedUsage: vi.fn() }));
+vi.mock("@company-human/database/usage-ingestion", async (importOriginal) => ({ ...await importOriginal<typeof import("@company-human/database/usage-ingestion")>(), storeSignedUsage: vi.fn() }));
 const key = new Uint8Array(32).fill(11);
 const org=createCanonicalId("organization"), product=createCanonicalId("product"), instance=createCanonicalId("productInstance");
 const body: EventEnvelopeV1 = {schemaVersion:1,eventId:createCanonicalId("event"),organizationId:org,productId:product,eventType:"usage.recorded",source:{system:"scalar",eventId:"one"},actor:{type:"service",id:"enrichment"},environment:"test",occurredAt:"2026-01-01T00:00:00Z",reportedAt:"2026-01-01T00:00:01Z",idempotencyKey:"one",payload:{productInstanceId:instance,membershipId:null,teamId:null,meterKey:"enriched-leads",meterVersion:1,quantity:"1",unit:"lead",sourceCost:null,customerRateVersion:null,metadata:{}}};
@@ -60,4 +60,14 @@ it("redacts database failures and fails closed without database configuration",a
   expect(response.status).toBe(503);expect(await response.text()).not.toContain("secret");
   vi.stubEnv("DATABASE_USAGE_INGEST_URL","");
   expect((await POST(request(signed()))).status).toBe(503);
+});
+it("returns a nonretryable, redacted response for disproven historical team attribution",async()=>{
+  vi.mocked(storeSignedUsage).mockRejectedValueOnce(new InvalidUsageTeamAttributionError());
+  const response=await POST(request(signed()));
+  expect(response.status).toBe(422);
+  expect(await response.json()).toEqual({error:"Usage team attribution invalid"});
+  vi.mocked(storeSignedUsage).mockRejectedValueOnce(Object.assign(new Error("sensitive SQL context"),{code:"CHT01"}));
+  const unexpected=await POST(request(signed()));
+  expect(unexpected.status).toBe(503);
+  expect(await unexpected.text()).not.toContain("sensitive");
 });

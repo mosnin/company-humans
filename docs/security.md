@@ -255,3 +255,7 @@ The activation readiness reader uses the restricted service role and requires bo
 Migration 0066 narrows the budget service role to the original V1 revision columns. Its direct SQL cannot assert a V2 meter version; V2 revisions are excluded from the V1 job trigger and rejected by the V1 worker. This is a storage and dispatch boundary, not certification of a meter or provider hard stop.
 
 Migration 0067 grants a dedicated non-login operator only the catalog and immutable meter-definition columns required for declaration comparison. The comparator requires that exact role and repeatable-read isolation. The role has no write permission on either source table, and the service/budget administrator cannot use the comparator as an access grant. The result always states that provider enforcement and activation are unverified.
+
+### Usage team provenance
+
+The database now guards a human usage event that names a team with a restricted, non-login function owner and private assignment intervals. The guard runs on direct inserts as well as the signed ingestion path. Quarantine release rechecks legacy rows. The API returns a redacted 422 for a disproven interval while keeping idempotency conflicts separate. This is attribution validation, not proof that providers bind operations to teams or enforce team budgets.
