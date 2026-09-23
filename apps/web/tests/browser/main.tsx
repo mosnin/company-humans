@@ -16,6 +16,7 @@ import { ROLE_CAPABILITIES } from "@company-human/contracts";
 import { WorkspaceShell } from "@/components/shell/workspace-shell";
 import { WorkBoard } from "@/components/work/work-board";
 import { WorkspaceModuleControls } from "@/components/administration/workspace-module-controls";
+import { HomeOverview } from "@/components/home/home-overview";
 import { PageHeader } from "@/components/ui/page-header";
 import { InvitePerson, PeopleTable } from "@/components/administration/people";
 import { TeamsEditor } from "@/components/administration/teams";
@@ -68,5 +69,9 @@ createRoot(document.getElementById("root")!).render(<WorkspaceShell organization
     {moduleKey:"referrals",enabled:false,revision:0},{moduleKey:"earnings",enabled:false,revision:0},
     {moduleKey:"leaderboard",enabled:false,revision:0},{moduleKey:"team",enabled:false,revision:0},
     {moduleKey:"context",enabled:false,revision:0},{moduleKey:"creator",enabled:false,revision:0},
+  ]} />}
+  {screen === "home" && <HomeOverview admin={false} canReadUsage workState="ready" appRecordCount={1} actions={[
+    {id:`ch_hwrk_${"a".repeat(32)}`,title:"Call the lead",dueAt:"2026-09-23T15:00:00.000Z"},
+    {id:`ch_hwrk_${"b".repeat(32)}`,title:"Review the proposal",dueAt:null},
   ]} />}
 </WorkspaceShell>);

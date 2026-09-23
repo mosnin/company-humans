@@ -206,3 +206,7 @@ Notion 07 and 08 make Company Human the authority for human obligations while Op
 ### Expose only implemented native module controls — 2026-09-23
 
 Notion 07 requires modular workspaces and no dead modules in navigation. The organization manager page shows all eight planned native modules and their stored requested state, but enables public configuration only for the implemented Work experience. CRM, Referrals, Earnings, Leaderboard, Team, Context, and Creator remain labeled unavailable and disabled until their actual routes, data, permissions, and acceptance tests exist. This does not change the independent connected-product registry or sponsorship controls.
+
+### Begin Home with authoritative action data — 2026-09-23
+
+Notion 07 asks Home to answer what the contributor should do, what moved, and what money is real. Home begins with the member's own native Human Work queue and a link to the Apps access-status page. The app reader includes historical removed records, so Home uses cautious status copy instead of an “assigned apps” count or launch claim. Leads, pipeline, earnings, targets, leaderboard, wins, and announcements await their authoritative modules rather than placeholder metrics.

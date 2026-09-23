@@ -10,6 +10,10 @@ The Work-only administrator control reuses the previously verified 0077 database
 
 Commit `6eaa31f76d24e9129131fe96e87417023b35ec58` passed [CI 35843895701](https://github.com/mosnin/company-humans/actions/runs/35843895701). Production deployment `dpl_AA4GorU21FUMvQEMMPomr8nBaATm` reports the exact revision; live anonymous settings/Work PUT/foreign-origin PUT checks returned 307/401/403. Authenticated production configuration remains unverified.
 
+## Contributor Home action candidate — 2026-09-23
+
+The Home slice reuses the verified own-assignment and own-app readers with no new migration. The local full gate passed 114 contract and 377 web tests, typecheck, lint and production build. Two desktop/mobile browser fixture checks passed and the 390px screenshot was inspected. A built local server redirected anonymous Home to sign-in with 307. Regression tests cover Work off, module read failure, own assignment read failure, empty assignments, missing own-read permission, and a removed app mapping that must not be counted as an assigned app. The independent reviewer accepted the bounded slice. The browser fixture does not prove authenticated production rendering or live persistence.
+
 Use Node 24 and a dedicated PostgreSQL test database. Never point integration tests at production: they create disposable identities, organizations and login roles, then clean up their own records.
 
 ```sh
