@@ -40,12 +40,15 @@ export async function claimMemberBootstrap(url:string,organizationId:Organizatio
       JOIN public.organizations o ON o.id=pm.organization_id
       JOIN public.products p ON p.id=i.product_id
       WHERE c.organization_id=$1 AND i.product_id=$2 AND c.operation IN ('provisionMember')
-        AND c.desired_revision=pm.desired_revision AND pm.desired_enabled
+        AND c.desired_revision=pm.desired_revision AND pm.desired_enabled AND NOT pm.policy_blocked
         AND m.status='active' AND u.status='active' AND o.status='active'
         AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status='ready'
+        AND company_human_private.bootstrap_missing_product_permission(c.organization_id,m.role_id,i.product_id) IS NULL
       ON CONFLICT (command_id) DO NOTHING`,[organizationId,productId]);
     const result=await client.query<Row>(`SELECT j.*,c.operation,c.idempotency_key,pm.product_instance_id,pm.membership_id,
-      j.lease_expires_at<=clock_timestamp() AS expired,(c.desired_revision=pm.desired_revision AND pm.desired_enabled AND m.status='active' AND u.status='active' AND o.status='active' AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status='ready') AS current_revision
+      j.lease_expires_at<=clock_timestamp() AS expired,(c.desired_revision=pm.desired_revision AND pm.desired_enabled AND NOT pm.policy_blocked
+        AND m.status='active' AND u.status='active' AND o.status='active' AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status='ready'
+        AND company_human_private.bootstrap_missing_product_permission(c.organization_id,m.role_id,i.product_id) IS NULL) AS current_revision
       FROM public.member_bootstrap_jobs j JOIN public.product_membership_commands c ON c.id=j.command_id AND c.organization_id=j.organization_id
       JOIN public.product_memberships pm ON pm.id=c.product_membership_id AND pm.organization_id=c.organization_id
       JOIN public.product_instances i ON i.id=pm.product_instance_id AND i.organization_id=pm.organization_id
@@ -83,7 +86,9 @@ export async function finishMemberBootstrap(url:string,organizationId:Organizati
   ProvisioningOperationIdSchema.parse(lease.commandId);z.uuid().parse(lease.leaseToken);
   const receipt=Response.parse(raw);
   await transaction(url,organizationId,async client=>{
-    const result=await client.query<Row>(`SELECT j.*,c.operation,pm.external_member_id,(c.desired_revision=pm.desired_revision AND pm.desired_enabled AND m.status='active' AND u.status='active' AND o.status='active' AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status='ready') AS current_revision,
+    const result=await client.query<Row>(`SELECT j.*,c.operation,pm.external_member_id,(c.desired_revision=pm.desired_revision AND pm.desired_enabled AND NOT pm.policy_blocked
+      AND m.status='active' AND u.status='active' AND o.status='active' AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status='ready'
+      AND company_human_private.bootstrap_missing_product_permission(c.organization_id,m.role_id,i.product_id) IS NULL) AS current_revision,
       j.lease_expires_at<=clock_timestamp() AS expired FROM public.member_bootstrap_jobs j
       JOIN public.product_membership_commands c ON c.id=j.command_id AND c.organization_id=j.organization_id
       JOIN public.product_memberships pm ON pm.id=c.product_membership_id AND pm.organization_id=c.organization_id

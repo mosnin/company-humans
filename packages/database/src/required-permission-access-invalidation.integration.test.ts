@@ -88,12 +88,10 @@ it.skipIf(!url)('invalidates every missing catalog permission with fenced, tenan
   expect((await admin.query('SELECT failure_code FROM member_denial_jobs WHERE command_id=$1',[second.commandId])).rows[0].failure_code).toBe('fenced_policy_receipt_required');
   // Provider identity created before permission loss is retained and denied in
   // the same binding transaction after its provision receipt arrives.
+  await set(contributorA,[...await grants(contributorA),'billing.read.all']);
   let lease=await claimMemberBootstrap(bootstrap,orgs[0]!,pRequired);
   for(let n=0;n<8&&lease?.membershipId!==pendingMember;n++)lease=await claimMemberBootstrap(bootstrap,orgs[0]!,pRequired);
   expect(lease?.membershipId).toBe(pendingMember);
-  await admin.query('BEGIN');
-  await admin.query("INSERT INTO role_permissions(organization_id,role_id,permission_key) VALUES($1,$2,'billing.read.all') ON CONFLICT DO NOTHING",[orgs[0],contributorA]);
-  await admin.query('COMMIT');
   await admin.query('BEGIN');
   await admin.query("DELETE FROM role_permissions WHERE organization_id=$1 AND role_id=$2 AND permission_key='billing.read.all'",[orgs[0],contributorA]);
   const bind=finishMemberBootstrap(bootstrap,orgs[0]!,lease!,suspended(pending));

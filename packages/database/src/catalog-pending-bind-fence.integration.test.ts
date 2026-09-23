@@ -98,6 +98,8 @@ it.skipIf(!url)('serializes catalog changes with suspended bindings and fences s
 
   // A provision command from before this migration has no stamp. Its successful
   // suspended receipt remains bound and immediately enters the same denial journal.
+  // Satisfy the new requirement so this case isolates the catalog revision fence.
+  await db.query("INSERT INTO role_permissions(organization_id,role_id,permission_key) SELECT organization_id,role_id,'billing.read.all' FROM memberships WHERE id=$1 ON CONFLICT DO NOTHING",[extraMembers[0]]);
   const legacy=await setup(0,extraMembers[0]!);
   await db.query('UPDATE product_membership_commands SET catalog_access_revision=NULL WHERE product_membership_id=$1 AND operation=$2',[legacy,'provisionMember']);
   const legacyLease=await claim(0);
