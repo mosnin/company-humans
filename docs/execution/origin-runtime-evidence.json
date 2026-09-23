@@ -1,0 +1,131 @@
+{
+  "runtime": "production Next.js on loopback, OAuth unconfigured",
+  "handlers": 12,
+  "checks": [
+    {
+      "method": "POST",
+      "path": "/api/identity/sync",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/invitations/accept",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/organizations/ch_org_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/applications",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/organizations/ch_org_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/invitations",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/organizations/ch_org_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/memberships/ch_mem_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/role",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/organizations/ch_org_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/memberships/ch_mem_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/organizations/ch_org_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/roles/ch_role_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/permissions",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/organizations/ch_org_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/organizations/ch_org_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/teams/ch_team_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/members",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/organizations/ch_org_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/teams",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/organizations",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/organizations/switch",
+      "missing_cross_same_origin": [
+        403,
+        403,
+        503
+      ]
+    }
+  ],
+  "health": 200,
+  "date": "2026-09-21",
+  "source_sha256": {
+    "apps/web/lib/mutation-origin.ts": "bbe996b1d064f21dba4896ae35f8228cd5186e7262dc6ff2a031047fb22e0fde",
+    "apps/web/app/api/identity/sync/route.ts": "dcc246ea35d20d625aed9139362f721e4da088d726c1bc9b22fcd700f45fadfd",
+    "apps/web/app/api/invitations/accept/route.ts": "4f5dc6703daa8c52b8aa80f471ee01c17a35c9be39e07112b20bb452d91a6432",
+    "apps/web/app/api/organizations/[organizationId]/applications/route.ts": "2d38214ba68f2c63c14ffcb75c5cc3530b437755ee6d735cbb2e5c7be1485baf",
+    "apps/web/app/api/organizations/[organizationId]/invitations/route.ts": "dae10621f1722af861def059041b51b52cc794ca948dbf59c0307a780f704899",
+    "apps/web/app/api/organizations/[organizationId]/memberships/[membershipId]/role/route.ts": "6e546a736349dda51ab7fd30fccdb5aa29dcd5787dabb5bea0e8022e4f59fc85",
+    "apps/web/app/api/organizations/[organizationId]/memberships/[membershipId]/route.ts": "22c7c56dd463b3ad3334a28fe5da5832fa555a65e2ed6dfe2d7afb537e69df4d",
+    "apps/web/app/api/organizations/[organizationId]/roles/[roleId]/permissions/route.ts": "6012adb72a9205e6edbeb7ab2f0e0021cf2e23847769d2369ab00532499d3720",
+    "apps/web/app/api/organizations/[organizationId]/route.ts": "47fc3dbbb75f590a6b196a07a1a304d6df3c6ade25aaa3b2b1520344f26480b7",
+    "apps/web/app/api/organizations/[organizationId]/teams/[teamId]/members/route.ts": "444f3a6014c0d06457d5ecdc7037f721fae1e6379a06371b0036aef1c6eb03dc",
+    "apps/web/app/api/organizations/[organizationId]/teams/route.ts": "d8139b37152f51ae7a8970dd2963e135b2190b83ece82ceee984f23468aeacde",
+    "apps/web/app/api/organizations/route.ts": "245736466aff0ceee1ca5665550588197d81d1d5b9bd4c5500084828b2e1922b",
+    "apps/web/app/api/organizations/switch/route.ts": "40c03ac7fce1821ede9a49296795bb78e0076b33226216bc1c7d7595bc05abda"
+  }
+}

@@ -1,0 +1,209 @@
+{
+  "captured_at": "2026-09-21",
+  "pages": [
+    {
+      "id": "3e1a0db630cf8143bc2bd77af98bc7c8",
+      "title": "\ud83e\udde9 Company Human",
+      "url": "https://app.notion.com/p/3e1a0db630cf8143bc2bd77af98bc7c8?pvs=204",
+      "last_edited_at": "2026-09-20T16:02:17.301Z",
+      "content_sha256": "2a34ddaf5a8ff130d7f7778556f4c5ad20d3aff172a98e053ed2cb2222c7af03",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf811a9fd9fab2c3bcbe01",
+      "title": "\ud83d\udcd8 01 Product Requirements Document",
+      "url": "https://app.notion.com/p/3e1a0db630cf811a9fd9fab2c3bcbe01?pvs=204",
+      "last_edited_at": "2026-09-20T04:58:55.441Z",
+      "content_sha256": "65f410f44b5b19a67ba9ded80fa7ae70cffa67af364954d3308d502d6404531e",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf81e9ac00ca0606a1a61a",
+      "title": "\ud83c\udfd7\ufe0f 02 System Architecture and Control Planes",
+      "url": "https://app.notion.com/p/3e1a0db630cf81e9ac00ca0606a1a61a?pvs=204",
+      "last_edited_at": "2026-09-20T16:11:29.844Z",
+      "content_sha256": "8befb513b363b7bde95f5798ce936fb03f6612767c71d82f3d241d0a9f7339aa",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf81ab8d7bd86ab03a4bfa",
+      "title": "\ud83d\uddc3\ufe0f 03 Canonical Data Model and Tenant Boundaries",
+      "url": "https://app.notion.com/p/3e1a0db630cf81ab8d7bd86ab03a4bfa?pvs=204",
+      "last_edited_at": "2026-09-20T04:58:55.441Z",
+      "content_sha256": "4b194deaabb16494bce8cf2cce0738e6313b1ed6cade093cc883ea7cbfcc7577",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf819ca7c7fb059f952031",
+      "title": "\ud83d\udd10 04 Identity Roles Permissions and Organization Sponsorship",
+      "url": "https://app.notion.com/p/3e1a0db630cf819ca7c7fb059f952031?pvs=204",
+      "last_edited_at": "2026-09-20T16:01:40.731Z",
+      "content_sha256": "7423fc93d7d55986e26b0baeca71d7b4e4be366bb66dfdf2f330ea22febe9456",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf81be8772e49be73843cb",
+      "title": "\ud83d\udd0c 05 Application Platform and Provisioning Contract",
+      "url": "https://app.notion.com/p/3e1a0db630cf81be8772e49be73843cb?pvs=204",
+      "last_edited_at": "2026-09-20T04:58:55.441Z",
+      "content_sha256": "b5b1d685593781fedd827c9f11fa06e5f98f79d34b4ddd03104a9414512cf03d",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf81649db2cecf1fa2b562",
+      "title": "\ud83d\udcb3 06 Usage Metering Entitlements and Centralized Billing",
+      "url": "https://app.notion.com/p/3e1a0db630cf81649db2cecf1fa2b562?pvs=204",
+      "last_edited_at": "2026-09-20T05:01:29.415Z",
+      "content_sha256": "5b19122d1640594cbbc7be0f0c704c2d10012cb6128eca539adcc98bf68f4304",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf8123a301c46baec2756e",
+      "title": "\ud83d\udda5\ufe0f 07 Human Workspace Information Architecture and UX",
+      "url": "https://app.notion.com/p/3e1a0db630cf8123a301c46baec2756e?pvs=204",
+      "last_edited_at": "2026-09-20T05:01:29.415Z",
+      "content_sha256": "d576bd96f93920e2781ab44e1ab6b10f8df8c36a9a65c4969ad6929a22c606af",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf81289f21f9f2f44a0bd9",
+      "title": "\ud83d\udcc7 08 Native CRM Human Work Team and Creator Modules",
+      "url": "https://app.notion.com/p/3e1a0db630cf81289f21f9f2f44a0bd9?pvs=204",
+      "last_edited_at": "2026-09-20T05:01:29.415Z",
+      "content_sha256": "03f9f3226acc3371689363ae53ea55064f1c7392660900dea8a5fdc03d39096f",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf81f8a94be482753afa7e",
+      "title": "\ud83d\udcb8 09 Attribution Referral Commission and Payout System",
+      "url": "https://app.notion.com/p/3e1a0db630cf81f8a94be482753afa7e?pvs=204",
+      "last_edited_at": "2026-09-20T05:01:29.415Z",
+      "content_sha256": "a7ee127c23d4b475e8e1f9905a918e05151bc859cef6878418d643ecdeb06e8f",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf81fd895cd2ac37f41610",
+      "title": "\ud83e\uddf0 10 Developer Platform SDK Tracking and Integration Protocols",
+      "url": "https://app.notion.com/p/3e1a0db630cf81fd895cd2ac37f41610?pvs=204",
+      "last_edited_at": "2026-09-20T05:01:29.415Z",
+      "content_sha256": "db14efbd6db34fe58075ab11592d48388b3862c2fd8b4ed7ab41071a6151568f",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf8123ac48cca194da9f06",
+      "title": "\ud83e\uddec 11 Ecosystem Integration Specifications",
+      "url": "https://app.notion.com/p/3e1a0db630cf8123ac48cca194da9f06?pvs=204",
+      "last_edited_at": "2026-09-20T05:03:32.384Z",
+      "content_sha256": "18db0c8c3bcd8b0b5cbd62d5df97c2e269b050daf7034bcef5fef3540a5ed54b",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf81feb45fd1c03e18b416",
+      "title": "\ud83d\udee1\ufe0f 12 Security Reliability Compliance and Failure Recovery",
+      "url": "https://app.notion.com/p/3e1a0db630cf81feb45fd1c03e18b416?pvs=204",
+      "last_edited_at": "2026-09-20T05:03:32.384Z",
+      "content_sha256": "ef188a5f7a8a53871387da7ee2fb591d002e3196a422769cd4c627159b850a32",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf81588f09f8e8f619283a",
+      "title": "\ud83c\udfe2 13 White Label and Enterprise Administration",
+      "url": "https://app.notion.com/p/3e1a0db630cf81588f09f8e8f619283a?pvs=204",
+      "last_edited_at": "2026-09-20T05:03:32.384Z",
+      "content_sha256": "27d527d7cbe8433c9f0141db35f225f46dd56d5a7ed10986e994c72c91c7281e",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf817a9ca3f04094f3d238",
+      "title": "\ud83d\udcc8 14 Unit Economics Pricing and Financial Controls",
+      "url": "https://app.notion.com/p/3e1a0db630cf817a9ca3f04094f3d238?pvs=204",
+      "last_edited_at": "2026-09-20T05:03:32.384Z",
+      "content_sha256": "bb00f88a76a1826376da8cb0ae23f9ee1e78c13c27de4435b5f95358ebd863fe",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf819585ccd74a6968af50",
+      "title": "\ud83d\uddfa\ufe0f 15 Phased Build Roadmap",
+      "url": "https://app.notion.com/p/3e1a0db630cf819585ccd74a6968af50?pvs=204",
+      "last_edited_at": "2026-09-20T16:11:30.934Z",
+      "content_sha256": "4a00181b309e61376eacbae00929021c96d23dda7d447cdc85c7372c35d252bc",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf81a7bf90f3d8609bd08d",
+      "title": "\u2705 16 Test Plan Acceptance Criteria and Launch",
+      "url": "https://app.notion.com/p/3e1a0db630cf81a7bf90f3d8609bd08d?pvs=204",
+      "last_edited_at": "2026-09-20T05:03:32.384Z",
+      "content_sha256": "58c2e5d660b34829785ca9ed5454c1f0aecb16c652d18c29b84f87bbab66bd99",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    },
+    {
+      "id": "3e1a0db630cf81fa8961c39953ba33ca",
+      "title": "\ud83e\udded 17 Decisions Assumptions Open Questions and Non Goals",
+      "url": "https://app.notion.com/p/3e1a0db630cf81fa8961c39953ba33ca?pvs=204",
+      "last_edited_at": "2026-09-20T16:11:31.673Z",
+      "content_sha256": "2d7081914412e167af7a3ea0fbc6fd2dc8f8d52055ca8d27c2cbd21a63235db4",
+      "truncated": false,
+      "unknown_block_count": 0,
+      "reading": "read in full on 2026-09-21",
+      "authority": "canonical Notion; explicit user overrides win"
+    }
+  ],
+  "tracker": "notion-tasks.json",
+  "notes": [
+    "The task tracker is an execution index; detailed documents remain mandatory requirements.",
+    "Security page Clerk wording and CH-7 dependency were corrected after this source snapshot.",
+    "No fetched specification contained reported truncation or unknown blocks."
+  ]
+}

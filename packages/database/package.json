@@ -1,0 +1,151 @@
+{
+  "name": "@company-human/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./auth-users": {
+      "types": "./dist/auth-users.d.ts",
+      "default": "./dist/auth-users.js"
+    },
+    "./rls": {
+      "types": "./dist/rls.d.ts",
+      "default": "./dist/rls.js"
+    },
+    "./organizations": {
+      "types": "./dist/organizations.d.ts",
+      "default": "./dist/organizations.js"
+    },
+    "./membership-lifecycle": {
+      "types": "./dist/membership-lifecycle.d.ts",
+      "default": "./dist/membership-lifecycle.js"
+    },
+    "./organization-authority": {
+      "types": "./dist/organization-authority.d.ts",
+      "default": "./dist/organization-authority.js"
+    },
+    "./product-instances": {
+      "types": "./dist/product-instances.d.ts",
+      "default": "./dist/product-instances.js"
+    },
+    "./role-permissions": {
+      "types": "./dist/role-permissions.d.ts",
+      "default": "./dist/role-permissions.js"
+    },
+    "./administration": {
+      "types": "./dist/administration.d.ts",
+      "default": "./dist/administration.js"
+    },
+    "./teams": {
+      "types": "./dist/teams.d.ts",
+      "default": "./dist/teams.js"
+    },
+    "./provisioning-operations": {
+      "types": "./dist/provisioning-operations.d.ts",
+      "default": "./dist/provisioning-operations.js"
+    },
+    "./provisioning-dispatcher": {
+      "types": "./dist/provisioning-dispatcher.d.ts",
+      "default": "./dist/provisioning-dispatcher.js"
+    },
+    "./product-memberships": {
+      "types": "./dist/product-memberships.d.ts",
+      "default": "./dist/product-memberships.js"
+    },
+    "./member-denial-worker": {
+      "types": "./dist/member-denial-worker.d.ts",
+      "default": "./dist/member-denial-worker.js"
+    },
+    "./product-entitlements": {
+      "types": "./dist/product-entitlements.d.ts",
+      "default": "./dist/product-entitlements.js"
+    },
+    "./member-bootstrap-worker": {
+      "types": "./dist/member-bootstrap-worker.d.ts",
+      "default": "./dist/member-bootstrap-worker.js"
+    },
+    "./product-usage-limits": {
+      "types": "./dist/product-usage-limits.d.ts",
+      "default": "./dist/product-usage-limits.js"
+    },
+    "./usage-limit-worker": {
+      "types": "./dist/usage-limit-worker.d.ts",
+      "default": "./dist/usage-limit-worker.js"
+    },
+    "./product-connections": {
+      "types": "./dist/product-connections.d.ts",
+      "default": "./dist/product-connections.js"
+    },
+    "./member-capability-snapshots": {
+      "types": "./dist/member-capability-snapshots.d.ts",
+      "default": "./dist/member-capability-snapshots.js"
+    },
+    "./capability-worker": {
+      "types": "./dist/capability-worker.d.ts",
+      "default": "./dist/capability-worker.js"
+    },
+    "./capability-preparer": {
+      "types": "./dist/capability-preparer.d.ts",
+      "default": "./dist/capability-preparer.js"
+    },
+    "./application-health": {
+      "types": "./dist/application-health.d.ts",
+      "default": "./dist/application-health.js"
+    },
+    "./usage-ingestion": {
+      "types": "./dist/usage-ingestion.d.ts",
+      "default": "./dist/usage-ingestion.js"
+    },
+    "./usage-aggregation": {
+      "types": "./dist/usage-aggregation.d.ts",
+      "default": "./dist/usage-aggregation.js"
+    },
+    "./budget-policies": {
+      "types": "./dist/budget-policies.d.ts",
+      "default": "./dist/budget-policies.js"
+    },
+    "./budget-consumption-snapshot": {
+      "types": "./dist/budget-consumption-snapshot.d.ts",
+      "default": "./dist/budget-consumption-snapshot.js"
+    },
+    "./usage-quarantine": {
+      "types": "./dist/usage-quarantine.d.ts",
+      "default": "./dist/usage-quarantine.js"
+    },
+    "./member-access-worker": {
+      "types": "./dist/member-access-worker.d.ts",
+      "default": "./dist/member-access-worker.js"
+    },
+    "./member-activation-readiness": {
+      "types": "./dist/member-activation-readiness.d.ts",
+      "default": "./dist/member-activation-readiness.js"
+    },
+    "./workspace-modules": {
+      "types": "./dist/workspace-modules.d.ts",
+      "default": "./dist/workspace-modules.js"
+    },
+    "./human-work": {
+      "types": "./dist/human-work.d.ts",
+      "default": "./dist/human-work.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "lint": "eslint src --config ../../eslint.config.mjs",
+    "test": "vitest run --passWithNoTests --maxWorkers=1",
+    "migrate": "npm run build -w @company-human/contracts && npm run build && node dist/migrate-cli.js",
+    "seed": "npm run build -w @company-human/contracts && npm run build && node dist/seed-cli.js"
+  },
+  "dependencies": {
+    "@company-human/contracts": "0.1.0",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.5"
+  }
+}

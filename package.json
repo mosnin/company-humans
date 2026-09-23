@@ -1,0 +1,26 @@
+{
+  "name": "company-human",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": "24.x"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @company-human/web",
+    "build": "npm run build -w @company-human/contracts && npm run build -w @company-human/database && npm run build -w @company-human/web",
+    "typecheck": "npm run typecheck -w @company-human/contracts && npm run typecheck -w @company-human/database && npm run typecheck -w @company-human/web",
+    "lint": "npm run lint -w @company-human/web && npm run lint -w @company-human/contracts && npm run lint -w @company-human/database",
+    "test": "npm run test -w @company-human/contracts && npm run test -w @company-human/database && npm run test -w @company-human/web",
+    "start": "npm run start -w @company-human/web",
+    "db:migrate": "npm run migrate -w @company-human/database",
+    "db:seed": "npm run seed -w @company-human/database",
+    "pretypecheck": "npm run build -w @company-human/contracts && npm run build -w @company-human/database"
+  },
+  "devDependencies": {
+    "jose": "^6.2.12"
+  }
+}

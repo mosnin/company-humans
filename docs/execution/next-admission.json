@@ -1,0 +1,57 @@
+{
+  "$schema": "company-os.work-admission-receipt.v1",
+  "request_id": "hosted-database-20260921",
+  "task_id": "CH-8-hosted-database",
+  "manager_id": "root",
+  "work_class": "integration",
+  "admitted": true,
+  "blockers": [],
+  "mission_state_sha256": "8e9dc22af9f5664cf89962fe094322cf2ca8f191eb93c001d73db217a5028e57",
+  "governor_decision_sha256": "2bc83ede0d57a4a15e4fdff1b0f97d472fddbe442fbb53aeae25e623a0a6ae0e",
+  "governor_mode": "normal",
+  "dominant_bottleneck": {
+    "capability_id": "phase:03",
+    "state": "missing",
+    "critical": true,
+    "priority": 100,
+    "existing_implementation": null
+  },
+  "allowed_work_classes": [
+    "research",
+    "architecture",
+    "governance",
+    "implementation",
+    "integration",
+    "runtime",
+    "repair",
+    "evaluation",
+    "documentation",
+    "packaging",
+    "checkpoint"
+  ],
+  "replacement_orders": [
+    {
+      "order_id": "replace-worker:current-bottleneck-worker:first_runtime",
+      "kind": "replace_worker",
+      "worker_id": "current-bottleneck-worker",
+      "reason": "second miss of first_runtime",
+      "issued_at": "2026-09-21T17:15:39.339151Z"
+    },
+    {
+      "order_id": "replace-manager:current-bottleneck-manager:first_runtime",
+      "kind": "replace_manager",
+      "manager_id": "current-bottleneck-manager",
+      "reason": "repeated mission deadline failure: first_runtime",
+      "issued_at": "2026-09-21T17:21:43.199616Z"
+    }
+  ],
+  "navigation_decision_sha256": "93776cdf6d133414754352c6a919fb4c77b1f637d32a6d2ab0b4999f8300dec8",
+  "navigation_mode": "navigate",
+  "next_action": {
+    "action_kind": "materialize",
+    "work_class": "implementation",
+    "capability_id": "phase:03",
+    "instruction": "Materialize the smallest real phase:03 artifact that changes objective reality."
+  },
+  "receipt_sha256": "f7df8f8f3b88ceb926b19b6eb260211445bcbefbd3bcfa65257d1259235316ed"
+}

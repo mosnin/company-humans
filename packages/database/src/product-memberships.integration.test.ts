@@ -1,0 +1,111 @@
+import { randomBytes } from "node:crypto";
+import { Client } from "pg";
+import { describe,expect,it } from "vitest";
+import { createCanonicalId } from "@company-human/contracts";
+import { syncAuthUser } from "./auth-users.js";
+import { createOrganization } from "./organizations.js";
+import { enableProductInstance } from "./product-instances.js";
+import { requestProductMembership } from "./product-memberships.js";
+import { listApplicationMemberCandidates } from "./administration.js";
+import { listMemberApplications } from "./rls.js";
+const databaseUrl=process.env.DATABASE_URL;
+describe.skipIf(!databaseUrl)("product membership mapping",()=>{
+  it("binds one pending mapping to one tenant/member/instance without allowing manufactured provider success",async()=>{
+    const suffix=randomBytes(6).toString("hex"), role=`ch_pmem_${suffix}`, password=randomBytes(20).toString("hex");
+    const admin=new Client({connectionString:databaseUrl});await admin.connect();
+    await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}'`);await admin.query(`GRANT company_human_service TO ${role}`);
+    const url=new URL(databaseUrl!);url.username=role;url.password=password;
+    const alice=await syncAuthUser(databaseUrl!,{authIssuer:"https://identity.example.test",authSubject:`pmem-alice-${suffix}`,primaryEmail:null,displayName:"Alice",status:"active",eventTimestamp:1});
+    const bob=await syncAuthUser(databaseUrl!,{authIssuer:"https://identity.example.test",authSubject:`pmem-bob-${suffix}`,primaryEmail:null,displayName:"Bob",status:"active",eventTimestamp:1});
+    const org=await createOrganization(databaseUrl!,{ownerUserId:alice,slug:`pmem-alice-${suffix}`,name:"Alice"});
+    const other=await createOrganization(databaseUrl!,{ownerUserId:bob,slug:`pmem-bob-${suffix}`,name:"Bob"});
+    const orgs=[org.organizationId,other.organizationId],product=createCanonicalId('product');
+    const readerRole=`ch_pread_${suffix}`;
+    await admin.query(`CREATE ROLE ${readerRole} LOGIN PASSWORD '${password}'`);
+    await admin.query(`GRANT company_human_app TO ${readerRole}`);
+    const readerUrl=new URL(url);readerUrl.username=readerRole;
+    const runtime=new Client({connectionString:url.toString()});await runtime.connect();
+    try {
+      await admin.query("INSERT INTO products(id,product_key,display_name,catalog_status,catalog_metadata) VALUES($1,$2,'Fixture','ready',$3)",
+        [product,`pmem-${suffix}`,{schemaVersion:1,description:'Test only',category:'sales',supportedCapabilities:[],
+          provisioningModes:['connected'],supportedMemberOperations:['provision','suspend'],usageMeters:[],requiredPermissions:['product.use'],
+          adapterVersion:'1.0.0',billingBehavior:'organization_sponsored',deepLinks:{},connectionRequirements:[]}]);
+      const instance=await enableProductInstance(url.toString(),{actorUserId:alice,organizationId:org.organizationId,productId:product,mode:"connected"});
+      const input={actorUserId:alice,organizationId:org.organizationId,productInstanceId:instance,membershipId:org.ownerMembershipId};
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
+      // Explicit fixture activation, not a real Scalar organization or member.
+      await admin.query("DELETE FROM product_instances WHERE id=$1",[instance]);
+      await admin.query(`INSERT INTO product_instances (id,organization_id,product_id,instance_key,mode,provisioning_status,external_organization_id,created_by_user_id)
+        VALUES ($1,$2,$3,'primary','connected','active',$4,$5)`,[instance,org.organizationId,product,`fixture-${suffix}`,alice]);
+      const candidates=await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance);
+      expect(candidates.members).toEqual([{id:org.ownerMembershipId,name:'Alice'}]);
+      expect(candidates.total).toBe(1);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance,'missing')).members).toEqual([]);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance,'',2)).members).toEqual([]);
+      await expect(listApplicationMemberCandidates(url.toString(),bob,org.organizationId,instance)).rejects.toThrow();
+      await expect(listApplicationMemberCandidates(url.toString(),bob,other.organizationId,instance)).rejects.toThrow();
+      await admin.query("UPDATE products SET catalog_status='draft' WHERE id=$1",[product]);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).available).toBe(false);
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
+      await admin.query("UPDATE products SET catalog_status='ready' WHERE id=$1",[product]);
+      await admin.query("UPDATE products SET catalog_metadata=jsonb_set(catalog_metadata,'{provisioningModes}','[\"provisioned\"]'::jsonb) WHERE id=$1",[product]);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).available).toBe(false);
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
+      await admin.query("UPDATE products SET catalog_metadata=jsonb_set(catalog_metadata,'{provisioningModes}','[\"connected\"]'::jsonb) WHERE id=$1",[product]);
+      await admin.query("UPDATE products SET catalog_metadata=jsonb_set(catalog_metadata,'{supportedMemberOperations}','[\"suspend\"]'::jsonb) WHERE id=$1",[product]);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).available).toBe(false);
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
+      await admin.query("UPDATE products SET catalog_metadata=jsonb_set(catalog_metadata,'{supportedMemberOperations}','[\"provision\",\"suspend\"]'::jsonb) WHERE id=$1",[product]);
+      const excludedUser=await syncAuthUser(databaseUrl!,{authIssuer:"https://identity.example.test",authSubject:`pmem-excluded-${suffix}`,primaryEmail:null,displayName:"Excluded",status:"active",eventTimestamp:1});
+      const excludedMember=createCanonicalId("membership");
+      await admin.query("INSERT INTO memberships(id,organization_id,user_id,status,role_key) VALUES($1,$2,$3,'active','contributor')",[excludedMember,org.organizationId,excludedUser]);
+      await admin.query("DELETE FROM role_permissions WHERE organization_id=$1 AND role_id=(SELECT id FROM roles WHERE organization_id=$1 AND key='contributor') AND permission_key='product.use'",[org.organizationId]);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).members).toEqual([{id:org.ownerMembershipId,name:'Alice'}]);
+      await expect(requestProductMembership(url.toString(),{...input,membershipId:excludedMember})).rejects.toThrow("Product or membership unavailable");
+      const ids=await Promise.all(Array.from({length:6},()=>requestProductMembership(url.toString(),input)));
+      expect(new Set(ids).size).toBe(1);
+      expect(await listMemberApplications(readerUrl.toString(),alice,org.organizationId)).toEqual([
+        {id:ids[0],name:'Fixture',instanceKey:'primary',status:'preparing'}
+      ]);
+      expect(await listMemberApplications(readerUrl.toString(),bob,org.organizationId)).toEqual([]);
+      expect(await listMemberApplications(readerUrl.toString(),alice,other.organizationId)).toEqual([]);
+      await expect(listMemberApplications(databaseUrl!,alice,org.organizationId)).rejects.toThrow('nonprivileged');
+      const reader=new Client({connectionString:readerUrl.toString()});await reader.connect();
+      try {
+        await reader.query("SELECT set_config('company_human.user_id',$1,false)",[bob]);
+        expect((await reader.query('SELECT id FROM product_memberships WHERE organization_id=$1',[org.organizationId])).rowCount).toBe(0);
+        await reader.query("SELECT set_config('company_human.user_id',$1,false)",[alice]);
+        await expect(reader.query('SELECT external_member_id FROM product_memberships')).rejects.toThrow();
+        await expect(reader.query("UPDATE product_memberships SET desired_enabled=true WHERE id=$1",[ids[0]])).rejects.toThrow();
+      } finally {await reader.end();}
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).members).toEqual([]);
+      expect((await admin.query("SELECT provisioning_status,external_member_id FROM product_memberships WHERE id=$1",[ids[0]])).rows[0]).toEqual({provisioning_status:"pending",external_member_id:null});
+      expect((await admin.query("SELECT count(*)::int AS n FROM identity_audit_events WHERE target_id=$1 AND action='product.membership.requested'",[ids[0]])).rows[0].n).toBe(1);
+      await admin.query("UPDATE product_memberships SET policy_blocked=true WHERE id=$1",[ids[0]]);
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("reconciliation");
+      await admin.query("UPDATE product_memberships SET policy_blocked=false WHERE id=$1",[ids[0]]);
+      await expect(requestProductMembership(url.toString(),{...input,actorUserId:bob})).rejects.toThrow();
+      await expect(requestProductMembership(url.toString(),{...input,membershipId:other.ownerMembershipId})).rejects.toThrow();
+      await expect(admin.query(`INSERT INTO product_memberships (id,organization_id,product_instance_id,membership_id,created_by_user_id)
+        VALUES ($1,$2,$3,$4,$5)`,[createCanonicalId("productMembership"),org.organizationId,instance,other.ownerMembershipId,alice])).rejects.toThrow();
+      await runtime.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)",[bob,other.organizationId]);
+      expect((await runtime.query("SELECT id FROM product_memberships WHERE id=$1",[ids[0]])).rowCount).toBe(0);
+      await runtime.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)",[alice,org.organizationId]);
+      await expect(runtime.query("UPDATE product_memberships SET external_member_id='forged',provisioning_status='active' WHERE id=$1",[ids[0]])).rejects.toThrow();
+      await expect(runtime.query("DELETE FROM product_memberships WHERE id=$1",[ids[0]])).rejects.toThrow();
+      await runtime.query("UPDATE product_memberships SET desired_enabled=false WHERE id=$1",[ids[0]]);
+      await expect(runtime.query("UPDATE product_memberships SET desired_enabled=true WHERE id=$1",[ids[0]])).rejects.toThrow();
+      expect((await listMemberApplications(readerUrl.toString(),alice,org.organizationId))[0]?.status).toBe('access_update_pending');
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("reconciliation");
+      await admin.query("UPDATE product_instances SET desired_enabled=false WHERE id=$1",[instance]);
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("reconciliation");
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).available).toBe(false);
+    } finally {
+      await runtime.end();
+      for(const table of ["product_membership_commands","product_memberships","identity_audit_events","product_instances","memberships","roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
+      await admin.query("DELETE FROM organizations WHERE id=ANY($1)",[orgs]);await admin.query("DELETE FROM users WHERE auth_subject LIKE $1",[`pmem-%-${suffix}`]);
+      await admin.query('DELETE FROM products WHERE id=$1',[product]);
+      await admin.query(`DROP ROLE ${readerRole}`);await admin.query(`DROP ROLE ${role}`);await admin.end();
+    }
+  });
+});
