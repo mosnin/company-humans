@@ -111,6 +111,10 @@
     "./member-access-worker": {
       "types": "./dist/member-access-worker.d.ts",
       "default": "./dist/member-access-worker.js"
+    },
+    "./member-activation-readiness": {
+      "types": "./dist/member-activation-readiness.d.ts",
+      "default": "./dist/member-activation-readiness.js"
     }
   },
   "scripts": {

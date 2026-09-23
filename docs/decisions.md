@@ -127,3 +127,9 @@ Review reproduced an accepted signed event claiming a nonexistent human. A servi
 ### Fence every provider member access transition
 
 The existing V1 resume API has no revision precondition. A delayed resume could execute after suspension and restore access. A new additive ProductMemberAccessAdapterV1 requires one monotonic revision for activation, denial and removal, plus atomic comparison of the complete current capability and finite-limit policy. Legacy denial workers are not sufficient for a registration that enables fenced grants. No live provider registration is upgraded automatically.
+
+### Activation readiness remains closed without verified meter semantics — 2026-09-22
+
+Canonical application provisioning applies entitlements and budgets before granting member access. The catalog currently lists meter keys, while meter definitions record unit and aggregation; neither declares which operations are expensive or the provider's enforced reset windows. A configured finite quantity and a successful transport receipt cannot establish complete hard-stop coverage. A readiness diagnostic may report current local evidence, but must return `meter_semantics_unverified` until a versioned, provider-verified enforcement mapping exists. A later activation worker must independently recheck that mapping and all current evidence under a durable access fence. No historical receipt alone authorizes a grant.
+
+The member access command currently requires at least one limit. A product with zero catalog usage meters therefore has no representable active command. Keep such activation closed until the product contract explicitly defines whether it has no metered spend or requires a nonspend boundary; do not insert a fabricated limit. Phase 02's real Scalar lifecycle proof may use a dedicated test tenant with verified finite provider enforcement, while general production access remains gated by the Phase 03 hard-stop proof.
