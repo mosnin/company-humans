@@ -571,3 +571,9 @@ The focused diagnostic integration passed on hosted verification in 19.14 second
 ### Versioned meter enforcement declaration — 2026-09-22
 
 The shared contract now validates the shape of a claimed exhaustive variable-cost meter declaration, including meter definition version/unit/aggregation, finite UTC windows, organization/member scopes, pre-cost hard stop and accumulated-usage preservation. Revision 0 is allowed because new products begin there. This is schema-only preparation: the claim is not persisted or compared with catalog/registered meters, existing V1 limits cannot be matched by meter version, and Scalar has not verified enforcement. Activation remains blocked. A fresh local database replayed and seeded migrations 0001–0065; 351 tests passed (73 contracts, 43 database, 235 web), plus repository typecheck, lint and production build. CI and hosted release are separate gates.
+
+The declaration-only revision `e7dff945a5e14fa4f13a0c62308ca355ea5c04fc` passed CI run 35807613281 and deployed READY as `dpl_ZAgw3UDzEixMAh2GiVXrAapVkyfc`; the live health endpoint reports that exact revision. The deployment does not establish authenticated use or provider enforcement.
+
+### V2 usage-limit transport contract — 2026-09-22
+
+A distinct V2 finite-limit request, receipt and readback shape carries `meterVersion` with an explicit V2 adapter marker. Exact matching checks policy identity, target, scope, quantity, meter version, hard-stop mode and accounting. V1 adapters still serve their old scope; no V2 database field, worker, catalog registration or Scalar implementation exists. A fresh disposable PostgreSQL database replayed and seeded migrations 0001–0065, and 355 tests passed (77 contracts, 43 database, 235 web), followed by root typecheck, lint and production build. This is local contract verification only.

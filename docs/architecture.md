@@ -40,6 +40,8 @@ The server-only activation readiness diagnostic reads a repeatable tenant-scoped
 
 A shared version 1 meter enforcement declaration schema now describes a product's claimed variable-cost meter versions, units, aggregation, UTC windows and organization/member hard-stop scopes. It has no persistence or provider-verification flag. Existing V1 finite-limit policies and receipts carry no meter version, so declaration validation cannot establish limit coverage or change activation readiness.
 
+An additive V2 usage-limit adapter contract carries `meterVersion` through policy, request, successful provider state and exact readback matching. It rejects V1-only registrations for V2 calls. No storage, worker, provider registration or access decision consumes this contract yet; versioned readback alone cannot prove a hard stop before cost.
+
 Role-policy edits and membership role changes serialize through an organization authorization lock. Grant writes retain unchanged rows. Permission loss emits durable denial with authorization provenance, and an owner-only reconciliation covers preexisting gaps. Remote effects still require provider delivery/readback; restoring a role grant alone never activates access.
 
 ## Organization suspension access invalidation

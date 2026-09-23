@@ -10,6 +10,8 @@ export * from "./product-adapter-v2.js";
 
 export * from "./usage-limits.js";
 export * from "./usage-limit-adapter.js";
+export * from "./usage-limits-v2.js";
+export * from "./usage-limit-adapter-v2.js";
 export * from "./capability-adapter.js";
 
 export * from "./adapter-health.js";
