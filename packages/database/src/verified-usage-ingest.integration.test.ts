@@ -1,4 +1,5 @@
 import { Client } from "pg";
+import { readFile } from "node:fs/promises";
 import { expect, it } from "vitest";
 import { createCanonicalId, type EventEnvelopeV1 } from "@company-human/contracts";
 import { canonicalEventEnvelopeV1, signEventEnvelope } from "@company-human/contracts/signing";
@@ -21,6 +22,54 @@ it.skipIf(!url || !enabled)("stages a private signed usage verifier without runt
   await db.connect();
   await db.query("BEGIN");
   try {
+    const role = await db.query<{rolcanlogin:boolean;rolinherit:boolean;rolsuper:boolean;rolbypassrls:boolean;rolcreaterole:boolean;rolcreatedb:boolean;rolreplication:boolean;edges:string}>(`
+      SELECT writer.rolcanlogin,writer.rolinherit,writer.rolsuper,writer.rolbypassrls,
+        writer.rolcreaterole,writer.rolcreatedb,writer.rolreplication,
+        (SELECT count(*)::text FROM pg_catalog.pg_auth_members AS edge
+          WHERE edge.roleid=writer.oid OR edge.member=writer.oid) AS edges
+      FROM pg_catalog.pg_roles AS writer WHERE writer.rolname='company_human_verified_usage_writer'`);
+    expect(role.rows).toEqual([{rolcanlogin:false,rolinherit:false,rolsuper:false,
+      rolbypassrls:false,rolcreaterole:false,rolcreatedb:false,rolreplication:false,edges:"0"}]);
+    const runtimeRoles = await db.query<{rolname:string}>(`SELECT rolname FROM pg_catalog.pg_roles
+      WHERE rolname LIKE 'company_human_%' AND rolname <> 'company_human_verified_usage_writer'`);
+    for (const runtime of runtimeRoles.rows) {
+      const acl = await db.query<{can_execute:boolean;can_read_keys:boolean;can_read_revocations:boolean}>(`
+        SELECT pg_catalog.has_function_privilege($1,'company_human_private.ingest_verified_usage_v1(text,jsonb)','EXECUTE') AS can_execute,
+          pg_catalog.has_table_privilege($1,'company_human_private.usage_signing_keys','SELECT') AS can_read_keys,
+          pg_catalog.has_table_privilege($1,'company_human_private.usage_signing_key_revocations','SELECT') AS can_read_revocations`, [runtime.rolname]);
+      expect(acl.rows, runtime.rolname).toEqual([{can_execute:false,can_read_keys:false,can_read_revocations:false}]);
+    }
+    const publicAcl = await db.query<{function_execute:boolean;key_read:boolean;revocation_read:boolean;writer_schema_create:boolean}>(`
+      SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_proc AS routine,
+        LATERAL pg_catalog.aclexplode(COALESCE(routine.proacl,pg_catalog.acldefault('f',routine.proowner))) AS acl
+        WHERE routine.oid='company_human_private.ingest_verified_usage_v1(text,jsonb)'::regprocedure
+          AND acl.grantee=0 AND acl.privilege_type='EXECUTE') AS function_execute,
+        EXISTS (SELECT 1 FROM pg_catalog.pg_class AS relation,
+          LATERAL pg_catalog.aclexplode(COALESCE(relation.relacl,pg_catalog.acldefault('r',relation.relowner))) AS acl
+          WHERE relation.oid='company_human_private.usage_signing_keys'::regclass
+            AND acl.grantee=0 AND acl.privilege_type='SELECT') AS key_read,
+        EXISTS (SELECT 1 FROM pg_catalog.pg_class AS relation,
+          LATERAL pg_catalog.aclexplode(COALESCE(relation.relacl,pg_catalog.acldefault('r',relation.relowner))) AS acl
+          WHERE relation.oid='company_human_private.usage_signing_key_revocations'::regclass
+            AND acl.grantee=0 AND acl.privilege_type='SELECT') AS revocation_read,
+        pg_catalog.has_schema_privilege('company_human_verified_usage_writer','company_human_private','CREATE') AS writer_schema_create`);
+    expect(publicAcl.rows).toEqual([{function_execute:false,key_read:false,revocation_read:false,writer_schema_create:false}]);
+    const migrationSql = await readFile(new URL("../migrations/0076_verified_usage_ingest.sql", import.meta.url), "utf8");
+    await db.query("SAVEPOINT elevated_role");
+    await db.query("ALTER ROLE company_human_verified_usage_writer CREATEROLE");
+    await expect(db.query(migrationSql)).rejects.toThrow(/Unsafe verified usage writer role/i);
+    await db.query("ROLLBACK TO SAVEPOINT elevated_role");
+    await db.query("RELEASE SAVEPOINT elevated_role");
+    await db.query("SAVEPOINT member_role");
+    await db.query("GRANT company_human_verified_usage_writer TO company_human_app");
+    await expect(db.query(migrationSql)).rejects.toThrow(/Unsafe verified usage writer role/i);
+    await db.query("ROLLBACK TO SAVEPOINT member_role");
+    await db.query("RELEASE SAVEPOINT member_role");
+    await db.query("SAVEPOINT inherited_role");
+    await db.query("GRANT company_human_app TO company_human_verified_usage_writer");
+    await expect(db.query(migrationSql)).rejects.toThrow(/Unsafe verified usage writer role/i);
+    await db.query("ROLLBACK TO SAVEPOINT inherited_role");
+    await db.query("RELEASE SAVEPOINT inherited_role");
     const user = createCanonicalId("user");
     const organization = createCanonicalId("organization");
     const otherOrganization = createCanonicalId("organization");
@@ -80,8 +129,40 @@ it.skipIf(!url || !enabled)("stages a private signed usage verifier without runt
     await db.query("ROLLBACK TO SAVEPOINT secret_denial");
     await db.query("INSERT INTO company_human_private.usage_signing_key_revocations(key_id,reason) VALUES('fixture-key','test rotation')");
     await rejected(() => call(signedBody,signature), /scope denied/i);
+    await rejected(() => db.query("UPDATE company_human_private.usage_signing_keys SET active_until=clock_timestamp() WHERE key_id='fixture-key'"), /immutable/i);
+    await rejected(() => db.query("DELETE FROM company_human_private.usage_signing_keys WHERE key_id='fixture-key'"), /immutable/i);
+    await rejected(() => db.query("UPDATE company_human_private.usage_signing_key_revocations SET reason='rewrite' WHERE key_id='fixture-key'"), /immutable/i);
+    await rejected(() => db.query("DELETE FROM company_human_private.usage_signing_key_revocations WHERE key_id='fixture-key'"), /immutable/i);
   } finally {
     await db.query("ROLLBACK");
     await db.end();
+  }
+});
+
+it.skipIf(!url || !enabled)("fails closed when pgcrypto was installed outside public", async () => {
+  const target = new URL(url!);
+  if (!["127.0.0.1", "localhost", "::1"].includes(target.hostname)
+    || !target.pathname.slice(1).startsWith("company_human_0076_")) {
+    throw new Error("Extension test requires a disposable loopback company_human_0076_ database");
+  }
+  const name = `company_human_0076_extension_${crypto.randomUUID().replaceAll("-", "")}`;
+  const adminUrl = new URL(url!);
+  adminUrl.pathname = "/postgres";
+  const admin = new Client({ connectionString: adminUrl.toString() });
+  await admin.connect();
+  try {
+    await admin.query(`CREATE DATABASE ${name}`);
+    const isolatedUrl = new URL(url!);
+    isolatedUrl.pathname = `/${name}`;
+    const isolated = new Client({ connectionString: isolatedUrl.toString() });
+    await isolated.connect();
+    try {
+      await isolated.query("CREATE SCHEMA extensions");
+      await isolated.query("CREATE EXTENSION pgcrypto WITH SCHEMA extensions");
+    } finally { await isolated.end(); }
+    await expect(runMigrations(isolatedUrl.toString())).rejects.toThrow(/pgcrypto installed in public schema/i);
+  } finally {
+    await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+    await admin.end();
   }
 });

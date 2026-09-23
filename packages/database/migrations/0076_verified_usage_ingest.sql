@@ -4,13 +4,23 @@
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '60s';
 
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_catalog.pg_extension AS extension
+    JOIN pg_catalog.pg_namespace AS namespace ON namespace.oid = extension.extnamespace
+    WHERE extension.extname = 'pgcrypto' AND namespace.nspname <> 'public') THEN
+    RAISE EXCEPTION 'Verified usage ingest requires pgcrypto installed in public schema';
+  END IF;
+END $$;
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'company_human_verified_usage_writer') THEN
-    CREATE ROLE company_human_verified_usage_writer NOLOGIN NOSUPERUSER NOBYPASSRLS;
+    CREATE ROLE company_human_verified_usage_writer NOLOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS;
   ELSIF EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'company_human_verified_usage_writer'
-    AND (rolcanlogin OR rolsuper OR rolbypassrls)) THEN
+    AND (rolcanlogin OR rolinherit OR rolsuper OR rolbypassrls OR rolcreaterole OR rolcreatedb OR rolreplication))
+    OR EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members AS membership
+      JOIN pg_catalog.pg_roles AS writer ON writer.rolname = 'company_human_verified_usage_writer'
+      WHERE membership.roleid = writer.oid OR membership.member = writer.oid) THEN
     RAISE EXCEPTION 'Unsafe verified usage writer role';
   END IF;
 END $$;
@@ -195,6 +205,22 @@ GRANT CREATE ON SCHEMA company_human_private TO company_human_verified_usage_wri
 ALTER FUNCTION company_human_private.ingest_verified_usage_v1(text,jsonb)
   OWNER TO company_human_verified_usage_writer;
 REVOKE CREATE ON SCHEMA company_human_private FROM company_human_verified_usage_writer;
+-- PostgreSQL 16+ can self-grant SET membership to CREATEROLE at creation.
+-- It is needed only until function ownership transfers, and must not survive.
+DO $remove_temporary_membership$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members AS membership
+    JOIN pg_catalog.pg_roles AS writer ON writer.oid = membership.roleid
+    JOIN pg_catalog.pg_roles AS migrator ON migrator.oid = membership.member
+    WHERE writer.rolname = 'company_human_verified_usage_writer'
+      AND migrator.rolname = current_user) THEN
+    EXECUTE format('REVOKE company_human_verified_usage_writer FROM %I', current_user);
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members AS membership
+    JOIN pg_catalog.pg_roles AS writer ON writer.rolname = 'company_human_verified_usage_writer'
+    WHERE membership.roleid = writer.oid OR membership.member = writer.oid) THEN
+    RAISE EXCEPTION 'Verified usage writer role retains a membership edge';
+  END IF;
+END $remove_temporary_membership$;
 
 SET LOCAL lock_timeout = DEFAULT;
 SET LOCAL statement_timeout = DEFAULT;
