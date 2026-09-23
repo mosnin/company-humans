@@ -577,3 +577,9 @@ The declaration-only revision `e7dff945a5e14fa4f13a0c62308ca355ea5c04fc` passed 
 ### V2 usage-limit transport contract — 2026-09-22
 
 A distinct V2 finite-limit request, receipt and readback shape carries `meterVersion` with an explicit V2 adapter marker. Exact matching checks policy identity, target, scope, quantity, meter version, hard-stop mode and accounting. V1 adapters still serve their old scope; no V2 database field, worker, catalog registration or Scalar implementation exists. A fresh disposable PostgreSQL database replayed and seeded migrations 0001–0065, and 355 tests passed (77 contracts, 43 database, 235 web), followed by root typecheck, lint and production build. This is local contract verification only.
+
+[CI run 35808226396](https://github.com/mosnin/company-humans/actions/runs/35808226396) passed the V2 contract revision `c6c9e86327e6b7b8c7018d27be6fc87b43cd602e`. Production Vercel deployment `dpl_3mbyAHYu6ye7fZd5L3uddNGQh2KG` is READY and aliased to https://company-humans.vercel.app. Live health reports that exact SHA; anonymous organizations and unsigned usage POST return 401, while Apps redirects to sign-in. Real authenticated Google/email and provider enforcement remain unverified.
+
+### Versioned limit storage fence — 2026-09-22
+
+Migration 0066 adds contract and meter version columns without changing historical V1 rows. A V2 row must identify a positive meter version, does not enqueue a V1 job, cannot be followed by a V1 downgrade, and cannot be written through the current budget service role. The V1 worker also rejects a V2 row before forming provider state. Existing V1 configuration and delivery remain intact. The focused storage and worker integrations passed; a fresh disposable database replayed and seeded 0001–0066 and passed all 355 automated tests (77 contracts, 43 database, 235 web). Root typecheck, lint and production build passed. No V2 writer or remote provider enforcement exists.

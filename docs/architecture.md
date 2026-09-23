@@ -42,6 +42,8 @@ A shared version 1 meter enforcement declaration schema now describes a product'
 
 An additive V2 usage-limit adapter contract carries `meterVersion` through policy, request, successful provider state and exact readback matching. It rejects V1-only registrations for V2 calls. No storage, worker, provider registration or access decision consumes this contract yet; versioned readback alone cannot prove a hard stop before cost.
 
+The additive revision-storage migration now preserves V1 history with an explicit contract version and reserves a positive meter-version field for V2. It prevents V2 revisions from entering the V1 dispatch journal or being interpreted by the V1 worker. A V2 write and delivery path remains absent, so the activation gate is unchanged.
+
 Role-policy edits and membership role changes serialize through an organization authorization lock. Grant writes retain unchanged rows. Permission loss emits durable denial with authorization provenance, and an owner-only reconciliation covers preexisting gaps. Remote effects still require provider delivery/readback; restoring a role grant alone never activates access.
 
 ## Organization suspension access invalidation

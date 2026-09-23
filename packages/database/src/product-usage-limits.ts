@@ -26,11 +26,12 @@ export async function setProductUsageLimit(url: string, input: z.input<typeof Ch
       if (member.rowCount !== 1) throw new Error("Membership unavailable");
     }
     await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [JSON.stringify(["usage-limit", parsed.organizationId, parsed.productInstanceId, parsed.membershipId, parsed.meterKey, parsed.window])]);
-    const existing = await client.query<{ id: string; unit: string; revision: number; maximum_quantity: string }>(`SELECT l.id,l.unit,COALESCE(r.revision,0) AS revision,r.maximum_quantity FROM public.product_usage_limits l
-      LEFT JOIN LATERAL (SELECT revision,maximum_quantity FROM public.product_usage_limit_revisions WHERE organization_id=l.organization_id AND usage_limit_id=l.id ORDER BY revision DESC LIMIT 1) r ON true
+    const existing = await client.query<{ id: string; unit: string; revision: number; contract_version: number | null; maximum_quantity: string }>(`SELECT l.id,l.unit,COALESCE(r.revision,0) AS revision,r.contract_version,r.maximum_quantity FROM public.product_usage_limits l
+      LEFT JOIN LATERAL (SELECT revision,contract_version,maximum_quantity FROM public.product_usage_limit_revisions WHERE organization_id=l.organization_id AND usage_limit_id=l.id ORDER BY revision DESC LIMIT 1) r ON true
       WHERE l.organization_id=$1 AND l.product_instance_id=$2 AND l.membership_id IS NOT DISTINCT FROM $3 AND l.meter_key=$4 AND l.window_key=$5`,
     [parsed.organizationId, parsed.productInstanceId, parsed.membershipId, parsed.meterKey, parsed.window]);
     const previous = existing.rows[0];
+    if (previous && previous.contract_version !== 1) throw new UsageLimitConflict();
     if ((previous?.revision ?? 0) !== parsed.expectedRevision) throw new UsageLimitConflict();
     if (previous && previous.unit !== parsed.unit) throw new Error("Usage limit unit is immutable");
     // A known historical meter may still be stopped if its catalog entry disappears.

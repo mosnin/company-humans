@@ -141,3 +141,7 @@ An additive version 1 declaration describes a claimed complete variable-cost met
 ### Carry exact meter version in a new limit transport — 2026-09-22
 
 The existing usage-limit V1 policy and provider readback omit meter version. Preserve that contract for historical jobs and add a distinct V2 policy/readback shape with a required meter version. V2 matching compares the version with every other immutable limit, target, scope and enforcement field. A registration must explicitly implement the V2 methods and marker; V1-only adapters are rejected for V2 work. No existing worker is switched to V2, and no database column, manifest registration or provider has yet proven compatibility. The V1 member access command still accepts V1 limit states, so this contract alone cannot activate a member.
+
+### Reserve versioned limit storage without dispatch — 2026-09-22
+
+Add a contract version and meter version to limit revision rows, retaining V1 as the historical default. Restrict the current service writer to its original columns. Do not enqueue V2 revisions on the V1 journal, reject V2 rows in the V1 worker, and forbid V2-to-V1 downgrades. This creates a fail-closed migration path for a future dedicated V2 writer and worker; it does not register meters or establish provider enforcement.

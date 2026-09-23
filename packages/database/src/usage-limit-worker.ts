@@ -10,12 +10,13 @@ interface Row {
   organization_id: string; usage_limit_id: string; revision: number; status: string; attempt_count: number;
   lease_token: string | null; expired: boolean; latest: boolean; eligible: boolean;
   product_instance_id: string; membership_id: string | null; meter_key: string; unit: string; window_key: string; maximum_quantity: string;
+  contract_version: number; meter_version: number | null;
   external_organization_id: string | null; external_member_id: string | null; catalog_metadata: unknown;
   access_revision:string|null; claimed_access_revision:string|null;
 }
 export interface UsageLimitLease { productId: ProductId; state: AppliedUsageLimitState; leaseToken: string; attemptNumber: number; idempotencyKey: string; }
 const selection = `SELECT j.*,j.lease_expires_at<=clock_timestamp() AS expired,l.product_instance_id,l.membership_id,l.meter_key,l.unit,l.window_key,
-  r.maximum_quantity,i.external_organization_id,pm.external_member_id,pm.access_revision,attempt.claimed_access_revision,p.catalog_metadata,
+  r.maximum_quantity,r.contract_version,r.meter_version,i.external_organization_id,pm.external_member_id,pm.access_revision,attempt.claimed_access_revision,p.catalog_metadata,
   NOT EXISTS (SELECT 1 FROM public.product_usage_limit_revisions newer WHERE newer.usage_limit_id=l.id AND newer.revision>j.revision) AS latest,
   (r.maximum_quantity=0 OR (o.status='active' AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status='ready'
     AND (l.membership_id IS NULL OR (m.status='active' AND u.status='active' AND pm.desired_enabled
@@ -39,6 +40,7 @@ const selection = `SELECT j.*,j.lease_expires_at<=clock_timestamp() AS expired,l
   LEFT JOIN public.usage_limit_attempts attempt ON attempt.organization_id=j.organization_id
     AND attempt.usage_limit_id=j.usage_limit_id AND attempt.revision=j.revision AND attempt.attempt_number=j.attempt_count`;
 function stateFor(row: Row): AppliedUsageLimitState | null {
+  if (row.contract_version !== 1 || row.meter_version !== null) return null;
   const parsed = AppliedUsageLimitStateSchema.safeParse({ schemaVersion: 1,
     limit: { schemaVersion: 1, usageLimitId: row.usage_limit_id, organizationId: row.organization_id, productInstanceId: row.product_instance_id,
       membershipId: row.membership_id, meterKey: row.meter_key, unit: row.unit, window: row.window_key, revision: row.revision, maximumQuantity: row.maximum_quantity },

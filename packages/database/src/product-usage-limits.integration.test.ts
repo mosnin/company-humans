@@ -87,15 +87,15 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       expect((await runtime.query("SELECT * FROM usage_limit_attempts WHERE usage_limit_id=$1", [id])).rowCount).toBe(0);
       await expect(runtime.query("INSERT INTO usage_limit_jobs(organization_id,usage_limit_id,revision) VALUES($1,$2,3)", [org.organizationId,id])).rejects.toThrow();
       await expect(admin.query("INSERT INTO usage_limit_jobs(organization_id,usage_limit_id,revision) VALUES($1,$2,4)", [other.organizationId,id])).rejects.toThrow();
-      await expect(runtime.query("INSERT INTO product_usage_limit_revisions VALUES($1,$2,4,1,$3,now())", [org.organizationId, id, bob])).rejects.toThrow();
+      await expect(runtime.query("INSERT INTO product_usage_limit_revisions(organization_id,usage_limit_id,revision,maximum_quantity,actor_user_id) VALUES($1,$2,4,1,$3)", [org.organizationId, id, bob])).rejects.toThrow();
       await runtime.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)", [alice, org.organizationId]);
       expect((await runtime.query("SELECT * FROM usage_limit_jobs WHERE usage_limit_id=$1", [id])).rowCount).toBe(3);
       await expect(runtime.query("UPDATE usage_limit_jobs SET status='succeeded' WHERE usage_limit_id=$1", [id])).rejects.toThrow();
       await expect(runtime.query("DELETE FROM usage_limit_jobs WHERE usage_limit_id=$1", [id])).rejects.toThrow();
       await expect(runtime.query("INSERT INTO usage_limit_jobs(organization_id,usage_limit_id,revision,status) VALUES($1,$2,4,'succeeded')", [org.organizationId,id])).rejects.toThrow();
       await expect(runtime.query("INSERT INTO usage_limit_attempts(organization_id,usage_limit_id,revision,attempt_number,lease_token) VALUES($1,$2,3,1,gen_random_uuid())", [org.organizationId,id])).rejects.toThrow();
-      await expect(runtime.query("INSERT INTO product_usage_limit_revisions VALUES($1,$2,5,1,$3,now())", [org.organizationId, id, alice])).rejects.toThrow("must follow");
-      for (const invalid of ["-1", "NaN", "Infinity", "0.0000001", "1000000000000"]) await expect(runtime.query("INSERT INTO product_usage_limit_revisions VALUES($1,$2,4,$3,$4,now())", [org.organizationId, id, invalid, alice])).rejects.toThrow();
+      await expect(runtime.query("INSERT INTO product_usage_limit_revisions(organization_id,usage_limit_id,revision,maximum_quantity,actor_user_id) VALUES($1,$2,5,1,$3)", [org.organizationId, id, alice])).rejects.toThrow("must follow");
+      for (const invalid of ["-1", "NaN", "Infinity", "0.0000001", "1000000000000"]) await expect(runtime.query("INSERT INTO product_usage_limit_revisions(organization_id,usage_limit_id,revision,maximum_quantity,actor_user_id) VALUES($1,$2,4,$3,$4)", [org.organizationId, id, invalid, alice])).rejects.toThrow();
       await expect(runtime.query("UPDATE product_usage_limit_revisions SET maximum_quantity=100 WHERE usage_limit_id=$1", [id])).rejects.toThrow();
       await expect(runtime.query("DELETE FROM product_usage_limit_revisions WHERE usage_limit_id=$1", [id])).rejects.toThrow();
       await expect(admin.query("INSERT INTO product_usage_limits(id,organization_id,product_instance_id,membership_id,meter_key,unit,window_key,created_by_user_id) VALUES($1,$2,$3,$4,'other','lead','utc_day',$5)", [createCanonicalId("usageLimit"), org.organizationId, instance, other.ownerMembershipId, alice])).rejects.toThrow();
@@ -113,6 +113,25 @@ describe.skipIf(!databaseUrl)("finite product usage limit history", () => {
       await expect(readApplicationUsageLimits(url.toString(), bob, org.organizationId, instance)).rejects.toThrow("administration denied");
       await runtime.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)", [bob, org.organizationId]);
       expect((await runtime.query("SELECT * FROM product_usage_limits WHERE id=$1", [id])).rowCount).toBe(0);
+      // A V2 revision is a privileged storage fixture, never a V1 provider job.
+      expect((await admin.query("SELECT DISTINCT contract_version,meter_version FROM product_usage_limit_revisions WHERE usage_limit_id=$1", [id])).rows)
+        .toEqual([{ contract_version: 1, meter_version: null }]);
+      await runtime.query("SELECT set_config('company_human.user_id',$1,false),set_config('company_human.organization_id',$2,false)", [alice, org.organizationId]);
+      await expect(runtime.query(`INSERT INTO product_usage_limit_revisions
+        (organization_id,usage_limit_id,revision,maximum_quantity,actor_user_id,contract_version,meter_version)
+        VALUES($1,$2,4,0,$3,2,3)`, [org.organizationId,id,alice])).rejects.toThrow("permission denied");
+      await expect(admin.query(`INSERT INTO product_usage_limit_revisions
+        (organization_id,usage_limit_id,revision,maximum_quantity,actor_user_id,contract_version,meter_version)
+        VALUES($1,$2,4,0,$3,2,0)`, [org.organizationId,id,alice])).rejects.toThrow();
+      await admin.query(`INSERT INTO product_usage_limit_revisions
+        (organization_id,usage_limit_id,revision,maximum_quantity,actor_user_id,contract_version,meter_version)
+        VALUES($1,$2,4,0,$3,2,3)`, [org.organizationId,id,alice]);
+      expect((await admin.query("SELECT revision FROM usage_limit_jobs WHERE usage_limit_id=$1 ORDER BY revision", [id])).rows)
+        .toEqual([{ revision: 1 }, { revision: 2 }, { revision: 3 }]);
+      await expect(setProductUsageLimit(url.toString(), { ...input, maximumQuantity: "0", expectedRevision: 4 })).rejects.toThrow("Reload");
+      await expect(admin.query(`INSERT INTO product_usage_limit_revisions
+        (organization_id,usage_limit_id,revision,maximum_quantity,actor_user_id)
+        VALUES($1,$2,5,0,$3)`, [org.organizationId,id,alice])).rejects.toThrow("cannot return to V1");
     } finally {
       await runtime.end();
       for (const table of ["usage_limit_attempts", "usage_limit_jobs", "product_usage_limit_revisions", "product_usage_limits", "identity_audit_events", "product_instances", "memberships", "roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`, [orgs]);

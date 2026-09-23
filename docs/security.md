@@ -247,3 +247,5 @@ Migration0064 restricts new product-membership inserts to the current tenant, cu
 ## Activation readiness is advisory
 
 The activation readiness reader uses the restricted service role and requires both applications.manage and budgets.manage in the requested organization. It reads one repeatable, read-only snapshot and returns no raw provider receipt or credential. A foreign mapping has no visible data. The diagnostic never enables a member or claims complete provider enforcement. Any later grant must use a separate restricted worker, current tenant and policy checks, a monotonic access revision, complete finite policy coverage, and provider readback.
+
+Migration 0066 narrows the budget service role to the original V1 revision columns. Its direct SQL cannot assert a V2 meter version; V2 revisions are excluded from the V1 job trigger and rejected by the V1 worker. This is a storage and dispatch boundary, not certification of a meter or provider hard stop.
