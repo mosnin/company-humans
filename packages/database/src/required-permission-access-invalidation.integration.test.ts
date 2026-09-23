@@ -36,7 +36,7 @@ it.skipIf(!url)('invalidates every missing catalog permission with fenced, tenan
  const members=[[memberA,orgs[0],users[1]],[memberB,orgs[1],users[1]],[moveMember,orgs[0],users[2]],[pendingMember,orgs[0],users[3]],[roleMember,orgs[0],users[4]],[legacyMember,orgs[0],users[5]]] as const;
  const pRequired=createCanonicalId('product'),pSimple=createCanonicalId('product');
  const productIds=[pRequired,pSimple];
- const metadata={schemaVersion:1,description:'Fixture',category:'sales',supportedCapabilities:[],provisioningModes:['connected'],supportedMemberOperations:['suspend'],usageMeters:[],requiredPermissions:['product.use','billing.read.all'],adapterVersion:'1.0.0',billingBehavior:'organization_sponsored',deepLinks:{},connectionRequirements:[]};
+ const metadata={schemaVersion:1,description:'Fixture',category:'sales',supportedCapabilities:[],provisioningModes:['connected'],supportedMemberOperations:['provision','suspend'],usageMeters:[],requiredPermissions:['product.use','billing.read.all'],adapterVersion:'1.0.0',billingBehavior:'organization_sponsored',deepLinks:{},connectionRequirements:[]};
  const instances=new Map<string,string>();
  const instance=(org:string,product:string)=>instances.get(`${org}:${product}`)!;
  const mappingIds:string[]=[];
@@ -152,8 +152,13 @@ it.skipIf(!url)('invalidates every missing catalog permission with fenced, tenan
   expect(await missingPermission(orgs[0]!,contributorA,malformed)).toBe('catalog.invalid');
   const malformedInstance=createCanonicalId('productInstance');
   await admin.query("INSERT INTO product_instances(id,organization_id,product_id,instance_key,mode,provisioning_status,external_organization_id,created_by_user_id) VALUES($1,$2,$3,'invalid','connected','active',$2,$4)",[malformedInstance,orgs[0],malformed,users[0]]);
-  const malformedMapping=await requestProductMembership(service,{actorUserId:users[0]!,organizationId:orgs[0]!,productInstanceId:malformedInstance,membershipId:legacyMember});
-  await admin.query("UPDATE product_memberships SET external_member_id=id,provider_receipt_reference='legacy',provisioned_at=now(),provisioning_status='active' WHERE id=$1",[malformedMapping]);
+  // Model a bound historical row predating request-time catalog validation.
+  // A current service request for this malformed catalog must fail closed.
+  await expect(requestProductMembership(service,{actorUserId:users[0]!,organizationId:orgs[0]!,productInstanceId:malformedInstance,membershipId:legacyMember})).rejects.toThrow('unavailable');
+  const malformedMapping=createCanonicalId('productMembership');
+  await admin.query(`INSERT INTO product_memberships(id,organization_id,product_instance_id,membership_id,created_by_user_id,
+    external_member_id,provider_receipt_reference,provisioned_at,provisioning_status)
+    VALUES($1,$2,$3,$4,$5,$1,'legacy',now(),'active')`,[malformedMapping,orgs[0],malformedInstance,legacyMember,users[0]]);
   expect(await historical()).toBe(1);
   expect((await authorizations(malformedMapping))[0].source_authorization).toMatchObject({reason:'preexisting_authorization_gap',permission:'catalog.invalid'});
   const nonArray=createCanonicalId('product');productIds.push(nonArray);

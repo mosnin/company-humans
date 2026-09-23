@@ -6,7 +6,6 @@ import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { inviteMember,acceptInvitation,changeMembershipStatus } from "./membership-lifecycle.js";
 import { requestProductMembership } from "./product-memberships.js";
-import { referenceProductId } from "./seed.js";
 const databaseUrl=process.env.DATABASE_URL;
 describe.skipIf(!databaseUrl)("product membership offboarding",()=>{
   it("denies product intent atomically, preserves provider state, and does not restore old access on reinvitation",async()=>{
@@ -14,11 +13,15 @@ describe.skipIf(!databaseUrl)("product membership offboarding",()=>{
     const admin=new Client({connectionString:databaseUrl});await admin.connect();
     await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}'`);await admin.query(`GRANT company_human_service TO ${role}`);
     const url=new URL(databaseUrl!);url.username=role;url.password=password;
-    const users:UserId[]=[];let organizationId:string|undefined;
+    const users:UserId[]=[];let organizationId:string|undefined;const fixtureProduct=createCanonicalId('product');
     try {
       for(const name of ["owner","admin","member"]) users.push(await syncAuthUser(databaseUrl!,{authIssuer:"https://identity.example.test",authSubject:`offboard-${name}-${suffix}`,primaryEmail:`${name}-${suffix}@example.test`,displayName:name,status:"active",eventTimestamp:1}));
       const [owner,manager,member]=users;
       const org=await createOrganization(databaseUrl!,{ownerUserId:owner!,name:"Offboarding",slug:`offboard-${suffix}`});organizationId=org.organizationId;
+      await admin.query("INSERT INTO products(id,product_key,display_name,catalog_status,catalog_metadata) VALUES($1,$2,'Offboarding fixture','ready',$3)",
+        [fixtureProduct,`offboard-${suffix}`,{schemaVersion:1,description:'Offboarding fixture',category:'sales',supportedCapabilities:[],
+          provisioningModes:['connected'],supportedMemberOperations:['provision','suspend','remove'],usageMeters:[],requiredPermissions:['product.use'],
+          adapterVersion:'1.0.0',billingBehavior:'organization_sponsored',deepLinks:{},connectionRequirements:[]}]);
       async function join(userId:UserId,name:string,roleKey:"admin"|"contributor") {
         const invitation=await inviteMember(url.toString(),{actorUserId:owner!,organizationId:org.organizationId,recipientEmail:`${name}-${suffix}@example.test`,roleKey,expiresAt:new Date(Date.now()+86400000)});
         return acceptInvitation(url.toString(),invitation.token,userId,`${name}-${suffix}@example.test`);
@@ -28,7 +31,7 @@ describe.skipIf(!databaseUrl)("product membership offboarding",()=>{
       await admin.query("DELETE FROM role_permissions WHERE organization_id=$1 AND permission_key='applications.manage' AND role_id IN (SELECT id FROM roles WHERE organization_id=$1 AND key='admin')",[organizationId]);
       const instance=createCanonicalId("productInstance");
       await admin.query(`INSERT INTO product_instances (id,organization_id,product_id,instance_key,mode,provisioning_status,external_organization_id,created_by_user_id)
-        VALUES ($1,$2,$3,'primary','connected','active',$4,$5)`,[instance,organizationId,referenceProductId("scalar"),`fixture-${suffix}`,owner]);
+        VALUES ($1,$2,$3,'primary','connected','active',$4,$5)`,[instance,organizationId,fixtureProduct,`fixture-${suffix}`,owner]);
       const mapping=await requestProductMembership(url.toString(),{actorUserId:owner!,organizationId,productInstanceId:instance,membershipId});
       const change=(action:"suspend"|"reactivate"|"remove")=>changeMembershipStatus(url.toString(),{actorUserId:manager!,organizationId:organizationId!,membershipId,action});
       await expect(changeMembershipStatus(url.toString(),{actorUserId:member!,organizationId,membershipId,action:"suspend"})).rejects.toThrow();
@@ -61,7 +64,7 @@ describe.skipIf(!databaseUrl)("product membership offboarding",()=>{
       // Race a second product mapping with suspension: no enabled mapping may survive.
       const second=createCanonicalId("productInstance");
       await admin.query(`INSERT INTO product_instances (id,organization_id,product_id,instance_key,mode,provisioning_status,external_organization_id,created_by_user_id)
-        VALUES ($1,$2,$3,'secondary','connected','active',$4,$5)`,[second,organizationId,referenceProductId("scalar"),`fixture-second-${suffix}`,owner]);
+        VALUES ($1,$2,$3,'secondary','connected','active',$4,$5)`,[second,organizationId,fixtureProduct,`fixture-second-${suffix}`,owner]);
       const results=await Promise.allSettled([requestProductMembership(url.toString(),{actorUserId:owner!,organizationId,productInstanceId:second,membershipId}),change("suspend")]);
       if (results[1]!.status === "rejected") throw results[1]!.reason;
       expect(results[1]!.status).toBe("fulfilled");
@@ -70,7 +73,7 @@ describe.skipIf(!databaseUrl)("product membership offboarding",()=>{
       // parent's uncommitted transition, then ensure it rejects the new status.
       const third=createCanonicalId("productInstance");
       await admin.query(`INSERT INTO product_instances (id,organization_id,product_id,instance_key,mode,provisioning_status,external_organization_id,created_by_user_id)
-        VALUES ($1,$2,$3,'third','connected','active',$4,$5)`,[third,organizationId,referenceProductId("scalar"),`fixture-third-${suffix}`,owner]);
+        VALUES ($1,$2,$3,'third','connected','active',$4,$5)`,[third,organizationId,fixtureProduct,`fixture-third-${suffix}`,owner]);
       await admin.query("UPDATE memberships SET status='active' WHERE id=$1",[membershipId]);
       const concurrent=new Client({connectionString:url.toString()});await concurrent.connect();
       let insertion:Promise<unknown>|undefined;
@@ -93,6 +96,7 @@ describe.skipIf(!databaseUrl)("product membership offboarding",()=>{
 
     } finally {
       if(organizationId) {for(const table of ["member_denial_attempts","member_denial_jobs","product_membership_commands","product_memberships","identity_audit_events","membership_invitations","product_instances","memberships","roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=$1`,[organizationId]);await admin.query("DELETE FROM organizations WHERE id=$1",[organizationId]);}
+      await admin.query('DELETE FROM products WHERE id=$1',[fixtureProduct]);
       await admin.query("DELETE FROM users WHERE id=ANY($1)",[users]);await admin.query(`DROP ROLE ${role}`);await admin.end();
     }
   });

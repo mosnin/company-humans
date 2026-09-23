@@ -6,7 +6,6 @@ import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { disableProductInstance, enableProductInstance } from "./product-instances.js";
 import { requestProductMembership } from "./product-memberships.js";
-import { referenceProductId } from "./seed.js";
 const databaseUrl=process.env.DATABASE_URL;
 describe.skipIf(!databaseUrl)("product disable boundary",()=>{
   it("atomically denies mappings, persists suspension, rejects foreign actors and fences concurrent insertion",async()=>{
@@ -14,16 +13,20 @@ describe.skipIf(!databaseUrl)("product disable boundary",()=>{
     const admin=new Client({connectionString:databaseUrl});await admin.connect();
     await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}'`);await admin.query(`GRANT company_human_service TO ${role}`);
     const url=new URL(databaseUrl!);url.username=role;url.password=password;
-    const users:UserId[]=[];const orgIds:string[]=[];
+    const users:UserId[]=[];const orgIds:string[]=[],fixtureProduct=createCanonicalId('product');
     try {
       for(const name of ["owner","foreign"]) users.push(await syncAuthUser(databaseUrl!,{authIssuer:"https://identity.example.test",authSubject:`disable-${name}-${suffix}`,primaryEmail:null,displayName:name,status:"active",eventTimestamp:1}));
       const org=await createOrganization(databaseUrl!,{ownerUserId:users[0]!,name:"Disable",slug:`disable-${suffix}`});orgIds.push(org.organizationId);
       const foreign=await createOrganization(databaseUrl!,{ownerUserId:users[1]!,name:"Foreign",slug:`foreign-${suffix}`});orgIds.push(foreign.organizationId);
+      await admin.query("INSERT INTO products(id,product_key,display_name,catalog_status,catalog_metadata) VALUES($1,$2,'Disable fixture','ready',$3)",
+        [fixtureProduct,`disable-${suffix}`,{schemaVersion:1,description:'Disable fixture',category:'sales',supportedCapabilities:[],
+          provisioningModes:['connected'],supportedMemberOperations:['provision','suspend'],usageMeters:[],requiredPermissions:['product.use'],
+          adapterVersion:'1.0.0',billingBehavior:'organization_sponsored',deepLinks:{},connectionRequirements:[]}]);
       const membershipId=(await admin.query("SELECT id FROM memberships WHERE organization_id=$1 AND user_id=$2",[org.organizationId,users[0]])).rows[0].id;
       async function fixture(key:string) {
         const id=createCanonicalId("productInstance");
         await admin.query(`INSERT INTO product_instances (id,organization_id,product_id,instance_key,mode,provisioning_status,external_organization_id,created_by_user_id)
-          VALUES ($1,$2,$3,$4,'connected','active',$5,$6)`,[id,org.organizationId,referenceProductId("scalar"),key,`fixture-${key}-${suffix}`,users[0]]);
+          VALUES ($1,$2,$3,$4,'connected','active',$5,$6)`,[id,org.organizationId,fixtureProduct,key,`fixture-${key}-${suffix}`,users[0]]);
         return id;
       }
       const instance=await fixture("primary");
@@ -44,8 +47,8 @@ describe.skipIf(!databaseUrl)("product disable boundary",()=>{
       expect((await admin.query("SELECT desired_enabled,desired_revision,provisioning_status FROM product_memberships WHERE id=$1",[mapping])).rows[0]).toEqual({desired_enabled:false,desired_revision:2,provisioning_status:"pending"});
       expect((await admin.query("SELECT operation,desired_revision FROM product_membership_commands WHERE product_membership_id=$1 ORDER BY desired_revision",[mapping])).rows).toEqual([{operation:"provisionMember",desired_revision:1},{operation:"suspendMember",desired_revision:2}]);
       expect((await admin.query("SELECT count(*)::int AS n FROM identity_audit_events WHERE target_id=$1 AND action='product.instance.disabled'",[instance])).rows[0].n).toBe(1);
-      await expect(enableProductInstance(url.toString(),{actorUserId:users[0]!,organizationId:org.organizationId,productId:referenceProductId("scalar"),mode:"connected"})).rejects.toThrow("requires reconciliation");
-      await expect(requestProductMembership(url.toString(),{...scope,membershipId})).rejects.toThrow("unavailable");
+      await expect(enableProductInstance(url.toString(),{actorUserId:users[0]!,organizationId:org.organizationId,productId:fixtureProduct,mode:"connected"})).rejects.toThrow("requires reconciliation");
+      await expect(requestProductMembership(url.toString(),{...scope,membershipId})).rejects.toThrow("reconciliation");
       // Race the public services: any inserted mapping must be denied at commit.
       const second=await fixture("second");
       const raced=await Promise.allSettled([requestProductMembership(url.toString(),{...scope,productInstanceId:second,membershipId}),disableProductInstance(url.toString(),{...scope,productInstanceId:second})]);
@@ -74,7 +77,7 @@ describe.skipIf(!databaseUrl)("product disable boundary",()=>{
       } finally {await admin.query("ROLLBACK");await insertion;await runtime.end();}
     } finally {
       for(const table of ["member_denial_attempts","member_denial_jobs","product_membership_commands","product_memberships","identity_audit_events","product_instances","memberships","roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgIds]);
-      await admin.query("DELETE FROM organizations WHERE id=ANY($1)",[orgIds]);await admin.query("DELETE FROM users WHERE id=ANY($1)",[users]);await admin.query(`DROP ROLE ${role}`);await admin.end();
+      await admin.query("DELETE FROM organizations WHERE id=ANY($1)",[orgIds]);await admin.query("DELETE FROM products WHERE id=$1",[fixtureProduct]);await admin.query("DELETE FROM users WHERE id=ANY($1)",[users]);await admin.query(`DROP ROLE ${role}`);await admin.end();
     }
   });
 });

@@ -27,7 +27,7 @@ it.skipIf(!url)('serializes catalog changes with suspended bindings and fences s
  const orgs=[a.organizationId,b.organizationId],product=createCanonicalId('product');
  const metadata={schemaVersion:1,category:'sales',description:'Fixture',supportedCapabilities:['read'],usageMeters:[],
   requiredPermissions:['product.use'],adapterVersion:'1.0.0',provisioningModes:['connected'],
-  supportedMemberOperations:['suspend'],billingBehavior:'organization_sponsored',connectionRequirements:[],deepLinks:{}};
+  supportedMemberOperations:['provision','suspend'],billingBehavior:'organization_sponsored',connectionRequirements:[],deepLinks:{}};
  const instances=[createCanonicalId('productInstance'),createCanonicalId('productInstance')];
  const members=[a.ownerMembershipId,b.ownerMembershipId];
  const extraMembers=[createCanonicalId('membership'),createCanonicalId('membership')];

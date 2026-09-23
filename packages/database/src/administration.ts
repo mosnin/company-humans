@@ -226,20 +226,27 @@ export async function listApplicationMemberCandidates(databaseUrl:string,actorUs
   const currentPage=Number.isSafeInteger(page)&&page>0?Math.min(page,100000):1;
   const query=search.trim().slice(0,128);
   return readAdministration(databaseUrl,actorUserId,organizationId,['applications.manage'],async client=>{
-    const instance=await client.query<{productName:string;available:boolean}>(`SELECT p.display_name AS "productName",
-      (i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status='ready') AS available
+    const instance=await client.query<{productName:string;available:boolean;mode:string;catalog_metadata:unknown}>(`SELECT p.display_name AS "productName",i.mode,
+      (i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status='ready'
+        AND company_human_private.ready_catalog_metadata_valid(p.catalog_metadata)) AS available,p.catalog_metadata
       FROM public.product_instances i JOIN public.products p ON p.id=i.product_id
       WHERE i.organization_id=$1 AND i.id=$2`,[organizationId,instanceId]);
-    if(!instance.rows[0])throw new AdministrationDenied();
+    const currentInstance=instance.rows[0];
+    if(!currentInstance)throw new AdministrationDenied();
+    const metadata=ProductCatalogMetadataV1Schema.safeParse(currentInstance.catalog_metadata);
+    const available=currentInstance.available && metadata.success
+      && metadata.data.provisioningModes.some(mode=>mode===currentInstance.mode)
+      && metadata.data.supportedMemberOperations.includes('provision');
     const filter=`FROM public.memberships m JOIN public.users u ON u.id=m.user_id
       WHERE m.organization_id=$1 AND m.status='active' AND u.status='active'
       AND COALESCE(u.display_name,'Member') ILIKE $3
+      AND company_human_private.member_request_eligible($1,$2,m.id)
       AND NOT EXISTS (SELECT 1 FROM public.product_memberships pm WHERE pm.organization_id=m.organization_id AND pm.membership_id=m.id AND pm.product_instance_id=$2)`;
-    if(!instance.rows[0].available)return {productName:instance.rows[0].productName,available:false,members:[] as {id:string;name:string}[],total:0,page:currentPage,search:query};
+    if(!available)return {productName:currentInstance.productName,available:false,members:[] as {id:string;name:string}[],total:0,page:currentPage,search:query};
     const values=[organizationId,instanceId,`%${query}%`];
     const count=await client.query<{total:string}>(`SELECT count(*) AS total ${filter}`,values);
     const members=await client.query<{id:string;name:string}>(`SELECT m.id,COALESCE(u.display_name,'Member') AS name ${filter} ORDER BY COALESCE(u.display_name,'Member'),m.id LIMIT 50 OFFSET $4`,[...values,(currentPage-1)*50]);
-    return {productName:instance.rows[0].productName,available:true,members:members.rows,total:Number(count.rows[0]!.total),page:currentPage,search:query};
+    return {productName:currentInstance.productName,available:true,members:members.rows,total:Number(count.rows[0]!.total),page:currentPage,search:query};
   });
 }
 

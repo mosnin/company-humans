@@ -44,6 +44,24 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance,'',2)).members).toEqual([]);
       await expect(listApplicationMemberCandidates(url.toString(),bob,org.organizationId,instance)).rejects.toThrow();
       await expect(listApplicationMemberCandidates(url.toString(),bob,other.organizationId,instance)).rejects.toThrow();
+      await admin.query("UPDATE products SET catalog_status='draft' WHERE id=$1",[product]);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).available).toBe(false);
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
+      await admin.query("UPDATE products SET catalog_status='ready' WHERE id=$1",[product]);
+      await admin.query("UPDATE products SET catalog_metadata=jsonb_set(catalog_metadata,'{provisioningModes}','[\"provisioned\"]'::jsonb) WHERE id=$1",[product]);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).available).toBe(false);
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
+      await admin.query("UPDATE products SET catalog_metadata=jsonb_set(catalog_metadata,'{provisioningModes}','[\"connected\"]'::jsonb) WHERE id=$1",[product]);
+      await admin.query("UPDATE products SET catalog_metadata=jsonb_set(catalog_metadata,'{supportedMemberOperations}','[\"suspend\"]'::jsonb) WHERE id=$1",[product]);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).available).toBe(false);
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
+      await admin.query("UPDATE products SET catalog_metadata=jsonb_set(catalog_metadata,'{supportedMemberOperations}','[\"provision\",\"suspend\"]'::jsonb) WHERE id=$1",[product]);
+      const excludedUser=await syncAuthUser(databaseUrl!,{authIssuer:"https://identity.example.test",authSubject:`pmem-excluded-${suffix}`,primaryEmail:null,displayName:"Excluded",status:"active",eventTimestamp:1});
+      const excludedMember=createCanonicalId("membership");
+      await admin.query("INSERT INTO memberships(id,organization_id,user_id,status,role_key) VALUES($1,$2,$3,'active','contributor')",[excludedMember,org.organizationId,excludedUser]);
+      await admin.query("DELETE FROM role_permissions WHERE organization_id=$1 AND role_id=(SELECT id FROM roles WHERE organization_id=$1 AND key='contributor') AND permission_key='product.use'",[org.organizationId]);
+      expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).members).toEqual([{id:org.ownerMembershipId,name:'Alice'}]);
+      await expect(requestProductMembership(url.toString(),{...input,membershipId:excludedMember})).rejects.toThrow("Product or membership unavailable");
       const ids=await Promise.all(Array.from({length:6},()=>requestProductMembership(url.toString(),input)));
       expect(new Set(ids).size).toBe(1);
       expect(await listMemberApplications(readerUrl.toString(),alice,org.organizationId)).toEqual([
@@ -63,6 +81,9 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).members).toEqual([]);
       expect((await admin.query("SELECT provisioning_status,external_member_id FROM product_memberships WHERE id=$1",[ids[0]])).rows[0]).toEqual({provisioning_status:"pending",external_member_id:null});
       expect((await admin.query("SELECT count(*)::int AS n FROM identity_audit_events WHERE target_id=$1 AND action='product.membership.requested'",[ids[0]])).rows[0].n).toBe(1);
+      await admin.query("UPDATE product_memberships SET policy_blocked=true WHERE id=$1",[ids[0]]);
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("reconciliation");
+      await admin.query("UPDATE product_memberships SET policy_blocked=false WHERE id=$1",[ids[0]]);
       await expect(requestProductMembership(url.toString(),{...input,actorUserId:bob})).rejects.toThrow();
       await expect(requestProductMembership(url.toString(),{...input,membershipId:other.ownerMembershipId})).rejects.toThrow();
       await expect(admin.query(`INSERT INTO product_memberships (id,organization_id,product_instance_id,membership_id,created_by_user_id)
@@ -77,12 +98,12 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       expect((await listMemberApplications(readerUrl.toString(),alice,org.organizationId))[0]?.status).toBe('access_update_pending');
       await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("reconciliation");
       await admin.query("UPDATE product_instances SET desired_enabled=false WHERE id=$1",[instance]);
-      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
+      await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("reconciliation");
       expect((await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance)).available).toBe(false);
     } finally {
       await runtime.end();
       for(const table of ["product_membership_commands","product_memberships","identity_audit_events","product_instances","memberships","roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
-      await admin.query("DELETE FROM organizations WHERE id=ANY($1)",[orgs]);await admin.query("DELETE FROM users WHERE id=ANY($1)",[[alice,bob]]);
+      await admin.query("DELETE FROM organizations WHERE id=ANY($1)",[orgs]);await admin.query("DELETE FROM users WHERE auth_subject LIKE $1",[`pmem-%-${suffix}`]);
       await admin.query('DELETE FROM products WHERE id=$1',[product]);
       await admin.query(`DROP ROLE ${readerRole}`);await admin.query(`DROP ROLE ${role}`);await admin.end();
     }

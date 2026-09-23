@@ -30,8 +30,11 @@ describe.skipIf(!databaseUrl)('durable member denial worker',()=>{
     const foreign=await createOrganization(databaseUrl!,{ownerUserId:owner,name:'Foreign fixture',slug:`denial-other-${suffix}`});
     const orgIds=[org.organizationId,foreign.organizationId],scalar=createCanonicalId('product');
     await admin.query(`INSERT INTO products(id,product_key,display_name,catalog_status,catalog_metadata)
-      SELECT $1,$2,display_name,'ready',catalog_metadata FROM products WHERE id=$3`,
-      [scalar,`denial-fixture-${suffix}`,referenceProductId('scalar')]);
+      VALUES($1,$2,'Denial fixture','ready',$3)`,
+      [scalar,`denial-fixture-${suffix}`,{schemaVersion:1,description:'Denial worker fixture',category:'sales',
+        supportedCapabilities:[],provisioningModes:['connected'],supportedMemberOperations:['provision','suspend','remove'],
+        usageMeters:[],requiredPermissions:['product.use'],adapterVersion:'1.0.0',
+        billingBehavior:'organization_sponsored',deepLinks:{},connectionRequirements:[]}]);
     const member=(await admin.query('SELECT id FROM memberships WHERE organization_id=$1',[org.organizationId])).rows[0].id;
     async function setup(key:string,deny=true) {
       const instance=createCanonicalId('productInstance');
