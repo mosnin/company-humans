@@ -6,6 +6,7 @@ import { UsageLimitEditor } from "@/components/administration/usage-limits";
 import { RequestApplicationMembers } from "@/components/administration/request-application-members";
 import { EntitlementEditor } from "@/components/administration/entitlements";
 import { ApplicationMembers } from "@/components/administration/application-members";
+import { MemberActivationReadiness } from "@/components/administration/member-activation-readiness";
 import { InvitationsTable } from "@/components/administration/invitations";
 import { ApplicationDiagnostics } from "@/components/administration/applications";
 import { OAuthSignIn } from "@/components/auth/sign-in";
@@ -26,7 +27,7 @@ const deliveryStatus = (['pending','running','retry_wait','succeeded','failed','
 const delivery:UsageLimitDelivery={status:deliveryStatus,attemptCount:2,failureCode:deliveryStatus==='failed'?'provider_limit_mismatch':null,updatedAt:'2026-09-21T12:00:01Z',nextAttemptAt:deliveryStatus==='retry_wait'?'2026-09-21T12:05:00Z':null,attempts:[{number:2,startedAt:'2026-09-21T12:00:00Z',finishedAt:'2026-09-21T12:00:01Z',outcome:deliveryStatus==='succeeded'?'succeeded':'retryable_failure',failureCode:deliveryStatus==='succeeded'?null:'adapter_transport_failure'}]};
 const restricted = new URLSearchParams(location.search).get("role") === "contributor";
 createRoot(document.getElementById("root")!).render(<WorkspaceShell organizationName="Test organization" capabilities={ROLE_CAPABILITIES[restricted ? "contributor" : "owner"]}>
-  <PageHeader title={screen.charAt(0).toUpperCase()+screen.slice(1)} description="Local component test fixture. Authentication and API responses are mocked." />
+  <PageHeader title={screen === 'activation-readiness' ? 'Member activation readiness' : screen.charAt(0).toUpperCase()+screen.slice(1)} description="Local component test fixture. Authentication and API responses are mocked." />
   {screen.startsWith('usage-view') && (screen === 'usage-view-permission' ? <UsageView permitted={false}/> : <UsageView permitted scope="Your own usage only." selection={{environment:'production',from:'2026-09-01',through:'2026-09-30'}} validQuery={screen !== 'usage-view-invalid'} usage={screen === 'usage-view-error' ? null : screen === 'usage-view-empty' ? [] : [
     {organizationId:org, productId:'fixture-scalar', productName:'Scalar', productInstanceId:null,membershipId:null,teamId:null,capabilityKey:null,environment:'production',meterKey:'enrichment',meterName:'Enrichment credits',meterVersion:1,unit:'credits',aggregation:'sum',quantity:'999999999999999999.123456',eventCount:'25'},
     {organizationId:org, productId:'fixture-stored', productName:'Stored', productInstanceId:null,membershipId:null,teamId:null,capabilityKey:null,environment:'production',meterKey:'memory',meterName:'Memory storage',meterVersion:2,unit:'bytes',aggregation:'last',quantity:'0.100001',eventCount:'2'},
@@ -42,6 +43,11 @@ createRoot(document.getElementById("root")!).render(<WorkspaceShell organization
     {id:"done",membershipId:member.id,memberName:"Removed Contributor",membershipStatus:"removed",desiredEnabled:false,denial:{operation:"removeMember",status:"succeeded",attemptCount:1,failureCode:null,attempts:[]}},
   ]} />}
   {screen === "empty-application-members" && <ApplicationMembers members={[]} />}
+  {screen === "activation-readiness" && <MemberActivationReadiness diagnostic={{
+    ready: false, subject: {membershipId: member.id, productInstanceId: `ch_inst_${"a".repeat(32)}`},
+    reasons: ["capability_readback_missing", "limit_readback_missing", "meter_semantics_unverified"],
+    evidence: {capabilityRevision: 3, checkedLimitCount: 2, declaredMeterCount: 1},
+  }} />}
   {screen === "invitations" && <InvitationsTable organizationId={org} owner invitations={[{id:`ch_inv_${"b".repeat(32)}`,email:"pending@example.test",roleKey:"contributor",status:"pending",expiresAt:"2026-10-01T12:00:00Z"}]} />}
   {screen === "applications" && <ApplicationDiagnostics organizationId={org} applications={[{ id: "fixture-app", productName: "Scalar", instanceKey: "primary", mode: "provisioned", desiredEnabled: true, provisioningStatus: "pending", operation: { status: "failed", attemptCount: 1, failureCode: "authentication_required", nextAttemptAt: "2026-09-21T12:00:00Z", attempts: [{ number: 1, startedAt: "2026-09-21T12:00:00Z", finishedAt: "2026-09-21T12:00:01Z", outcome: "permanent_failure", failureCode: "authentication_required" }] } }]} />}
   {screen === "connect-application" && <ApplicationDiagnostics organizationId={org} applications={[{id:`ch_inst_${"a".repeat(32)}`,productName:"Scalar",instanceKey:"primary",mode:"connected",desiredEnabled:true,provisioningStatus:"pending",operation:null}]} />}

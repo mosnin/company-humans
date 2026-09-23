@@ -175,6 +175,19 @@ test("application member list explains an empty mapping",async({page})=>{
   await expect(page.getByRole('cell',{name:'No members mapped to this application.'})).toBeVisible();
 });
 
+test("member activation diagnosis shows unresolved evidence without offering product access",async({page},testInfo)=>{
+  await page.goto('/?screen=activation-readiness');
+  await expect(page.getByRole('heading',{name:'Activation remains blocked'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Capability delivery unverified'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Usage limit delivery unverified'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Meter enforcement unverified'})).toBeVisible();
+  await expect(page.getByText('It does not grant product access or confirm live provider enforcement.',{exact:false})).toBeVisible();
+  await expect(page.getByRole('button',{name:/activate|launch/i})).toHaveCount(0);
+  await expect(page.getByRole('link',{name:/activate|launch/i})).toHaveCount(0);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath('activation-readiness.png'),fullPage:true});
+});
+
 test('entitlement settings save versioned intent and keep provider access unconfirmed',async({page},testInfo)=>{
   let calls=0;
   await page.route('**/api/organizations/*/applications/*/entitlements',async route=>{

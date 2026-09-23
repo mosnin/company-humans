@@ -2,7 +2,7 @@ import { Client } from "pg";
 import {
   AppliedUsageLimitStateSchema, CapabilityAdapterResultSchema, OrganizationIdSchema,
   ProductCatalogMetadataV1Schema, ProductMembershipIdSchema, StagedCapabilitiesStateSchema,
-  UsageLimitAdapterResultSchema, UserIdSchema, matchesAppliedUsageLimit,
+  ProductInstanceIdSchema, UsageLimitAdapterResultSchema, UserIdSchema, matchesAppliedUsageLimit,
   matchesStagedCapabilities,
 } from "@company-human/contracts";
 import { readCurrentCapabilityInputs } from "./capability-source.js";
@@ -18,6 +18,8 @@ export interface ActivationReadiness {
   /** Advisory only. No caller may treat this result as an access token or provider grant. */
   ready: false;
   reasons: ActivationReadinessReason[];
+  /** Present only when this mapping belongs to the requested organization and instance. */
+  subject: { membershipId: string; productInstanceId: string } | null;
   evidence: {
     capabilityRevision: number | null;
     checkedLimitCount: number;
@@ -48,11 +50,12 @@ type Limit = {
  * deliberately never returns ready, even when all stored receipts match.
  */
 export async function inspectMemberActivationReadiness(url: string, input: {
-  actorUserId: string; organizationId: string; productMembershipId: string;
+  actorUserId: string; organizationId: string; productMembershipId: string; expectedProductInstanceId: string;
 }): Promise<ActivationReadiness> {
   const actorUserId = UserIdSchema.parse(input.actorUserId);
   const organizationId = OrganizationIdSchema.parse(input.organizationId);
   const productMembershipId = ProductMembershipIdSchema.parse(input.productMembershipId);
+  const expectedProductInstanceId = ProductInstanceIdSchema.parse(input.expectedProductInstanceId);
   const client = new Client({ connectionString: url });
   await client.connect();
   try {
@@ -65,7 +68,8 @@ export async function inspectMemberActivationReadiness(url: string, input: {
 
     const reasons = new Set<ActivationReadinessReason>();
     const evidence = { capabilityRevision: null as number | null, checkedLimitCount: 0, declaredMeterCount: 0 };
-    const result = (): ActivationReadiness => ({ ready: false, reasons: [...reasons], evidence });
+    let subject: ActivationReadiness["subject"] = null;
+    const result = (): ActivationReadiness => ({ ready: false, reasons: [...reasons], subject, evidence });
     const mapping = (await client.query<Mapping>(`SELECT pm.desired_enabled,pm.policy_blocked,pm.provisioning_status,
       pm.desired_revision,pm.external_member_id,pm.access_revision,pm.provider_receipt_reference,pm.provisioned_at,
       pm.membership_id,pm.product_instance_id,
@@ -77,8 +81,10 @@ export async function inspectMemberActivationReadiness(url: string, input: {
       JOIN public.users u ON u.id=m.user_id JOIN public.organizations o ON o.id=pm.organization_id
       JOIN public.product_instances i ON i.organization_id=pm.organization_id AND i.id=pm.product_instance_id
       JOIN public.products p ON p.id=i.product_id
-      WHERE pm.organization_id=$1 AND pm.id=$2`, [organizationId, productMembershipId])).rows[0];
+      WHERE pm.organization_id=$1 AND pm.id=$2 AND pm.product_instance_id=$3`,
+      [organizationId, productMembershipId, expectedProductInstanceId])).rows[0];
     if (!mapping) { reasons.add("membership_unavailable"); reasons.add("meter_semantics_unverified"); await client.query("COMMIT"); return result(); }
+    subject = { membershipId: mapping.membership_id, productInstanceId: mapping.product_instance_id };
     if (mapping.member_status !== "active" || mapping.user_status !== "active" || mapping.organization_status !== "active") reasons.add("identity_inactive");
     const catalog = ProductCatalogMetadataV1Schema.safeParse(mapping.catalog_metadata);
     if (!catalog.success || mapping.catalog_status !== "ready" || !mapping.instance_enabled || mapping.instance_status !== "active"

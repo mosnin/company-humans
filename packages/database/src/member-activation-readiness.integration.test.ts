@@ -36,7 +36,8 @@ it.skipIf(!databaseUrl)("diagnoses tenant-scoped activation evidence without gra
     provisioningModes: ["connected"], supportedMemberOperations: ["provision", "suspend"], usageMeters: ["lead"],
     requiredPermissions: ["product.use"], adapterVersion: "1.0.0", billingBehavior: "organization_sponsored",
     deepLinks: {}, connectionRequirements: [] };
-  const input = { actorUserId: actor, organizationId: org.organizationId, productMembershipId: mapping };
+  const input = { actorUserId: actor, organizationId: org.organizationId,
+    productMembershipId: mapping, expectedProductInstanceId: instance };
   try {
     await admin.query("INSERT INTO products(id,product_key,display_name,catalog_status,catalog_metadata) VALUES($1,$2,'Fixture','ready',$3)",
       [product, `activation-${suffix}`, metadata]);
@@ -49,14 +50,27 @@ it.skipIf(!databaseUrl)("diagnoses tenant-scoped activation evidence without gra
       provisioning_status,external_member_id,created_by_user_id)
       VALUES($1,$2,$3,$4,'suspended','fixture-member',$5)`, [mapping, org.organizationId, instance, member, actor]);
     const before = await inspectMemberActivationReadiness(endpoint.toString(), input);
+    expect(before.subject).toEqual({ membershipId: member, productInstanceId: instance });
+    const wrongInstance = await inspectMemberActivationReadiness(endpoint.toString(), {
+      ...input, expectedProductInstanceId: createCanonicalId("productInstance"),
+    });
+    expect(wrongInstance.subject).toBeNull();
+    expect(wrongInstance.reasons).toContain("membership_unavailable");
+    const expectedInstance = await inspectMemberActivationReadiness(endpoint.toString(), {
+      ...input, expectedProductInstanceId: instance,
+    });
+    expect(expectedInstance.subject).toEqual({ membershipId: member, productInstanceId: instance });
     expect(before.ready).toBe(false);
     expect(before.reasons).toContain("binding_unverified");
     expect(before.reasons).toContain("capability_snapshot_missing");
     expect(before.reasons).toContain("limit_policy_missing");
     expect(before.reasons).toContain("meter_semantics_unverified");
+    await expect(inspectMemberActivationReadiness(endpoint.toString(), { ...input, actorUserId: target }))
+      .rejects.toThrow("Activation diagnostic denied");
     await expect(inspectMemberActivationReadiness(endpoint.toString(), { ...input, actorUserId: stranger })).rejects.toThrow("denied");
     const cross = await inspectMemberActivationReadiness(endpoint.toString(), {
-      actorUserId: stranger, organizationId: other.organizationId, productMembershipId: mapping });
+      actorUserId: stranger, organizationId: other.organizationId,
+      productMembershipId: mapping, expectedProductInstanceId: instance });
     expect(cross.reasons).toContain("membership_unavailable");
 
     await admin.query(`INSERT INTO product_membership_commands(id,organization_id,product_membership_id,
@@ -112,7 +126,9 @@ it.skipIf(!databaseUrl)("diagnoses tenant-scoped activation evidence without gra
     await admin.query(`INSERT INTO usage_limit_attempts(organization_id,usage_limit_id,revision,attempt_number,lease_token,
       finished_at,outcome,apply_receipt,readback_receipt) VALUES($1,$2,1,1,$3,now(),'succeeded',$4,$4)`,
       [org.organizationId, limit, randomUUID(), { status: "succeeded", value: limitState }]);
-    const staged = await prepareMemberCapabilitySnapshot(endpoint.toString(), input);
+    const staged = await prepareMemberCapabilitySnapshot(endpoint.toString(), {
+      actorUserId: actor, organizationId: org.organizationId, productMembershipId: mapping,
+    });
     await admin.query(`UPDATE capability_jobs SET status='succeeded',attempt_count=1 WHERE product_membership_id=$1 AND revision=$2`,
       [mapping, staged.policyRevision]);
     await admin.query(`INSERT INTO capability_attempts(organization_id,product_membership_id,revision,attempt_number,
