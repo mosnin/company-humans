@@ -38,6 +38,8 @@ Entitlement and finite-limit revisions invalidate bound member access transactio
 
 The server-only activation readiness diagnostic reads a repeatable tenant-scoped snapshot under both applications.manage and budgets.manage. It reports suspended binding provenance, current capability and finite-limit delivery receipts, unresolved denial, and current authorization reasons. It never returns ready because the catalog lacks a verified provider meter/unit/window enforcement contract. The later grant worker must revalidate every input under a durable access fence and read back actual provider state; this diagnostic is not an access decision.
 
+A shared version 1 meter enforcement declaration schema now describes a product's claimed variable-cost meter versions, units, aggregation, UTC windows and organization/member hard-stop scopes. It has no persistence or provider-verification flag. Existing V1 finite-limit policies and receipts carry no meter version, so declaration validation cannot establish limit coverage or change activation readiness.
+
 Role-policy edits and membership role changes serialize through an organization authorization lock. Grant writes retain unchanged rows. Permission loss emits durable denial with authorization provenance, and an owner-only reconciliation covers preexisting gaps. Remote effects still require provider delivery/readback; restoring a role grant alone never activates access.
 
 ## Organization suspension access invalidation

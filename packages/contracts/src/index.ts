@@ -14,4 +14,5 @@ export * from "./capability-adapter.js";
 
 export * from "./adapter-health.js";
 export * from "./usage-events.js";
+export * from "./product-meter-enforcement.js";
 export * from "./member-access-adapter.js";
