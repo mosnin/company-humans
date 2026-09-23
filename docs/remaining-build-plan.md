@@ -1,15 +1,15 @@
 # Company Human — remaining phased build plan
 
-Updated 2026-09-22 against the current 0067 release evidence. Canonical Notion phases and product requirements are unchanged. Destination: `mosnin/company-humans`; source `company-os-web` remains untouched. Dated implementation evidence lives in implementation-status.md.
+Updated 2026-09-23 against the current 0078 release evidence. Canonical Notion phases and product requirements are unchanged. Destination: `mosnin/company-humans`; source `company-os-web` remains untouched. Dated implementation evidence lives in implementation-status.md.
 
 ## Current position and evidence
 
 - **Phase 00: verified.** Reuse the scaffold, contracts, canonical IDs, migrations, seeds and CI.
 - **Phase 01: in progress.** Identity, membership, permissions and tenant protections exist; real Convex OAuth and authenticated two-organization acceptance remain open.
 - **Phase 02: in progress.** Catalog/setup intent, provisioning journals, suspended member binding, capability and limit delivery machinery, diagnostics and durable health collection exist. Real Scalar access, final activation, reconciliation and hosted worker operation remain incomplete.
-- **Phase03: in progress.** Signed immutable usage ingestion, scoped exact aggregation, quarantine recovery and usage presentation exist. Live Scalar emission, budget reservations/enforcement, durable billing windows and financial projections remain open. Phases04–15 are unfinished;16 is conditional.
-- Dedicated Convex, PostgreSQL and Vercel resources already exist. Do not create replacement projects. Production web health reports exact revision `77ac96c425bb1efb0e7a245dcdb901f36c2e7624`; anonymous API checks deny access.
-- CI 35809446576 passed at that revision. A fresh local 67-migration replay and 356 tests, typecheck, lint and production build passed. Hosted verification passed the focused registry comparison test, and production migrations through 0067 are applied. Real Google/email and live provider acceptance remain open.
+- **Phase 03: in progress.** Signed immutable usage ingestion, scoped exact aggregation, quarantine recovery and usage presentation exist. Live Scalar emission, budget reservations/enforcement, durable billing windows and financial projections remain open. **Phase 04 and the Human Work subset of Phase 05 are in progress:** a native Work queue, Work module control and contributor Home action summary exist, but their full acceptance remains open. Later phases are unfinished; Phase 16 is conditional.
+- Dedicated Convex, PostgreSQL and Vercel resources already exist. Do not create replacement projects. Production web health reports exact revision `a7aee7d33f7bb5ece4e57f5a58202e127b9fbb10`; anonymous workspace pages redirect to sign-in.
+- [CI 35845115189](https://github.com/mosnin/company-humans/actions/runs/35845115189) passed at that revision. A fresh local 78-migration replay and the latest 114 contract/377 web tests, typecheck, lint and production build passed. Hosted verification and production migrations through 0078 are applied. Real Google/email and live provider acceptance remain open.
 - Browser fixtures and adapter test doubles do not establish live OAuth, native product access, hard stops or payouts. No phase is closed by this plan.
 
 ## First usable release
@@ -87,7 +87,7 @@ Audit cleanup belongs to the phase touching that code: classify copied source as
 
 ## Phase 04 — simple contributor, manager and admin workspace
 
-**Tracker:** CH-27–CH-31 plus the canonical UX requirements. **Status:** Not started.
+**Tracker:** CH-27–CH-31 plus the canonical UX requirements. **Status:** In progress. Work module control, the native Work destination, and a contributor Home action summary are implemented as bounded slices; full role/module navigation, real identity rendering, and the remaining workspace views are unverified or unfinished.
 
 1. Build role-aware navigation and configurable module visibility using the source design primitives.
 2. Build contributor Home and dedicated Work, Apps, Context and Earnings destinations; show honest empty/unavailable states until their domains are available.
@@ -99,7 +99,7 @@ Audit cleanup belongs to the phase touching that code: classify copied source as
 
 ## Phase 05 — native Human Work and CRM
 
-**Tracker:** CH-32–CH-37 plus assignment requirements. **Status:** Not started.
+**Tracker:** CH-32–CH-37 plus assignment requirements. **Status:** In progress. Tenant-scoped native assignments and reported completions are implemented; CRM, follow-ups, verified outcomes, and Scalar synchronization remain open.
 
 1. Implement human assignments, ownership, due dates, Today/upcoming views, completion and follow-ups.
 2. Implement contacts, accounts, opportunities, pipelines/stages, relationship capital and team ownership.

@@ -14,6 +14,8 @@ Commit `6eaa31f76d24e9129131fe96e87417023b35ec58` passed [CI 35843895701](https:
 
 The Home slice reuses the verified own-assignment and own-app readers with no new migration. The local full gate passed 114 contract and 377 web tests, typecheck, lint and production build. Two desktop/mobile browser fixture checks passed and the 390px screenshot was inspected. A built local server redirected anonymous Home to sign-in with 307. Regression tests cover Work off, module read failure, own assignment read failure, empty assignments, missing own-read permission, and a removed app mapping that must not be counted as an assigned app. The independent reviewer accepted the bounded slice. The browser fixture does not prove authenticated production rendering or live persistence.
 
+Commit `a7aee7d33f7bb5ece4e57f5a58202e127b9fbb10` passed [CI 35845115189](https://github.com/mosnin/company-humans/actions/runs/35845115189). Production deployment `dpl_Ba4bswi85XdL6vC5K8Pa9Nywzy9w` reports the exact revision. Live anonymous Home, Work, and Workspace settings all redirected to sign-in with 307. This is deployment and anonymous-boundary evidence only.
+
 Use Node 24 and a dedicated PostgreSQL test database. Never point integration tests at production: they create disposable identities, organizations and login roles, then clean up their own records.
 
 ```sh
