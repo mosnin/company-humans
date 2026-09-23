@@ -19,5 +19,8 @@
     "db:migrate": "npm run migrate -w @company-human/database",
     "db:seed": "npm run seed -w @company-human/database",
     "pretypecheck": "npm run build -w @company-human/contracts && npm run build -w @company-human/database"
+  },
+  "devDependencies": {
+    "jose": "^6.2.12"
   }
 }

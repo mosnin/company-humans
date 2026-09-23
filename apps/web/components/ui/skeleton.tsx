@@ -30,41 +30,6 @@ export function Skeleton({
   );
 }
 
-export interface SkeletonTextProps {
-  lines?: number;
-  className?: string;
-}
-
-
-export function SkeletonText({
-  lines = 3,
-  className,
-}: SkeletonTextProps): ReactNode {
-  // Zero lines is a real answer, not a fallback: render nothing rather than an
-  // empty animated band.
-  if (lines <= 0) return null;
-  return (
-    <div className={cn("flex flex-col gap-4", className)}>
-      {Array.from({ length: lines }, (_, index) => (
-        <Skeleton
-          key={index}
-          className={cn("h-[12px]", TEXT_WIDTHS[index % TEXT_WIDTHS.length])}
-        />
-      ))}
-    </div>
-  );
-}
-
-
-const TEXT_WIDTHS = [
-  "w-[96%]",
-  "w-[72%]",
-  "w-[58%]",
-  "w-[40%]",
-  "w-[30%]",
-] as const;
-
-
 const PULSE =
   "[animation:human-skeleton_1200ms_var(--ease-move,cubic-bezier(0.4,0,0.2,1))_infinite_alternate]";
 
