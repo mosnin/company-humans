@@ -1,5 +1,9 @@
 # Testing
 
+## Human Work candidate — 2026-09-23
+
+On the uncommitted 0078 candidate, a fresh disposable PostgreSQL 18 cluster migrated 0001–0078 and replayed without pending migrations. Restricted application and service logins passed the Human Work integration scenario over TCP, including tenant and team denial, immutable completion and audit, Work-module shutdown, and a deterministic disable-first concurrency test. The repository test command passed 114 contract tests and 352 web tests; database tests that require a dedicated URL were run separately. Type checking, linting, and the production build passed. Four desktop/mobile browser fixture checks passed for manager assignment and contributor completion. A built local Next server returned 307 to sign-in for anonymous Work and 401 for anonymous assignment creation and completion. The independent reviewer accepted the bounded slice after a custom-permission mismatch was fixed and covered. These checks do not prove live OAuth, remote product provisioning, or an authenticated production journey. Hosted release is pending.
+
 Use Node 24 and a dedicated PostgreSQL test database. Never point integration tests at production: they create disposable identities, organizations and login roles, then clean up their own records.
 
 ```sh

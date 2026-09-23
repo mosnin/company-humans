@@ -14,6 +14,7 @@ import AcceptInvitationPage from "@/app/invite/page";
 import { createRoot } from "react-dom/client";
 import { ROLE_CAPABILITIES } from "@company-human/contracts";
 import { WorkspaceShell } from "@/components/shell/workspace-shell";
+import { WorkBoard } from "@/components/work/work-board";
 import { PageHeader } from "@/components/ui/page-header";
 import { InvitePerson, PeopleTable } from "@/components/administration/people";
 import { TeamsEditor } from "@/components/administration/teams";
@@ -26,8 +27,8 @@ const screen = new URLSearchParams(location.search).get("screen") ?? "people";
 const deliveryStatus = (['pending','running','retry_wait','succeeded','failed','superseded'] as const).find(value=>value===new URLSearchParams(location.search).get('delivery'))??'succeeded';
 const delivery:UsageLimitDelivery={status:deliveryStatus,attemptCount:2,failureCode:deliveryStatus==='failed'?'provider_limit_mismatch':null,updatedAt:'2026-09-21T12:00:01Z',nextAttemptAt:deliveryStatus==='retry_wait'?'2026-09-21T12:05:00Z':null,attempts:[{number:2,startedAt:'2026-09-21T12:00:00Z',finishedAt:'2026-09-21T12:00:01Z',outcome:deliveryStatus==='succeeded'?'succeeded':'retryable_failure',failureCode:deliveryStatus==='succeeded'?null:'adapter_transport_failure'}]};
 const restricted = new URLSearchParams(location.search).get("role") === "contributor";
-createRoot(document.getElementById("root")!).render(<WorkspaceShell organizationName="Test organization" capabilities={ROLE_CAPABILITIES[restricted ? "contributor" : "owner"]}>
-  <PageHeader title={screen === 'activation-readiness' ? 'Member activation readiness' : screen.charAt(0).toUpperCase()+screen.slice(1)} description="Local component test fixture. Authentication and API responses are mocked." />
+createRoot(document.getElementById("root")!).render(<WorkspaceShell organizationName="Test organization" capabilities={ROLE_CAPABILITIES[restricted ? "contributor" : "owner"]} workEnabled={screen.startsWith("work")}>
+  <PageHeader title={screen.startsWith('work') ? 'Work' : screen === 'activation-readiness' ? 'Member activation readiness' : screen.charAt(0).toUpperCase()+screen.slice(1)} description="Local component test fixture. Authentication and API responses are mocked." />
   {screen.startsWith('usage-view') && (screen === 'usage-view-permission' ? <UsageView permitted={false}/> : <UsageView permitted scope="Your own usage only." selection={{environment:'production',from:'2026-09-01',through:'2026-09-30'}} validQuery={screen !== 'usage-view-invalid'} usage={screen === 'usage-view-error' ? null : screen === 'usage-view-empty' ? [] : [
     {organizationId:org, productId:'fixture-scalar', productName:'Scalar', productInstanceId:null,membershipId:null,teamId:null,capabilityKey:null,environment:'production',meterKey:'enrichment',meterName:'Enrichment credits',meterVersion:1,unit:'credits',aggregation:'sum',quantity:'999999999999999999.123456',eventCount:'25'},
     {organizationId:org, productId:'fixture-stored', productName:'Stored', productInstanceId:null,membershipId:null,teamId:null,capabilityKey:null,environment:'production',meterKey:'memory',meterName:'Memory storage',meterVersion:2,unit:'bytes',aggregation:'last',quantity:'0.100001',eventCount:'2'},
@@ -59,4 +60,6 @@ createRoot(document.getElementById("root")!).render(<WorkspaceShell organization
   {screen === "people" && <><InvitePerson organizationId={org} owner /><PeopleTable organizationId={org} actorUserId={owner} owner people={[member]} /></>}
   {screen === "teams" && <TeamsEditor organizationId={org} canCreate canAssign people={[member]} teams={[{ id: `ch_team_${"a".repeat(32)}`, name: "Sales", memberCount: 0, members: [] }]} />}
   {screen === "permissions" && <PermissionsEditor organizationId={org} actorRoleId={`ch_role_${"a".repeat(32)}`} owner heldCapabilities={ROLE_CAPABILITIES.owner} policies={[{ id: `ch_role_${"b".repeat(32)}`, key: "contributor", capabilities: [...ROLE_CAPABILITIES.contributor] }]} />}
+  {screen === "work-own" && <WorkBoard organizationId={org} view="mine" canManage={false} candidates={[]} todayEndIso="2026-09-23T23:59:59.999Z" offset={0} nextOffset={null} items={[{id:`ch_hwrk_${"a".repeat(32)}`,title:"Call the lead",objective:"Confirm the team's needs",dueAt:"2026-09-23T15:00:00.000Z",priority:"high",expectedOutcome:"A qualified conversation",evidenceRequired:true,assigneeDisplayName:"You",completion:null}]} />}
+  {screen === "work-team" && <WorkBoard organizationId={org} view="team" canManage todayEndIso="2026-09-23T23:59:59.999Z" offset={0} nextOffset={null} candidates={[{membershipId:member.id,displayName:member.name,teamId:`ch_team_${"a".repeat(32)}`,teamName:"Sales"}]} items={[{id:`ch_hwrk_${"b".repeat(32)}`,title:"Call the lead",objective:"Confirm the team's needs",dueAt:"2026-09-23T15:00:00.000Z",priority:"high",expectedOutcome:"A qualified conversation",evidenceRequired:true,assigneeDisplayName:member.name,completion:{outcome:"Asked for a proposal",evidence:"Call notes",completedAt:"2026-09-23T16:00:00.000Z"}}]} />}
 </WorkspaceShell>);

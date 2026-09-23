@@ -9,11 +9,12 @@ import { cn } from "@/lib/utils";
 
 // Generalized from company-os-web/components/shell/app-shell.tsx at 94827a3.
 // Retains its full-width 56px bar, 240px rail, rounded body, and scrolling canvas.
-export function WorkspaceShell({ organizationName, capabilities, children }: { organizationName: string; capabilities: readonly Capability[]; children: ReactNode }) {
+export function WorkspaceShell({ organizationName, capabilities, workEnabled = false, children }: { organizationName: string; capabilities: readonly Capability[]; workEnabled?: boolean; children: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const navigation = [
     { label: "Workspace", href: "/workspace", visible: true },
+    { label: "Work", href: "/workspace/work", visible: workEnabled && capabilities.some(capability => ["assignments.read.own", "assignments.read.team", "assignments.read.all"].includes(capability)) },
     { label: "Apps", href: "/workspace/apps", visible: true },
     { label: "Usage", href: "/workspace/usage", visible: capabilities.some(capability => ["usage.read.own", "usage.read.team", "usage.read.all"].includes(capability)) },
     { label: "People", href: "/workspace/people", visible: capabilities.includes("members.manage") },

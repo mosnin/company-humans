@@ -20,6 +20,8 @@ export const EntitlementIdSchema = z.string().regex(new RegExp(`^ch_ent_${UUID_H
 export const ProvisioningOperationIdSchema = z.string().regex(new RegExp(`^ch_op_${UUID_HEX}$`)).brand<"ProvisioningOperationId">();
 export const EventIdSchema = z.string().regex(new RegExp(`^ch_evt_${UUID_HEX}$`)).brand<"EventId">();
 export const AuditIdSchema = z.string().regex(new RegExp(`^ch_aud_${UUID_HEX}$`)).brand<"AuditId">();
+export const HumanAssignmentIdSchema = z.string().regex(new RegExp(`^ch_hwrk_${UUID_HEX}$`)).brand<"HumanAssignmentId">();
+export const HumanCompletionIdSchema = z.string().regex(new RegExp(`^ch_hcmp_${UUID_HEX}$`)).brand<"HumanCompletionId">();
 
 export type UserId = z.infer<typeof UserIdSchema>;
 export type OrganizationId = z.infer<typeof OrganizationIdSchema>;
@@ -37,6 +39,8 @@ export type EntitlementId = z.infer<typeof EntitlementIdSchema>;
 export type ProvisioningOperationId = z.infer<typeof ProvisioningOperationIdSchema>;
 export type EventId = z.infer<typeof EventIdSchema>;
 export type AuditId = z.infer<typeof AuditIdSchema>;
+export type HumanAssignmentId = z.infer<typeof HumanAssignmentIdSchema>;
+export type HumanCompletionId = z.infer<typeof HumanCompletionIdSchema>;
 
 const schemas = {
   user: UserIdSchema,
@@ -55,6 +59,8 @@ const schemas = {
   provisioningOperation: ProvisioningOperationIdSchema,
   event: EventIdSchema,
   audit: AuditIdSchema,
+  humanAssignment: HumanAssignmentIdSchema,
+  humanCompletion: HumanCompletionIdSchema,
 } as const;
 
 const prefixes = {
@@ -74,6 +80,8 @@ const prefixes = {
   provisioningOperation: "op",
   event: "evt",
   audit: "aud",
+  humanAssignment: "hwrk",
+  humanCompletion: "hcmp",
 } as const;
 
 export type CanonicalIdKind = keyof typeof schemas;
@@ -102,4 +110,6 @@ export const CanonicalIdReferenceV1Schema = z.discriminatedUnion("kind", [
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("provisioningOperation"), id: ProvisioningOperationIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("event"), id: EventIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("audit"), id: AuditIdSchema }),
+  z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("humanAssignment"), id: HumanAssignmentIdSchema }),
+  z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("humanCompletion"), id: HumanCompletionIdSchema }),
 ]);

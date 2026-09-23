@@ -10,3 +10,4 @@ export * from "./budget-consumption-snapshot.js";
 export * from "./meter-declaration-verifier.js";
 export * from "./verified-usage-evidence.js";
 export * from "./workspace-modules.js";
+export * from "./human-work.js";

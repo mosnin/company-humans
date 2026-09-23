@@ -18,3 +18,12 @@ it('shows Teams for an assigned-team manager without organization-wide authority
   expect(html).toContain('href="/workspace/teams"');
   expect(html).not.toContain('href="/workspace/people"');
 });
+
+it('shows Work only when the native module and assignment read are both available', () => {
+  const allowed = renderToStaticMarkup(<WorkspaceShell organizationName="Example" capabilities={['assignments.read.own']} workEnabled><p>Page</p></WorkspaceShell>);
+  expect(allowed).toContain('href="/workspace/work"');
+  const disabled = renderToStaticMarkup(<WorkspaceShell organizationName="Example" capabilities={['assignments.read.own']}><p>Page</p></WorkspaceShell>);
+  expect(disabled).not.toContain('href="/workspace/work"');
+  const denied = renderToStaticMarkup(<WorkspaceShell organizationName="Example" capabilities={['members.manage']} workEnabled><p>Page</p></WorkspaceShell>);
+  expect(denied).not.toContain('href="/workspace/work"');
+});

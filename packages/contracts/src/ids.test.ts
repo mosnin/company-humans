@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BudgetIdSchema, CanonicalIdReferenceV1Schema, createCanonicalId, ID_SCHEMA_VERSION, MembershipIdSchema, OrganizationIdSchema, UserIdSchema, UsageLimitIdSchema } from "./ids.js";
+import { BudgetIdSchema, CanonicalIdReferenceV1Schema, createCanonicalId, HumanAssignmentIdSchema, HumanCompletionIdSchema, ID_SCHEMA_VERSION, MembershipIdSchema, OrganizationIdSchema, UserIdSchema, UsageLimitIdSchema } from "./ids.js";
 
 describe("canonical IDs v1", () => {
   it("creates globally distinct typed IDs", () => {
@@ -24,5 +24,15 @@ describe("canonical IDs v1", () => {
     expect(BudgetIdSchema.parse(budget)).toBe(budget);
     expect(UsageLimitIdSchema.safeParse(budget).success).toBe(false);
     expect(CanonicalIdReferenceV1Schema.parse({ schemaVersion: 1, kind: "budget", id: budget }).id).toBe(budget);
+  });
+
+  it("keeps a human obligation distinct from a completion report", () => {
+    const assignment = createCanonicalId("humanAssignment");
+    const completion = createCanonicalId("humanCompletion");
+    expect(HumanAssignmentIdSchema.parse(assignment)).toBe(assignment);
+    expect(HumanCompletionIdSchema.parse(completion)).toBe(completion);
+    expect(HumanCompletionIdSchema.safeParse(assignment).success).toBe(false);
+    expect(CanonicalIdReferenceV1Schema.parse({ schemaVersion: 1, kind: "humanAssignment", id: assignment }).id).toBe(assignment);
+    expect(CanonicalIdReferenceV1Schema.parse({ schemaVersion: 1, kind: "humanCompletion", id: completion }).id).toBe(completion);
   });
 });
