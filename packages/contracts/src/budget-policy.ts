@@ -47,6 +47,17 @@ export const BudgetPolicyV1Schema = z.object({
 }).strict();
 export type BudgetPolicyV1 = z.infer<typeof BudgetPolicyV1Schema>;
 
+/** A stored current policy record. Disabled records are retained by storage for
+ * history, but are not candidates for active budget resolution. Historical
+ * revisions must not be mixed into the current-record candidate set.
+ */
+export const BudgetPolicyStatusV1Schema = z.enum(["active", "disabled"]);
+export type BudgetPolicyStatusV1 = z.infer<typeof BudgetPolicyStatusV1Schema>;
+export const BudgetPolicyStoredV1Schema = BudgetPolicyV1Schema.extend({
+  status: BudgetPolicyStatusV1Schema,
+});
+export type BudgetPolicyStoredV1 = z.infer<typeof BudgetPolicyStoredV1Schema>;
+
 /** The caller must verify operation team membership with the database.
  * This shape deliberately carries no claim that such verification occurred.
  */
@@ -101,6 +112,35 @@ function isApplicable(policy: BudgetPolicyV1, operation: BudgetOperationV1): boo
     case "member": return policy.scope.membershipId === operation.membershipId;
     case "capability": return policy.scope.capabilityKey === operation.capabilityKey;
   }
+}
+
+/** Project a complete, authorized set of current stored records into active
+ * policies. Validate every row before filtering, including disabled rows, so
+ * a malformed or mixed-tenant candidate cannot be hidden by its status. The
+ * caller remains responsible for fetching the complete authorized set and
+ * verifying operation-team membership against the database.
+ */
+export function projectActiveBudgetPoliciesV1(
+  operationInput: unknown, storedCandidateInputs: readonly unknown[],
+): BudgetPolicyV1[] {
+  const operation = BudgetOperationV1Schema.parse(operationInput);
+  const ids = new Set<string>();
+  const active: BudgetPolicyV1[] = [];
+  for (const input of storedCandidateInputs) {
+    const { status, ...policy } = BudgetPolicyStoredV1Schema.parse(input);
+    if (ids.has(policy.policyId)) throw new Error("Duplicate budget policy identity in stored candidate set");
+    ids.add(policy.policyId);
+    if (policy.organizationId !== operation.organizationId || policy.productId !== operation.productId) {
+      throw new Error("Stored budget policy candidate crosses organization or product boundary");
+    }
+    if (policy.meter.meterKey !== operation.meter.meterKey ||
+        policy.meter.meterVersion !== operation.meter.meterVersion ||
+        policy.meter.unit !== operation.meter.unit) {
+      throw new Error("Stored budget policy candidate has a different meter, version, or unit");
+    }
+    if (status === "active") active.push(policy);
+  }
+  return active;
 }
 
 /** Resolve a caller-supplied candidate set. The caller must fetch all relevant

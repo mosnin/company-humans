@@ -4,7 +4,7 @@ No billing or metering is active. Company Human must become the commercial autho
 
 ## Entitlement configuration status
 
-Desired allow/deny/inherit settings are now versioned per product instance and optional member. They neither establish a commercial plan nor authorize spend. Hierarchical budgets, effective entitlement resolution and product-side metering/enforcement remain unimplemented.
+Desired allow/deny/inherit settings are now versioned per product instance and optional member. They neither establish a commercial plan nor authorize spend. Versioned budget configuration exists; consumption evaluation, effective entitlement resolution and product-side enforcement remain unimplemented.
 
 ## Finite limit intent
 
@@ -24,6 +24,6 @@ Exact decimal usage aggregates now support half-open occurrence windows and orga
 
 Quarantined events can now be released after an exact product/meter/version/unit is registered. A budgets.manage-authorized action appends a release receipt; it never changes the source event. Aggregation includes the released event once. Historical valuation and billing snapshots remain unimplemented.
 
-The CH-22 shared contract now describes separate organization, product, product-instance, operation-team, member, capability and meter policy scopes for a single exact product meter/version/unit and UTC day/week/month window. A pure resolver retains every applicable threshold and its own action, returns the earliest configured threshold without treating it as a spend decision, and rejects missing or mismatched team attribution. Migration 0069 validates a named human usage team against assignment time; a null team and non-human attribution remain insufficient for team limits. No budget policy storage, actual consumption evaluation, reservation, priced cross-product budget, or provider stop is implemented.
+The CH-22 shared contract now describes separate organization, product, product-instance, operation-team, member, capability and meter policy scopes for a single exact product meter/version/unit and UTC day/week/month window. A pure resolver retains every applicable threshold and its own action, returns the earliest configured threshold without treating it as a spend decision, and rejects missing or mismatched team attribution. Migration 0069 validates a named human usage team against assignment time; a null team and non-human attribution remain insufficient for team limits. Migration 0070 stores versioned, audited policy intent and supports disable/re-enable without deleting history. Its authenticated administration API reads the complete current set for one exact product meter; every response reports provider enforcement unconfirmed. No actual consumption evaluation, reservation, priced cross-product budget, or provider stop is implemented.
 
 The dedicated Usage page reports the authenticated reader's permitted consumption by product/meter, with explicit production/test and inclusive UTC dates. It preserves exact numeric strings and labels total, peak and latest-value aggregation. It does not show a bill estimate or claim provider enforcement.

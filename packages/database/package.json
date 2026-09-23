@@ -104,6 +104,10 @@
       "types": "./dist/usage-aggregation.d.ts",
       "default": "./dist/usage-aggregation.js"
     },
+    "./budget-policies": {
+      "types": "./dist/budget-policies.d.ts",
+      "default": "./dist/budget-policies.js"
+    },
     "./usage-quarantine": {
       "types": "./dist/usage-quarantine.d.ts",
       "default": "./dist/usage-quarantine.js"

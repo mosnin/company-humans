@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createCanonicalId } from "./ids.js";
 import {
-  BudgetOperationV1Schema, BudgetPolicyV1Schema, resolveBudgetPoliciesV1,
+  BudgetOperationV1Schema, BudgetPolicyStoredV1Schema, BudgetPolicyV1Schema,
+  projectActiveBudgetPoliciesV1, resolveBudgetPoliciesV1,
 } from "./budget-policy.js";
 
 const organizationId = createCanonicalId("organization");
@@ -26,6 +27,64 @@ function policy(scope: object, maximumQuantity: string, action = "hard_stop", wi
 }
 
 describe("exact meter quantity budget policy", () => {
+  it("validates a strict stored status separately from the active policy contract", () => {
+    const original = policy({ kind: "organization" }, "10");
+    expect(BudgetPolicyStoredV1Schema.parse({ ...original, status: "active" }).status).toBe("active");
+    expect(BudgetPolicyStoredV1Schema.parse({ ...original, status: "disabled" }).status).toBe("disabled");
+    expect(BudgetPolicyV1Schema.safeParse({ ...original, status: "active" }).success).toBe(false);
+    for (const status of [undefined, "archived", null, true]) {
+      expect(BudgetPolicyStoredV1Schema.safeParse({ ...original, status }).success).toBe(false);
+    }
+    expect(BudgetPolicyStoredV1Schema.safeParse({ ...original, status: "active", unknown: true }).success).toBe(false);
+  });
+
+  it("projects only active current records while retaining every threshold for a scope and window", () => {
+    const warning = policy({ kind: "team", teamId: teamA }, "5", "warning");
+    const pause = policy({ kind: "team", teamId: teamA }, "8", "soft_pause");
+    const hardStop = policy({ kind: "team", teamId: teamA }, "10", "hard_stop");
+    const disabled = policy({ kind: "team", teamId: teamA }, "1", "emergency_shutdown");
+    const stored = [
+      { ...hardStop, status: "active" }, { ...disabled, status: "disabled" },
+      { ...warning, status: "active" }, { ...pause, status: "active" },
+    ];
+    const active = projectActiveBudgetPoliciesV1(operation, stored);
+    expect(active.map(item => item.policyId)).toEqual([hardStop.policyId, warning.policyId, pause.policyId]);
+    expect(active.every(item => !Object.hasOwn(item, "status"))).toBe(true);
+    expect(stored[1]?.status).toBe("disabled");
+    const resolved = resolveBudgetPoliciesV1(operation, active);
+    expect(resolved.constraints).toHaveLength(3);
+    expect(resolved.constraints.map(item => [item.maximumQuantity, item.action])).toEqual(expect.arrayContaining([
+      ["10", "hard_stop"], ["5", "warning"], ["8", "soft_pause"],
+    ]));
+    expect(resolved.windows).toEqual([{
+      window: "utc_month", earliestThresholdQuantity: "5", bindingPolicyIds: [warning.policyId],
+    }]);
+    expect(projectActiveBudgetPoliciesV1({ ...operation, operationTeam: null }, [
+      { ...disabled, status: "disabled" },
+    ])).toEqual([]);
+  });
+
+  it("rejects malformed or mixed-boundary disabled records and duplicate identities before projection", () => {
+    const original = policy({ kind: "organization" }, "10");
+    for (const change of [
+      { organizationId: createCanonicalId("organization") },
+      { productId: createCanonicalId("product") },
+      { meter: { ...meter, meterKey: "other-meter" } },
+      { meter: { ...meter, meterVersion: 3 } },
+      { meter: { ...meter, unit: "email" } },
+      { maximumQuantity: "unlimited" },
+    ]) {
+      expect(() => projectActiveBudgetPoliciesV1(operation, [
+        { ...original, status: "active" },
+        { ...original, ...change, policyId: createCanonicalId("budget"), status: "disabled" },
+      ])).toThrow();
+    }
+    expect(() => projectActiveBudgetPoliciesV1(operation, [
+      { ...original, status: "active" },
+      { ...original, revision: 2, status: "disabled" },
+    ])).toThrow(/Duplicate/);
+  });
+
   it("validates typed identities, meter binding, finite precision, scope and revision", () => {
     const original = policy({ kind: "team", teamId: teamA }, "0.000001");
     expect(BudgetPolicyV1Schema.parse(original).maximumQuantity).toBe("0.000001");
