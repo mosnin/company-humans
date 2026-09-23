@@ -8,3 +8,4 @@ export * from "./usage-aggregation.js";
 export * from "./usage-quarantine.js";
 export * from "./budget-consumption-snapshot.js";
 export * from "./meter-declaration-verifier.js";
+export * from "./verified-usage-evidence.js";
