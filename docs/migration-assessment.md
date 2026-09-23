@@ -19,6 +19,7 @@ Source: `mosnin/company-os-web` `main` at `94827a320e06958995263b32a44d6fc8c227d
 | `app/globals.css` semantic tokens and type scale | Reuse after generalization | Kept shared surface, typography, spacing, and interaction tokens; removed source-specific commentary and unused animation behavior. |
 | `components/ui/button.tsx`, `card.tsx`, `page-header.tsx`, `skeleton.tsx` | Reuse after generalization | Kept mature interaction, empty/loading geometry, and responsive header behavior; removed Company OS-specific commentary. |
 | `lib/utils.ts` | Reuse after generalization | Kept class merging; removed unused source formatting helpers. |
+| `tw-animate-css` dependency and global import | Remove | No Company Human component uses its animation utilities; Tailwind's built-in `animate-spin` supplies the one loading animation. |
 | `next.config.ts`, `postcss.config.mjs`, `tsconfig.json`, `vitest.config.ts` | Reuse after generalization | Kept compatible build configuration and removed the source Playwright cache hook and Company OS scripts. |
 | `docs/DESIGN_LANGUAGE.md`, `anti-slop.md` | Remove | Removed the source product screen manual and generic rulebook; retained relevant design foundations in `docs/design.md`. |
 | `app/layout.tsx`, `app/page.tsx`, `app/icon.svg`, metadata | Replace | New Company Human metadata and restrained landing scaffold; no Company OS brand assets. |
