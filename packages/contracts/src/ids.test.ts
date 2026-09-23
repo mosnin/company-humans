@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CanonicalIdReferenceV1Schema, createCanonicalId, ID_SCHEMA_VERSION, MembershipIdSchema, OrganizationIdSchema, UserIdSchema } from "./ids.js";
+import { BudgetIdSchema, CanonicalIdReferenceV1Schema, createCanonicalId, ID_SCHEMA_VERSION, MembershipIdSchema, OrganizationIdSchema, UserIdSchema, UsageLimitIdSchema } from "./ids.js";
 
 describe("canonical IDs v1", () => {
   it("creates globally distinct typed IDs", () => {
@@ -20,5 +20,9 @@ describe("canonical IDs v1", () => {
     expect(CanonicalIdReferenceV1Schema.safeParse({ schemaVersion: 2, kind: "organization", id: organization }).success).toBe(false);
     expect(CanonicalIdReferenceV1Schema.safeParse({ schemaVersion: 1, kind: "user", id: organization }).success).toBe(false);
     expect(CanonicalIdReferenceV1Schema.safeParse({ schemaVersion: 1, kind: "organization", id: "convex_provider_id" }).success).toBe(false);
+    const budget = createCanonicalId("budget");
+    expect(BudgetIdSchema.parse(budget)).toBe(budget);
+    expect(UsageLimitIdSchema.safeParse(budget).success).toBe(false);
+    expect(CanonicalIdReferenceV1Schema.parse({ schemaVersion: 1, kind: "budget", id: budget }).id).toBe(budget);
   });
 });

@@ -24,4 +24,6 @@ Exact decimal usage aggregates now support half-open occurrence windows and orga
 
 Quarantined events can now be released after an exact product/meter/version/unit is registered. A budgets.manage-authorized action appends a release receipt; it never changes the source event. Aggregation includes the released event once. Historical valuation and billing snapshots remain unimplemented.
 
+The CH-22 shared contract now describes separate organization, product, product-instance, operation-team, member, capability and meter policy scopes for a single exact product meter/version/unit and UTC day/week/month window. A pure resolver retains every applicable threshold and its own action, returns the earliest configured threshold without treating it as a spend decision, and rejects missing or mismatched team attribution. No budget policy storage, actual consumption evaluation, reservation, priced cross-product budget, or provider stop is implemented. Signed usage team identity still needs a database-backed membership check before team limits can govern spend.
+
 The dedicated Usage page reports the authenticated reader's permitted consumption by product/meter, with explicit production/test and inclusive UTC dates. It preserves exact numeric strings and labels total, peak and latest-value aggregation. It does not show a bill estimate or claim provider enforcement.

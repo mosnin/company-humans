@@ -14,6 +14,7 @@ export const ProductIdSchema = z.string().regex(new RegExp(`^ch_prod_${UUID_HEX}
 export const ProductInstanceIdSchema = z.string().regex(new RegExp(`^ch_inst_${UUID_HEX}$`)).brand<"ProductInstanceId">();
 export const ProductMembershipIdSchema = z.string().regex(new RegExp(`^ch_pmem_${UUID_HEX}$`)).brand<"ProductMembershipId">();
 export const UsageLimitIdSchema = z.string().regex(new RegExp(`^ch_lim_${UUID_HEX}$`)).brand<"UsageLimitId">();
+export const BudgetIdSchema = z.string().regex(new RegExp(`^ch_bud_${UUID_HEX}$`)).brand<"BudgetId">();
 export const EntitlementIdSchema = z.string().regex(new RegExp(`^ch_ent_${UUID_HEX}$`)).brand<"EntitlementId">();
 export const ProvisioningOperationIdSchema = z.string().regex(new RegExp(`^ch_op_${UUID_HEX}$`)).brand<"ProvisioningOperationId">();
 export const EventIdSchema = z.string().regex(new RegExp(`^ch_evt_${UUID_HEX}$`)).brand<"EventId">();
@@ -29,6 +30,7 @@ export type ProductId = z.infer<typeof ProductIdSchema>;
 export type ProductInstanceId = z.infer<typeof ProductInstanceIdSchema>;
 export type ProductMembershipId = z.infer<typeof ProductMembershipIdSchema>;
 export type UsageLimitId = z.infer<typeof UsageLimitIdSchema>;
+export type BudgetId = z.infer<typeof BudgetIdSchema>;
 export type EntitlementId = z.infer<typeof EntitlementIdSchema>;
 export type ProvisioningOperationId = z.infer<typeof ProvisioningOperationIdSchema>;
 export type EventId = z.infer<typeof EventIdSchema>;
@@ -45,6 +47,7 @@ const schemas = {
   productInstance: ProductInstanceIdSchema,
   productMembership: ProductMembershipIdSchema,
   usageLimit: UsageLimitIdSchema,
+  budget: BudgetIdSchema,
   entitlement: EntitlementIdSchema,
   provisioningOperation: ProvisioningOperationIdSchema,
   event: EventIdSchema,
@@ -62,6 +65,7 @@ const prefixes = {
   productInstance: "inst",
   productMembership: "pmem",
   usageLimit: "lim",
+  budget: "bud",
   entitlement: "ent",
   provisioningOperation: "op",
   event: "evt",
@@ -88,6 +92,7 @@ export const CanonicalIdReferenceV1Schema = z.discriminatedUnion("kind", [
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("productInstance"), id: ProductInstanceIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("productMembership"), id: ProductMembershipIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("usageLimit"), id: UsageLimitIdSchema }),
+  z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("budget"), id: BudgetIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("entitlement"), id: EntitlementIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("provisioningOperation"), id: ProvisioningOperationIdSchema }),
   z.object({ schemaVersion: z.literal(ID_SCHEMA_VERSION), kind: z.literal("event"), id: EventIdSchema }),
