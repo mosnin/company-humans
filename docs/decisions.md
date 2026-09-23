@@ -145,3 +145,7 @@ The existing usage-limit V1 policy and provider readback omit meter version. Pre
 ### Reserve versioned limit storage without dispatch — 2026-09-22
 
 Add a contract version and meter version to limit revision rows, retaining V1 as the historical default. Restrict the current service writer to its original columns. Do not enqueue V2 revisions on the V1 journal, reject V2 rows in the V1 worker, and forbid V2-to-V1 downgrades. This creates a fail-closed migration path for a future dedicated V2 writer and worker; it does not register meters or establish provider enforcement.
+
+### Compare meter claims with current registry under operator authority — 2026-09-22
+
+Use a non-login, read-only operator role and a repeatable-read transaction to compare a shaped declaration with the product's current catalog revision, active catalog meter keys and immutable registered meter versions, units and aggregation. A result may report local registry compatibility, but always reports provider enforcement unverified and activation unavailable. Historical registered versions need not appear in the active catalog. This comparison is not a provider attestation and does not persist or clear an activation gate.
