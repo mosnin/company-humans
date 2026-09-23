@@ -26,6 +26,13 @@ function equalDigest(actual: string, expected: string): boolean {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
+/** Canonical bytes used by the V1 event HMAC. Keep database verification on
+ * these exact UTF-8 bytes; PostgreSQL jsonb text is not the same encoding.
+ */
+export function canonicalEventEnvelopeV1(body: EventEnvelopeV1): string {
+  return canonicalJson(EventEnvelopeV1Schema.parse(body));
+}
+
 /** Authenticate the exact parsed JSON body before any schema can strip or
  * normalize fields. A valid digest over a body that fails its schema remains
  * invalid, including unknown nested source and actor fields.

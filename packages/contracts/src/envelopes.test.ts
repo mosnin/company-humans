@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { createHmac } from "node:crypto";
 import { createCanonicalId } from "./ids.js";
 import { AuditEnvelopeV1Schema, EventEnvelopeV1Schema } from "./envelopes.js";
-import { signAuditEnvelope, signEventEnvelope, verifyAuditEnvelope, verifyEventEnvelope } from "./signing.js";
+import { canonicalEventEnvelopeV1, signAuditEnvelope, signEventEnvelope, verifyAuditEnvelope, verifyEventEnvelope } from "./signing.js";
 
 const key = new Uint8Array(32).fill(7);
 const wrongKey = new Uint8Array(32).fill(8);
@@ -39,6 +40,14 @@ function audit() {
 }
 
 describe("signed version 1 envelopes", () => {
+  it("exposes the exact UTF-8 event bytes used by signing for database verification", () => {
+    const body = { ...event(), payload: { quantity: "1.250000", metadata: { note: "é / \"quoted\"" } } };
+    const canonical = canonicalEventEnvelopeV1(body);
+    expect(canonical).toBe(canonicalEventEnvelopeV1({ ...body, payload: { metadata: body.payload.metadata, quantity: "1.250000" } }));
+    expect(createHmac("sha256", key).update("company-human:event:v1\n").update(canonical).digest("hex"))
+      .toBe(signEventEnvelope(body, "test-key", key).signature.digest);
+  });
+
   it("validates and verifies canonical event content regardless of property order", () => {
     const signed = signEventEnvelope(event(), "test-key", key);
     expect(verifyEventEnvelope(signed, () => key)).toEqual(signed);
