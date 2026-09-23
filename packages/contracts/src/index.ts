@@ -13,6 +13,7 @@ export * from "./usage-limit-adapter.js";
 export * from "./usage-limits-v2.js";
 export * from "./usage-limit-adapter-v2.js";
 export * from "./budget-policy.js";
+export * from "./budget-evaluation.js";
 export * from "./capability-adapter.js";
 
 export * from "./adapter-health.js";
