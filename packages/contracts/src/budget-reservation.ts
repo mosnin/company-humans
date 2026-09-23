@@ -309,9 +309,10 @@ export type BudgetReservationIntentV1 = z.infer<typeof BudgetReservationIntentV1
 /** Input from verified accepted/released ingestion. These fields alone do not
  * attest signature verification or database acceptance; the caller must fetch
  * the accepted/released event and its immutable source envelope under tenancy.
- * Current signed UsageEventV1 has source.system and source.eventId, but no
- * authenticated source.operationId. Settlement therefore also needs a future
- * persisted signed-event-to-operation mapping before this evidence is trusted.
+ * Signed UsageEventV1 can now report source.operationId, projected from the
+ * immutable envelope. The field proves only what the scoped signer reported;
+ * settlement still needs a trusted stored-event read, provider-operation
+ * binding and unique transactional event-to-reservation reconciliation.
  */
 export const BudgetReservationUsageEvidenceV1Schema = z.object({
   schemaVersion: z.literal(1),

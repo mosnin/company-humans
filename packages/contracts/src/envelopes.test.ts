@@ -48,6 +48,21 @@ describe("signed version 1 envelopes", () => {
     expect(() => verifyEventEnvelope(signed, () => undefined)).toThrow("Invalid event signature");
   });
 
+  it("keeps legacy event signatures and binds an optional source operation to the signature", () => {
+    const legacy = signEventEnvelope(event(), "test-key", key);
+    expect(legacy.source).toEqual({ system: "scalar", eventId: "provider-123" });
+    expect(verifyEventEnvelope(legacy, () => key)).toEqual(legacy);
+
+    const withOperation = signEventEnvelope({ ...event(), source: { system: "scalar", eventId: "provider-123", operationId: "enrich:123/step-1" } }, "test-key", key);
+    expect(withOperation.source.operationId).toBe("enrich:123/step-1");
+    expect(verifyEventEnvelope(withOperation, () => key)).toEqual(withOperation);
+    expect(() => verifyEventEnvelope({ ...withOperation, source: { ...withOperation.source, operationId: "enrich:123/step-2" } }, () => key)).toThrow("Invalid event signature");
+    expect(() => verifyEventEnvelope({ ...withOperation, source: { system: "scalar", eventId: "provider-123" } }, () => key)).toThrow("Invalid event signature");
+    expect(EventEnvelopeV1Schema.safeParse({ ...event(), source: { system: "scalar", eventId: "provider-123", operationId: "" } }).success).toBe(false);
+    expect(EventEnvelopeV1Schema.safeParse({ ...event(), source: { system: "scalar", eventId: "provider-123", operationId: "x".repeat(257) } }).success).toBe(false);
+    expect(EventEnvelopeV1Schema.safeParse({ ...event(), source: { system: "scalar", eventId: "provider-123", operationId: "line\nbreak" } }).success).toBe(false);
+  });
+
   it("validates and verifies audit provenance without accepting an event signature", () => {
     const signed = signAuditEnvelope(audit(), "test-key", key);
     expect(verifyAuditEnvelope(signed, () => key)).toEqual(signed);

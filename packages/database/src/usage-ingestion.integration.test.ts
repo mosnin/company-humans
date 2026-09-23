@@ -31,6 +31,30 @@ it.skipIf(!url)("persists signed usage once, quarantines unknown meters and enfo
     await client.query("SET LOCAL ROLE company_human_usage_ingest");
     expect(await ingestUsageEvent(client,signed,authority)).toEqual({eventId:body.eventId,disposition:"accepted",duplicate:false});
     expect(await ingestUsageEvent(client,signed,authority)).toEqual({eventId:body.eventId,disposition:"accepted",duplicate:true});
+    expect((await client.query("SELECT source_operation_id FROM usage_events WHERE event_id=$1",[body.eventId])).rows[0]!.source_operation_id).toBeNull();
+    const operationBody: EventEnvelopeV1 = {...body,eventId:createCanonicalId("event"),source:{system:"scalar",eventId:"source-operation-1",operationId:"enrich:123/step-1"},idempotencyKey:"operation-event-1"};
+    const operationSigned = signEventEnvelope(operationBody,authority.keyId,key);
+    expect(await ingestUsageEvent(client,operationSigned,authority)).toEqual({eventId:operationBody.eventId,disposition:"accepted",duplicate:false});
+    expect(await ingestUsageEvent(client,operationSigned,authority)).toEqual({eventId:operationBody.eventId,disposition:"accepted",duplicate:true});
+    await expect(ingestUsageEvent(client,{...operationSigned,source:{...operationSigned.source,operationId:"enrich:123/step-2"}},authority)).rejects.toThrow("signature");
+    await expect(ingestUsageEvent(client,signEventEnvelope({...operationBody,source:{...operationBody.source,operationId:"enrich:123/step-2"}},authority.keyId,key),authority)).rejects.toThrow("idempotency conflict");
+    await expect(ingestUsageEvent(client,operationSigned,{...authority,organizationId:otherOrg})).rejects.toThrow("scope denied");
+    const secondOperationBody: EventEnvelopeV1 = {...operationBody,eventId:createCanonicalId("event"),source:{...operationBody.source,eventId:"source-operation-2"},idempotencyKey:"operation-event-2"};
+    expect((await ingestUsageEvent(client,signEventEnvelope(secondOperationBody,authority.keyId,key),authority)).duplicate).toBe(false);
+    expect((await client.query("SELECT event_id,source_operation_id FROM usage_events WHERE source_operation_id=$1 ORDER BY event_id",["enrich:123/step-1"])).rows).toEqual([
+      {event_id:operationBody.eventId,source_operation_id:"enrich:123/step-1"},
+      {event_id:secondOperationBody.eventId,source_operation_id:"enrich:123/step-1"},
+    ].sort((a,b) => a.event_id.localeCompare(b.event_id)));
+    for (const invalidOperation of ["", "x".repeat(257), "line\nbreak", 123]) {
+      await client.query("SAVEPOINT invalid_operation_projection");
+      await expect(client.query(`INSERT INTO usage_events
+        (event_id,organization_id,product_id,product_instance_id,environment,source_system,source_event_id,idempotency_key,membership_id,team_id,meter_key,meter_version,quantity,unit,occurred_at,reported_at,disposition,envelope,signature)
+        SELECT $1,organization_id,product_id,product_instance_id,environment,source_system,$2,$2,membership_id,team_id,meter_key,meter_version,quantity,unit,occurred_at,reported_at,disposition,
+          jsonb_set(envelope,'{source,operationId}',$3::jsonb),signature FROM usage_events WHERE event_id=$4`,
+        [createCanonicalId("event"),crypto.randomUUID(),JSON.stringify(invalidOperation),operationBody.eventId])).rejects.toThrow("usage_events_source_operation_id_format");
+      await client.query("ROLLBACK TO SAVEPOINT invalid_operation_projection");
+      await client.query("RELEASE SAVEPOINT invalid_operation_projection");
+    }
     await expect(ingestUsageEvent(client,{...signed,payload:{...body.payload,quantity:"2"}},authority)).rejects.toThrow("signature");
     await expect(ingestUsageEvent(client,signEventEnvelope({...body,payload:{...body.payload,quantity:"2"}},authority.keyId,key),authority)).rejects.toThrow("idempotency conflict");
     await expect(ingestUsageEvent(client,signed,{...authority,organizationId:otherOrg})).rejects.toThrow("scope denied");
@@ -64,9 +88,18 @@ it.skipIf(!url)("persists signed usage once, quarantines unknown meters and enfo
     await client.query("SELECT set_config('company_human.organization_id',$1,true)",[otherOrg]);
     expect((await client.query("SELECT * FROM usage_events")).rowCount).toBe(0);
     await client.query("RESET ROLE");
+    await client.query("SAVEPOINT operation_shadow");
+    await expect(client.query(`INSERT INTO usage_events
+      (event_id,organization_id,product_id,product_instance_id,environment,source_system,source_event_id,idempotency_key,membership_id,team_id,meter_key,meter_version,quantity,unit,occurred_at,reported_at,disposition,envelope,signature,source_operation_id)
+      SELECT $1,organization_id,product_id,product_instance_id,environment,source_system,$2,$2,membership_id,team_id,meter_key,meter_version,quantity,unit,occurred_at,reported_at,disposition,envelope,signature,$3
+      FROM usage_events WHERE event_id=$4`,[createCanonicalId("event"),"shadow-operation","forged",operationBody.eventId])).rejects.toThrow("cannot insert a non-DEFAULT value");
+    await client.query("ROLLBACK TO SAVEPOINT operation_shadow");
     await client.query("SAVEPOINT rewrite");
-    await expect(client.query("UPDATE usage_events SET quantity=3 WHERE event_id=$1",[body.eventId])).rejects.toThrow("immutable");
+    await expect(client.query("UPDATE usage_events SET envelope=jsonb_set(envelope,'{source,operationId}','\"forged\"'::jsonb) WHERE event_id=$1",[operationBody.eventId])).rejects.toThrow("immutable");
     await client.query("ROLLBACK TO SAVEPOINT rewrite");
+    await client.query("SAVEPOINT rewrite_quantity");
+    await expect(client.query("UPDATE usage_events SET quantity=3 WHERE event_id=$1",[body.eventId])).rejects.toThrow("immutable");
+    await client.query("ROLLBACK TO SAVEPOINT rewrite_quantity");
     await expect(client.query("DELETE FROM meter_definitions WHERE product_id=$1",[product])).rejects.toThrow("immutable");
   } finally { await client.query("ROLLBACK"); await client.end(); }
 });

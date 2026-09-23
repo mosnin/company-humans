@@ -18,7 +18,11 @@ export const EventEnvelopeV1Schema = z.object({
   eventId: EventIdSchema,
   organizationId: OrganizationIdSchema,
   eventType: SlugSchema,
-  source: z.object({ system: SlugSchema, eventId: OpaqueReferenceSchema }),
+  source: z.object({
+    system: SlugSchema,
+    eventId: OpaqueReferenceSchema,
+    operationId: OpaqueReferenceSchema.regex(/^[^\u0000-\u001f\u007f]+$/u).optional(),
+  }),
   productId: ProductIdSchema.optional(),
   actor: ActorV1Schema,
   environment: z.enum(["test", "production"]),
