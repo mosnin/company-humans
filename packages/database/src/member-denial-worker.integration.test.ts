@@ -28,7 +28,10 @@ describe.skipIf(!databaseUrl)('durable member denial worker',()=>{
     const owner=await syncAuthUser(databaseUrl!,{authIssuer:'https://identity.example.test',authSubject:`deny-${suffix}`,displayName:'Worker fixture',primaryEmail:null,status:'active',eventTimestamp:1});
     const org=await createOrganization(databaseUrl!,{ownerUserId:owner,name:'Denial fixture',slug:`denial-${suffix}`});
     const foreign=await createOrganization(databaseUrl!,{ownerUserId:owner,name:'Foreign fixture',slug:`denial-other-${suffix}`});
-    const orgIds=[org.organizationId,foreign.organizationId],scalar=referenceProductId('scalar');
+    const orgIds=[org.organizationId,foreign.organizationId],scalar=createCanonicalId('product');
+    await admin.query(`INSERT INTO products(id,product_key,display_name,catalog_status,catalog_metadata)
+      SELECT $1,$2,display_name,'ready',catalog_metadata FROM products WHERE id=$3`,
+      [scalar,`denial-fixture-${suffix}`,referenceProductId('scalar')]);
     const member=(await admin.query('SELECT id FROM memberships WHERE organization_id=$1',[org.organizationId])).rows[0].id;
     async function setup(key:string,deny=true) {
       const instance=createCanonicalId('productInstance');
@@ -191,7 +194,7 @@ describe.skipIf(!databaseUrl)('durable member denial worker',()=>{
     } finally {
       await sql.end();
       for(const table of ['member_denial_attempts','member_denial_jobs','product_membership_commands','product_memberships','identity_audit_events','product_instances','memberships','roles']) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgIds]);
-      await admin.query('DELETE FROM organizations WHERE id=ANY($1)',[orgIds]);await admin.query('DELETE FROM users WHERE id=$1',[owner]);
+      await admin.query('DELETE FROM organizations WHERE id=ANY($1)',[orgIds]);await admin.query('DELETE FROM products WHERE id=$1',[scalar]);await admin.query('DELETE FROM users WHERE id=$1',[owner]);
       for(const role of [serviceRole,workerRole]) await admin.query(`DROP ROLE ${role}`);await admin.end();
     }
   });

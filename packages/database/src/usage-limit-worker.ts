@@ -17,7 +17,7 @@ export interface UsageLimitLease { productId: ProductId; state: AppliedUsageLimi
 const selection = `SELECT j.*,j.lease_expires_at<=clock_timestamp() AS expired,l.product_instance_id,l.membership_id,l.meter_key,l.unit,l.window_key,
   r.maximum_quantity,i.external_organization_id,pm.external_member_id,pm.access_revision,attempt.claimed_access_revision,p.catalog_metadata,
   NOT EXISTS (SELECT 1 FROM public.product_usage_limit_revisions newer WHERE newer.usage_limit_id=l.id AND newer.revision>j.revision) AS latest,
-  (r.maximum_quantity=0 OR (o.status='active' AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status<>'retired'
+  (r.maximum_quantity=0 OR (o.status='active' AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status='ready'
     AND (l.membership_id IS NULL OR (m.status='active' AND u.status='active' AND pm.desired_enabled
       AND NOT pm.policy_blocked AND pm.provisioning_status IN ('active','suspended')
       AND EXISTS(SELECT 1 FROM public.role_permissions permission WHERE permission.organization_id=m.organization_id

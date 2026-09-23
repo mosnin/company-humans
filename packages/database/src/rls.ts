@@ -125,7 +125,7 @@ export async function listMemberApplications(databaseUrl: string, userId: UserId
   OrganizationIdSchema.parse(organizationId);
   return withTenantContext(databaseUrl, userId, async client => {
     const result = await client.query<MemberApplication>(`SELECT pm.id, p.display_name AS name, i.instance_key AS "instanceKey",
-      CASE WHEN p.catalog_status='retired' OR pm.provisioning_status IN ('failed','removed')
+      CASE WHEN p.catalog_status<>'ready' OR pm.provisioning_status IN ('failed','removed')
           OR i.provisioning_status IN ('failed','disconnected') THEN 'unavailable'
         WHEN pm.provisioning_status='suspended' OR i.provisioning_status='suspended' THEN 'suspended'
         WHEN pm.policy_blocked OR NOT pm.desired_enabled OR NOT i.desired_enabled THEN 'access_update_pending'

@@ -150,6 +150,16 @@ describe.skipIf(!databaseUrl)('restricted exact usage-limit dispatch',()=>{
       await save(9);expect(await claim()).toBeNull();expect((await status(id,10)).status).toBe('superseded');
       await save(10,'0');await save(11,'0');expect(await claim()).toBeNull();expect((await status(id,11)).status).toBe('superseded');
       await dispatch();expect((await status(id,12)).status).toBe('succeeded');
+      // Draft products cannot receive a positive member limit. A zero hard stop
+      // remains deliverable even after catalog status withdraws access.
+      await admin.query("UPDATE products SET catalog_status='draft' WHERE id=$1",[product]);
+      await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
+      await setProductUsageLimit(service.toString(),{...input,membershipId:org.ownerMembershipId,expectedRevision:4,maximumQuantity:'5'});
+      expect(await claim()).toBeNull();expect((await status(member.usageLimitId,5)).status).toBe('superseded');
+      await setProductUsageLimit(service.toString(),{...input,membershipId:org.ownerMembershipId,expectedRevision:5,maximumQuantity:'0'});
+      const draftStop=(await claim())!;expect(draftStop.state.limit.maximumQuantity).toBe('0');
+      await finishUsageLimit(worker.toString(),org.organizationId,draftStop,{status:'succeeded',value:draftStop.state},{status:'succeeded',value:draftStop.state});
+      expect((await status(member.usageLimitId,6)).status).toBe('succeeded');
       // Worker can neither grant access nor change policies, identities or completed receipts.
       await sql.query("SELECT set_config('company_human.organization_id',$1,false),set_config('company_human.product_id',$2,false)",[org.organizationId,product]);
       await expect(sql.query("UPDATE product_memberships SET provisioning_status='active' WHERE id=$1",[mapping])).rejects.toThrow('permission denied');

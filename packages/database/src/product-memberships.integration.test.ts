@@ -6,7 +6,6 @@ import { syncAuthUser } from "./auth-users.js";
 import { createOrganization } from "./organizations.js";
 import { enableProductInstance } from "./product-instances.js";
 import { requestProductMembership } from "./product-memberships.js";
-import { referenceProductId } from "./seed.js";
 import { listApplicationMemberCandidates } from "./administration.js";
 import { listMemberApplications } from "./rls.js";
 const databaseUrl=process.env.DATABASE_URL;
@@ -20,20 +19,24 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
     const bob=await syncAuthUser(databaseUrl!,{authIssuer:"https://identity.example.test",authSubject:`pmem-bob-${suffix}`,primaryEmail:null,displayName:"Bob",status:"active",eventTimestamp:1});
     const org=await createOrganization(databaseUrl!,{ownerUserId:alice,slug:`pmem-alice-${suffix}`,name:"Alice"});
     const other=await createOrganization(databaseUrl!,{ownerUserId:bob,slug:`pmem-bob-${suffix}`,name:"Bob"});
-    const orgs=[org.organizationId,other.organizationId];
+    const orgs=[org.organizationId,other.organizationId],product=createCanonicalId('product');
     const readerRole=`ch_pread_${suffix}`;
     await admin.query(`CREATE ROLE ${readerRole} LOGIN PASSWORD '${password}'`);
     await admin.query(`GRANT company_human_app TO ${readerRole}`);
     const readerUrl=new URL(url);readerUrl.username=readerRole;
     const runtime=new Client({connectionString:url.toString()});await runtime.connect();
     try {
-      const instance=await enableProductInstance(url.toString(),{actorUserId:alice,organizationId:org.organizationId,productId:referenceProductId("scalar"),mode:"connected"});
+      await admin.query("INSERT INTO products(id,product_key,display_name,catalog_status,catalog_metadata) VALUES($1,$2,'Fixture','ready',$3)",
+        [product,`pmem-${suffix}`,{schemaVersion:1,description:'Test only',category:'sales',supportedCapabilities:[],
+          provisioningModes:['connected'],supportedMemberOperations:['provision','suspend'],usageMeters:[],requiredPermissions:['product.use'],
+          adapterVersion:'1.0.0',billingBehavior:'organization_sponsored',deepLinks:{},connectionRequirements:[]}]);
+      const instance=await enableProductInstance(url.toString(),{actorUserId:alice,organizationId:org.organizationId,productId:product,mode:"connected"});
       const input={actorUserId:alice,organizationId:org.organizationId,productInstanceId:instance,membershipId:org.ownerMembershipId};
       await expect(requestProductMembership(url.toString(),input)).rejects.toThrow("Product or membership unavailable");
       // Explicit fixture activation, not a real Scalar organization or member.
       await admin.query("DELETE FROM product_instances WHERE id=$1",[instance]);
       await admin.query(`INSERT INTO product_instances (id,organization_id,product_id,instance_key,mode,provisioning_status,external_organization_id,created_by_user_id)
-        VALUES ($1,$2,$3,'primary','connected','active',$4,$5)`,[instance,org.organizationId,referenceProductId("scalar"),`fixture-${suffix}`,alice]);
+        VALUES ($1,$2,$3,'primary','connected','active',$4,$5)`,[instance,org.organizationId,product,`fixture-${suffix}`,alice]);
       const candidates=await listApplicationMemberCandidates(url.toString(),alice,org.organizationId,instance);
       expect(candidates.members).toEqual([{id:org.ownerMembershipId,name:'Alice'}]);
       expect(candidates.total).toBe(1);
@@ -44,7 +47,7 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       const ids=await Promise.all(Array.from({length:6},()=>requestProductMembership(url.toString(),input)));
       expect(new Set(ids).size).toBe(1);
       expect(await listMemberApplications(readerUrl.toString(),alice,org.organizationId)).toEqual([
-        {id:ids[0],name:'Scalar',instanceKey:'primary',status:'preparing'}
+        {id:ids[0],name:'Fixture',instanceKey:'primary',status:'preparing'}
       ]);
       expect(await listMemberApplications(readerUrl.toString(),bob,org.organizationId)).toEqual([]);
       expect(await listMemberApplications(readerUrl.toString(),alice,other.organizationId)).toEqual([]);
@@ -80,6 +83,7 @@ describe.skipIf(!databaseUrl)("product membership mapping",()=>{
       await runtime.end();
       for(const table of ["product_membership_commands","product_memberships","identity_audit_events","product_instances","memberships","roles"]) await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
       await admin.query("DELETE FROM organizations WHERE id=ANY($1)",[orgs]);await admin.query("DELETE FROM users WHERE id=ANY($1)",[[alice,bob]]);
+      await admin.query('DELETE FROM products WHERE id=$1',[product]);
       await admin.query(`DROP ROLE ${readerRole}`);await admin.query(`DROP ROLE ${role}`);await admin.end();
     }
   });

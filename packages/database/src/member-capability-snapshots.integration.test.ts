@@ -23,18 +23,25 @@ describe.skipIf(!databaseUrl)('durable member capability snapshots',()=>{
    await admin.query("INSERT INTO product_memberships(id,organization_id,product_instance_id,membership_id,provisioning_status,external_member_id,created_by_user_id) VALUES($1,$2,$3,$4,'suspended','fixture-member',$5)",[mapping,org.organizationId,instance,org.ownerMembershipId,users[0]]);
    const config={actorUserId:users[0]!,organizationId:org.organizationId,productInstanceId:instance,membershipId:null,capability:'read',effect:'allow' as const,expectedRevision:0};
    await setProductEntitlement(url.toString(),config);
+   await expect(prepareMemberCapabilitySnapshot(url.toString(),input)).rejects.toThrow('unavailable');
+   // Fixture-only reset models a later authorized activation; runtime roles
+   // cannot clear policy_blocked merely because a policy looks permissive.
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
    const snapshots=await Promise.all(Array.from({length:5},()=>prepareMemberCapabilitySnapshot(url.toString(),input)));
    expect(snapshots.every(s=>s.policyRevision===1&&s.capabilities.join(',')==='read')).toBe(true);
    expect((await admin.query('SELECT count(*)::int n FROM member_capability_snapshots WHERE product_membership_id=$1',[mapping])).rows[0].n).toBe(1);
    expect((await admin.query("SELECT count(*)::int n FROM identity_audit_events WHERE target_id=$1 AND action='product.capabilities.prepared'",[mapping])).rows[0].n).toBe(1);
    await setProductEntitlement(url.toString(),{...config,effect:'deny',expectedRevision:1});
    await setProductEntitlement(url.toString(),{...config,membershipId:org.ownerMembershipId});
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
    const denied=await prepareMemberCapabilitySnapshot(url.toString(),input);expect(denied.policyRevision).toBe(2);expect(denied.capabilities).toEqual([]);
    const stored=(await admin.query('SELECT source,payload FROM member_capability_snapshots WHERE product_membership_id=$1 AND policy_revision=2',[mapping])).rows[0];
    expect(stored.source.revisions).toHaveLength(2);expect(stored.source.desiredRevision).toBe(4); // Three policy changes advance the bound mapping intent.
    await setProductEntitlement(url.toString(),{...config,effect:'inherit',expectedRevision:2});
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
    expect((await prepareMemberCapabilitySnapshot(url.toString(),input)).capabilities).toEqual(['read']);
    await admin.query('UPDATE products SET catalog_metadata=$2 WHERE id=$1',[product,{...metadata,supportedCapabilities:['write']}]);
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
    expect((await prepareMemberCapabilitySnapshot(url.toString(),input)).capabilities).toEqual([]);
    expect((await admin.query('SELECT payload FROM member_capability_snapshots WHERE product_membership_id=$1 AND policy_revision=1',[mapping])).rows[0].payload.capabilities).toEqual(['read']);
    await expect(prepareMemberCapabilitySnapshot(url.toString(),{...input,actorUserId:users[1]!})).rejects.toThrow();
@@ -49,6 +56,7 @@ describe.skipIf(!databaseUrl)('durable member capability snapshots',()=>{
    await admin.query(`CREATE FUNCTION public.${guard}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.target_id='${mapping}' AND NEW.action='product.capabilities.prepared' THEN RAISE EXCEPTION 'fixture audit failure'; END IF; RETURN NEW; END; $$`);
    await admin.query(`CREATE TRIGGER ${guard} BEFORE INSERT ON identity_audit_events FOR EACH ROW EXECUTE FUNCTION public.${guard}()`);
    await admin.query('UPDATE products SET catalog_metadata=$2 WHERE id=$1',[product,metadata]);
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
    try{await expect(prepareMemberCapabilitySnapshot(url.toString(),input)).rejects.toThrow('fixture audit failure');expect((await admin.query('SELECT max(policy_revision) n FROM member_capability_snapshots WHERE product_membership_id=$1',[mapping])).rows[0].n).toBe(4);}
    finally{await admin.query(`DROP TRIGGER ${guard} ON identity_audit_events`);await admin.query(`DROP FUNCTION public.${guard}()`);}
    await admin.query("UPDATE memberships SET status='suspended' WHERE organization_id=$1 AND id=$2",[org.organizationId,org.ownerMembershipId]);

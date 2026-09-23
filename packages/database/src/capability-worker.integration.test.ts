@@ -28,6 +28,8 @@ describe.skipIf(!databaseUrl)('restricted capability staging worker',()=>{
    await admin.query("INSERT INTO product_memberships(id,organization_id,product_instance_id,membership_id,provisioning_status,external_member_id,created_by_user_id) VALUES($1,$2,$3,$4,'suspended','fixture-member',$5)",[mapping,org.organizationId,instance,org.ownerMembershipId,users[0]]);
    const config={actorUserId:users[0]!,organizationId:org.organizationId,productInstanceId:instance,membershipId:null,capability:'read',effect:'allow' as const,expectedRevision:0};
    await setProductEntitlement(url.toString(),config);
+   await expect(prepareMemberCapabilitySnapshot(url.toString(),input)).rejects.toThrow('unavailable');
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
    const fixture=(stage:ProductCapabilityAdapterV1['stageCapabilities'],read:ProductCapabilityAdapterV1['getStagedCapabilities']):ProductCapabilityAdapterV1=>{
     const a={contractVersion:2,capabilityContractVersion:1,...Object.fromEntries(PRODUCT_ADAPTER_METHODS.map(name=>[name,async()=>{throw new Error(`Unexpected ${name}`);}])) ,stageCapabilities:stage,getStagedCapabilities:read};assertProductCapabilityAdapterV1(a);return a;
    };
@@ -36,7 +38,10 @@ describe.skipIf(!databaseUrl)('restricted capability staging worker',()=>{
    const dispatch=(adapter=good())=>dispatchCapability(worker.toString(),org.organizationId,{productId:product,adapter});
    const status=async(revision:number)=>(await admin.query('SELECT status,failure_code FROM capability_jobs WHERE product_membership_id=$1 AND revision=$2',[mapping,revision])).rows[0];
    let preference=1;
-   const prepare=async()=>{await setProductEntitlement(url.toString(),{...config,expectedRevision:preference++});return prepareMemberCapabilitySnapshot(url.toString(),input);};
+   const prepare=async()=>{await setProductEntitlement(url.toString(),{...config,expectedRevision:preference++});
+    // Fixture-only reset isolates worker retries from the separate activation gate.
+    await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
+    return prepareMemberCapabilitySnapshot(url.toString(),input);};
    await prepareMemberCapabilitySnapshot(url.toString(),input);
    await expect(claimCapability(url.toString(),org.organizationId,product)).rejects.toThrow('restricted worker');
    await expect(claimCapability(databaseUrl!,org.organizationId,product)).rejects.toThrow('restricted worker');
@@ -77,6 +82,7 @@ describe.skipIf(!databaseUrl)('restricted capability staging worker',()=>{
    expect((await readApplicationEntitlements(url.toString(),users[0]!,org.organizationId,instance,org.ownerMembershipId)).staging?.matchesCurrentRequest).toBe(false);
    await finishCapability(worker.toString(),org.organizationId,retry,{status:'succeeded',value:retry.state},{status:'succeeded',value:retry.state});
    expect((await status(4)).status).toBe('superseded');
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
    const empty=await prepareMemberCapabilitySnapshot(url.toString(),input);expect(empty.capabilities).toEqual([]);await dispatch();expect((await status(5)).status).toBe('succeeded');
    await prepare();let crash=(await claim())!;
    for(let n=2;n<=5;n++){

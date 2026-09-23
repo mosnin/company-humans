@@ -188,7 +188,7 @@ export async function readApplicationEntitlements(databaseUrl: string, actorUser
       const selected = membershipId===null ? organization : member;
       return { capability, effect: EntitlementEffectSchema.parse(selected?.effect ?? 'inherit'), revision: selected?.revision ?? 0,
         organizationEffect, memberEffect, requestedEffect: requestedEntitlementEffect(organizationEffect, memberEffect),
-        allowAvailable: catalog.success && product.catalog_status!=='retired' && supported.includes(capability) };
+        allowAvailable: catalog.success && product.catalog_status==='ready' && supported.includes(capability) };
     });
     let staging:CapabilityStagingDiagnostic|null=null;
     if(membershipId!==null){
@@ -227,7 +227,7 @@ export async function listApplicationMemberCandidates(databaseUrl:string,actorUs
   const query=search.trim().slice(0,128);
   return readAdministration(databaseUrl,actorUserId,organizationId,['applications.manage'],async client=>{
     const instance=await client.query<{productName:string;available:boolean}>(`SELECT p.display_name AS "productName",
-      (i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status<>'retired') AS available
+      (i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status='ready') AS available
       FROM public.product_instances i JOIN public.products p ON p.id=i.product_id
       WHERE i.organization_id=$1 AND i.id=$2`,[organizationId,instanceId]);
     if(!instance.rows[0])throw new AdministrationDenied();
@@ -306,7 +306,7 @@ export async function readApplicationUsageLimits(databaseUrl: string, actorUserI
         organizationMaximumQuantity: organization ? LimitQuantitySchema.parse(organization.maximum_quantity) : null,
         memberMaximumQuantity: member ? LimitQuantitySchema.parse(member.maximum_quantity) : null,
         delivery: delivery(selected), organizationDelivery: delivery(organization),
-        nonzeroAvailable: catalog.success && product.catalog_status !== 'retired' && supported.includes(meterKey) };
+        nonzeroAvailable: catalog.success && product.catalog_status === 'ready' && supported.includes(meterKey) };
     }));
     return { productName: product.productName, membershipId, memberName, settings, providerEnforcementConfirmed: false as const };
   });

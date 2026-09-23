@@ -117,7 +117,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "lint": "eslint src --config ../../eslint.config.mjs",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run --passWithNoTests --maxWorkers=1",
     "migrate": "npm run build -w @company-human/contracts && npm run build && node dist/migrate-cli.js",
     "seed": "npm run build -w @company-human/contracts && npm run build && node dist/seed-cli.js"
   },

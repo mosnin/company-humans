@@ -19,9 +19,9 @@ export async function readCurrentCapabilityInputs(client:Client,organizationId:s
    JOIN public.products p ON p.id=i.product_id
    JOIN public.memberships m ON m.organization_id=pm.organization_id AND m.id=pm.membership_id
    JOIN public.users u ON u.id=m.user_id JOIN public.organizations o ON o.id=pm.organization_id
-   WHERE pm.organization_id=$1 AND pm.id=$2 AND pm.desired_enabled AND pm.provisioning_status='suspended'
+   WHERE pm.organization_id=$1 AND pm.id=$2 AND pm.desired_enabled AND NOT pm.policy_blocked AND pm.provisioning_status='suspended'
     AND pm.external_member_id IS NOT NULL AND i.external_organization_id IS NOT NULL
-    AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status<>'retired'
+    AND i.desired_enabled AND i.provisioning_status='active' AND p.catalog_status='ready'
     AND m.status='active' AND u.status='active' AND o.status='active'
     AND EXISTS(SELECT 1 FROM public.role_permissions permission WHERE permission.organization_id=m.organization_id
       AND permission.role_id=m.role_id AND permission.permission_key='product.use')

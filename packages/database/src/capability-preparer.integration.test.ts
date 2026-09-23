@@ -29,6 +29,9 @@ describe.skipIf(!databaseUrl)('restricted automatic capability preparation',()=>
    await setProductEntitlement(url.toString(),config);
    await admin.query("INSERT INTO memberships(id,organization_id,user_id,status,role_key) VALUES($1,$2,$3,'active','contributor')",[member2,org.organizationId,users[1]]);
    await admin.query("INSERT INTO product_memberships(id,organization_id,product_instance_id,membership_id,provisioning_status,external_member_id,created_by_user_id) VALUES($1,$2,$3,$4,'suspended','fixture-second',$5)",[mapping2,org.organizationId,instance,member2,users[0]]);
+   // The entitlement edit blocked the already bound owner mapping. A fixture-only
+   // reset isolates snapshot mechanics; production has no activation shortcut.
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping]);
    await expect(refreshCapabilitySnapshots(url.toString(),input)).rejects.toThrow('restricted preparer');
    await expect(refreshCapabilitySnapshots(databaseUrl!,input)).rejects.toThrow('restricted preparer');
    await expect(refreshCapabilitySnapshots(preparer.toString(),{...input,limit:51})).rejects.toThrow();
@@ -44,9 +47,12 @@ describe.skipIf(!databaseUrl)('restricted automatic capability preparation',()=>
    // A matching permission in another organization cannot authorize this target.
    expect((await admin.query("SELECT count(*)::int n FROM role_permissions WHERE organization_id=$1 AND permission_key='product.use'",[other.organizationId])).rows[0].n).toBeGreaterThan(0);
    await admin.query("INSERT INTO role_permissions(organization_id,role_id,permission_key) VALUES($1,$2,'product.use')",[org.organizationId,contributorRole]);
-   // Restoring permission refreshes the denial-fenced source; it never resumes the member.
+   // Restoring permission alone cannot prepare a blocked mapping.
+   expect(await refreshCapabilitySnapshots(preparer.toString(),input)).toEqual({scanned:2,prepared:0,reused:1,skipped:1,nextCursor:null});
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping2]);
    expect(await refreshCapabilitySnapshots(preparer.toString(),input)).toEqual({scanned:2,prepared:1,reused:1,skipped:0,nextCursor:null});
    await setProductEntitlement(url.toString(),{...config,effect:'deny',expectedRevision:1});
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=ANY($1)',[[mapping,mapping2]]);
    const concurrent=await Promise.all(Array.from({length:3},()=>refreshCapabilitySnapshots(preparer.toString(),input)));
    expect(concurrent.reduce((n,r)=>n+r.prepared,0)).toBe(2);
    const snapshots=(await admin.query('SELECT policy_revision,payload,actor_user_id,actor_service_id FROM member_capability_snapshots WHERE organization_id=$1 ORDER BY policy_revision',[org.organizationId])).rows;
@@ -55,11 +61,13 @@ describe.skipIf(!databaseUrl)('restricted automatic capability preparation',()=>
    expect((await admin.query('SELECT count(*)::int n FROM capability_jobs WHERE organization_id=$1',[org.organizationId])).rows[0].n).toBe(5);
    // An initiating administrator leaving cannot strand already authorized configuration for another active member.
    await setProductEntitlement(url.toString(),{...config,effect:'allow',expectedRevision:2});
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping2]);
    await admin.query("UPDATE memberships SET status='suspended' WHERE organization_id=$1 AND user_id=$2",[org.organizationId,users[0]]);
    const independent=await refreshCapabilitySnapshots(preparer.toString(),input);expect(independent.prepared).toBe(1);expect(independent.skipped).toBe(1);
    expect((await admin.query('SELECT max(policy_revision) n FROM member_capability_snapshots WHERE product_membership_id=$1',[mapping2])).rows[0].n).toBe(4);
    // A catalog change triggers a new snapshot without a preference mutation.
    await admin.query('UPDATE products SET catalog_metadata=$2 WHERE id=$1',[product,{...metadata,supportedCapabilities:['write']}]);
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping2]);
    const guard=`prep_audit_${suffix}`;
    await admin.query(`CREATE FUNCTION public.${guard}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.target_id='${mapping2}' AND NEW.action='product.capabilities.refreshed' THEN RAISE EXCEPTION 'fixture audit failure'; END IF; RETURN NEW; END; $$`);
    await admin.query(`CREATE TRIGGER ${guard} BEFORE INSERT ON identity_audit_events FOR EACH ROW EXECUTE FUNCTION public.${guard}()`);
@@ -81,6 +89,7 @@ describe.skipIf(!databaseUrl)('restricted automatic capability preparation',()=>
    // A catalog requirement must be held by the target member, even if the initiating owner holds it.
    await admin.query('UPDATE product_instances SET desired_enabled=true WHERE id=$1',[instance]);
    await admin.query('UPDATE products SET catalog_metadata=$2 WHERE id=$1',[product,{...metadata,requiredPermissions:['product.use','billing.read.all']}]);
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping2]);
    expect(await refreshCapabilitySnapshots(preparer.toString(),input)).toEqual({scanned:2,prepared:0,reused:0,skipped:2,nextCursor:null});
    await admin.query("INSERT INTO role_permissions(organization_id,role_id,permission_key) VALUES($1,$2,'billing.read.all')",[org.organizationId,contributorRole]);
    expect((await refreshCapabilitySnapshots(preparer.toString(),input)).prepared).toBe(1);
@@ -88,6 +97,12 @@ describe.skipIf(!databaseUrl)('restricted automatic capability preparation',()=>
    // An unknown catalog requirement never becomes an implicit grant.
    await admin.query('UPDATE products SET catalog_metadata=$2 WHERE id=$1',[product,{...metadata,requiredPermissions:['product.use','unknown.permission']}]);
    expect((await refreshCapabilitySnapshots(preparer.toString(),input)).skipped).toBe(2);
+   await admin.query('UPDATE products SET catalog_metadata=$2,catalog_status=$3 WHERE id=$1',[product,{...metadata,requiredPermissions:['product.use','billing.read.all']},'draft']);
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping2]);
+   expect((await refreshCapabilitySnapshots(preparer.toString(),input)).skipped).toBe(2);
+   await admin.query("UPDATE products SET catalog_status='ready' WHERE id=$1",[product]);
+   await admin.query('UPDATE product_memberships SET policy_blocked=false WHERE id=$1',[mapping2]);
+   expect((await refreshCapabilitySnapshots(preparer.toString(),input)).prepared).toBe(1);
   }finally{
    await sql.end();for(const table of ['member_denial_access_receipts','member_denial_attempts','member_denial_jobs','member_access_commands','product_membership_commands','capability_attempts','capability_jobs','member_capability_snapshots','entitlement_policy_revisions','entitlement_policies','product_memberships','identity_audit_events','product_instances','memberships','roles'])await admin.query(`DELETE FROM ${table} WHERE organization_id=ANY($1)`,[orgs]);
    await admin.query('DELETE FROM organizations WHERE id=ANY($1)',[orgs]);await admin.query('DELETE FROM users WHERE id=ANY($1)',[users]);await admin.query('DELETE FROM products WHERE id=$1',[product]);await admin.query(`DROP ROLE ${preparerRole}`);await admin.query(`DROP ROLE ${role}`);await admin.end();

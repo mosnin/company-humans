@@ -120,7 +120,7 @@ it.skipIf(!url)('serializes catalog changes with suspended bindings and fences s
   await db.query("UPDATE products SET catalog_status='draft' WHERE id=$1",[product]);
   await finishMemberBootstrap(bootstrap,orgs[0]!,draftLease,suspended(draftMapping));
   expect((await mappingState(draftMapping)).external_member_id).toBeNull();
-  expect((await db.query('SELECT status,failure_code FROM member_bootstrap_jobs WHERE command_id=$1',[draftLease.commandId])).rows[0]).toEqual({status:'failed',failure_code:'provider_binding_rejected'});
+  expect((await db.query('SELECT status,failure_code FROM member_bootstrap_jobs WHERE command_id=$1',[draftLease.commandId])).rows[0]).toEqual({status:'superseded',failure_code:'superseded_revision'});
   for(const role of ['company_human_service','company_human_member_binding','company_human_policy_denial'])
    expect((await db.query("SELECT has_table_privilege($1,'public.products','UPDATE') allowed",[role])).rows[0].allowed).toBe(false);
   for(const role of ['company_human_service','company_human_bootstrap_worker','company_human_member_worker'])
