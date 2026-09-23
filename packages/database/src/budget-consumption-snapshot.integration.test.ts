@@ -37,7 +37,7 @@ describe.skipIf(!databaseUrl || !enabled)("read-only budget consumption snapshot
     const metadata = {
       schemaVersion: 1, description: "Snapshot fixture", category: "test",
       supportedCapabilities: ["compute"], provisioningModes: ["connected"],
-      supportedMemberOperations: ["provision"], usageMeters: ["compute"],
+      supportedMemberOperations: ["provision"], usageMeters: ["compute", "peak", "state"],
       requiredPermissions: [], adapterVersion: "1", billingBehavior: "native",
       deepLinks: {}, connectionRequirements: [],
     };
@@ -69,6 +69,18 @@ describe.skipIf(!databaseUrl || !enabled)("read-only budget consumption snapshot
           jsonb_build_object('payload',jsonb_build_object('capabilityKey',$10::text)), '{}'::jsonb)`,
       [eventId, organization, product, instance, sourceId, membershipId, teamId, meter.meterKey, quantity, capabilityKey]);
     };
+    const insertAggregatedUsage = async (
+      meterKey: "peak" | "state", quantity: string, eventId: string, occurredAt: string, reportedAt: string,
+    ) => {
+      const sourceId = `snapshot-${crypto.randomUUID()}`;
+      await admin.query(`INSERT INTO public.usage_events
+        (event_id,organization_id,product_id,product_instance_id,environment,source_system,source_event_id,
+         idempotency_key,membership_id,team_id,meter_key,meter_version,quantity,unit,occurred_at,reported_at,
+         disposition,envelope,signature)
+        VALUES ($1,$2,$3,$4,'test','snapshot-fixture',$5,$5,$6,$7,$8,1,$9,'unit',$10,$11,'accepted',
+          jsonb_build_object('payload',jsonb_build_object('capabilityKey',NULL)), '{}'::jsonb)`,
+      [eventId, organization, product, instance, sourceId, membership, team, meterKey, quantity, occurredAt, reportedAt]);
+    };
 
     try {
       await admin.query(`CREATE ROLE ${serviceRole} LOGIN PASSWORD '${servicePassword}' NOSUPERUSER NOBYPASSRLS`);
@@ -84,6 +96,8 @@ describe.skipIf(!databaseUrl || !enabled)("read-only budget consumption snapshot
       await admin.query("INSERT INTO memberships(id,organization_id,user_id,status,role_key,role_id) VALUES($1,$2,$3,'active','owner',$4)", [membership, organization, actor, role]);
       await admin.query("INSERT INTO products(id,product_key,display_name,catalog_status,catalog_metadata) VALUES($1,$2,'Snapshot product','ready',$3)", [product, `snapshot-${suffix}`, metadata]);
       await admin.query("INSERT INTO meter_definitions(product_id,meter_key,version,unit,aggregation,display_name) VALUES($1,'compute',1,'unit','sum','Compute')", [product]);
+      await admin.query("INSERT INTO meter_definitions(product_id,meter_key,version,unit,aggregation,display_name) VALUES($1,'peak',1,'unit','maximum','Peak')", [product]);
+      await admin.query("INSERT INTO meter_definitions(product_id,meter_key,version,unit,aggregation,display_name) VALUES($1,'state',1,'unit','last','State')", [product]);
       await admin.query("INSERT INTO product_instances(id,organization_id,product_id,instance_key,mode,desired_enabled,provisioning_status,created_by_user_id) VALUES($1,$2,$3,'main','connected',true,'active',$4)", [instance, organization, product, actor]);
       await admin.query("INSERT INTO product_memberships(id,organization_id,product_instance_id,membership_id,desired_enabled,provisioning_status,external_member_id,provider_receipt_reference,provisioned_at,created_by_user_id) VALUES($1,$2,$3,$4,true,'active','member-1','receipt-1',now(),$5)", [createCanonicalId("productMembership"), organization, instance, membership, actor]);
       await admin.query("INSERT INTO teams(id,organization_id,name) VALUES($1,$2,'Snapshot team')", [team, organization]);
@@ -113,6 +127,16 @@ describe.skipIf(!databaseUrl || !enabled)("read-only budget consumption snapshot
             (organization_id,budget_policy_id,revision,maximum_quantity,action,status,actor_user_id)
             VALUES($1,$2,1,'100','warning','active',$3)`, [organization, policyId, actor]);
         }
+        for (const meterKey of ["peak", "state"] as const) {
+          const policyId = createCanonicalId("budget");
+          await serviceClient.query(`INSERT INTO budget_policies
+            (id,organization_id,product_id,meter_key,meter_version,unit,window_key,scope_kind,created_by_user_id)
+            VALUES($1,$2,$3,$4,1,'unit','utc_month','organization',$5)`,
+          [policyId, organization, product, meterKey, actor]);
+          await serviceClient.query(`INSERT INTO budget_policy_revisions
+            (organization_id,budget_policy_id,revision,maximum_quantity,action,status,actor_user_id)
+            VALUES($1,$2,1,'100','warning','active',$3)`, [organization, policyId, actor]);
+        }
         await serviceClient.query("COMMIT");
       } finally {
         await serviceClient.end();
@@ -128,6 +152,35 @@ describe.skipIf(!databaseUrl || !enabled)("read-only budget consumption snapshot
 
       const after = await readBudgetConsumptionSnapshot(runtime.toString(), { actorUserId: actor, operation, environment: "test" });
       expect(after.evaluation.constraints.every(constraint => constraint.usageQuantity === "2.5")).toBe(true);
+
+      const peakOperation: BudgetOperationV1 = {
+        ...operation, capabilityKey: null, meter: { meterKey: "peak", meterVersion: 1, unit: "unit" },
+      };
+      const stateOperation: BudgetOperationV1 = {
+        ...operation, capabilityKey: null, meter: { meterKey: "state", meterVersion: 1, unit: "unit" },
+      };
+      const peakInput = { actorUserId: actor, operation: peakOperation, environment: "test" as const };
+      const stateInput = { actorUserId: actor, operation: stateOperation, environment: "test" as const };
+      for (const input of [peakInput, stateInput]) {
+        const empty = await readBudgetConsumptionSnapshot(runtime.toString(), input);
+        expect(empty.evaluation.constraints).toHaveLength(1);
+        expect(empty.evaluation.constraints[0]?.usageQuantity).toBe("0");
+      }
+      const now = new Date();
+      const older = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+      const newer = now.toISOString();
+      await insertAggregatedUsage("peak", "2", createCanonicalId("event"), older, older);
+      await insertAggregatedUsage("peak", "9.5", createCanonicalId("event"), newer, newer);
+      await insertAggregatedUsage("peak", "4", createCanonicalId("event"), newer, newer);
+      const peak = await readBudgetConsumptionSnapshot(runtime.toString(), peakInput);
+      expect(peak.evaluation.constraints[0]?.usageQuantity).toBe("9.5");
+
+      await insertAggregatedUsage("state", "12", createCanonicalId("event"), older, older);
+      const tiedIds = [createCanonicalId("event"), createCanonicalId("event")].sort();
+      await insertAggregatedUsage("state", "3", tiedIds[0]!, newer, newer);
+      await insertAggregatedUsage("state", "7", tiedIds[1]!, newer, newer);
+      const state = await readBudgetConsumptionSnapshot(runtime.toString(), stateInput);
+      expect(state.evaluation.constraints[0]?.usageQuantity).toBe("7");
 
       await insertUsage(admin, "1", null, team, "compute");
       await expect(readBudgetConsumptionSnapshot(runtime.toString(), { actorUserId: actor, operation, environment: "test" }))
