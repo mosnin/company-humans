@@ -18,13 +18,13 @@ First connected proof: real OAuth workspace creation and invite, real sponsored 
 
 ## Preserved baseline
 
-Foundation acceptance remains recorded in `../implementation-status.md`: CI at 3fbc494 proved its shared service scenario. Current product commit 4b9d614 passed GitHub run 35627020436. Identity has source, local/CI tests and a deployed Convex backend; real OAuth and the complete identity browser journey remain unverified. The route deliberately does not infer independent phase acceptance from tracker status or compiler validation.
+Foundation acceptance and later bounded releases are recorded in `../implementation-status.md`. The latest product release, `88ae1c9`, passed [CI 35842595718](https://github.com/mosnin/company-humans/actions/runs/35842595718) and deployed the first native Human Work slice. Identity has source, local/CI tests and a deployed Convex backend; real OAuth and the complete identity browser journey remain unverified. The route deliberately does not infer independent phase acceptance from tracker status or compiler validation.
 
 ## Current blockers and next work
 
-1. CH-6: configure OAuth provider applications and SITE_URL, then prove consent, canonical synchronization, revocation, invite return and organization isolation. Keep development/production identities separate; no existing product credentials may be reused.
+1. CH-6: configure the dedicated Google OAuth application, email magic-link sender and SITE_URL, then prove consent, canonical synchronization, revocation, invite return and organization isolation. Google Cloud Console reached first-use legal terms; explicit user acceptance is pending. Keep development/production identities separate; no existing product credentials may be reused.
 2. Separate Convex cloud development deployment still exceeds the team's quota; dedicated production `sensible-dinosaur-165` is already deployed.
-3. Symbolic connection doctor observed HTTP 401 without OAuth discovery (`oauth_challenge_missing`). There is no verified authenticated Context Compiler or Flow read. The Symbolic connection skill identifies this as an integration repair requirement, not a user sign-in failure. Do not substitute an internal credential or claim Symbolic execution.
+3. A later Symbolic connection check found OAuth discovery and opened native authorization, but the sign-in session expired before callback. There is no verified authenticated Context Compiler or Flow read. Do not substitute an internal credential or claim Symbolic execution.
 4. Callix source inspection is complete in `../callix-tracking-assessment.md`. Consume it during Phase 07; no premature attribution implementation is implied.
 
 ## Validation and maintenance
