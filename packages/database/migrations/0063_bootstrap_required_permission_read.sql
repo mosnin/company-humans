@@ -3,8 +3,6 @@
 -- scoped wrapper; the shared SECURITY DEFINER predicate itself accepts an
 -- arbitrary organization and must remain unavailable to runtime logins.
 GRANT SELECT (role_id) ON public.memberships TO company_human_bootstrap_worker;
-REVOKE EXECUTE ON FUNCTION company_human_private.missing_product_permission(text,text,text)
-  FROM company_human_bootstrap_worker;
 
 GRANT CREATE ON SCHEMA company_human_private TO company_human_member_binding;
 SET LOCAL ROLE company_human_member_binding;
