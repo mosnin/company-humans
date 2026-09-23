@@ -47,6 +47,14 @@ it.skipIf(!url)('invalidates every missing catalog permission with fenced, tenan
  const authorizations=async(id:string)=>(await admin.query('SELECT * FROM product_membership_commands WHERE product_membership_id=$1 AND source_authorization IS NOT NULL ORDER BY desired_revision',[id])).rows;
  const claimDenial=async()=>{for(let n=0;n<12;n++){const lease=await claimMemberDenial(denial,orgs[0]!,pRequired,true);if(lease)return lease;}throw new Error('Expected current fenced denial');};
  const historical=async()=>{await admin.query('BEGIN');try{await admin.query('SET LOCAL ROLE company_human_policy_denial');const result=await admin.query('SELECT company_human_private.reconcile_unauthorized_product_memberships() n');await admin.query('COMMIT');return result.rows[0].n as number;}catch(error){await admin.query('ROLLBACK');throw error;}};
+ const missingPermission=async(org:string,roleId:string,product:string)=>{
+  await admin.query('BEGIN');
+  try{
+   await admin.query('SET LOCAL ROLE company_human_member_binding');
+   const result=await admin.query<{missing:string|null}>('SELECT company_human_private.missing_product_permission($1,$2,$3) missing',[org,roleId,product]);
+   await admin.query('COMMIT');return result.rows[0]?.missing;
+  }catch(error){await admin.query('ROLLBACK');throw error;}
+ };
  try{
   for(const [id,org,user] of members)await admin.query("INSERT INTO memberships(id,organization_id,user_id,status,role_key) VALUES($1,$2,$3,'active','contributor')",[id,org,user]);
   for(const org of orgs){const targetRole=org===orgs[0]?contributorA:contributorB;await set(targetRole,[...await grants(targetRole),'billing.read.all'],org);}
@@ -140,10 +148,10 @@ it.skipIf(!url)('invalidates every missing catalog permission with fenced, tenan
   await set(contributorA,(await grants(contributorA)).filter(key=>!['billing.read.all','crm.read.own'].includes(key)));
   expect(await authorizations(multiMapping)).toHaveLength(1);
   expect((await admin.query("SELECT count(*)::int n FROM identity_audit_events WHERE target_id=$1 AND action='product.authorization.access_blocked'",[multiMapping])).rows[0].n).toBe(1);
-  expect((await admin.query("SELECT company_human_private.missing_product_permission($1,$2,$3) missing",[orgs[0],manager,pRequired])).rows[0].missing).toBe('billing.read.all');
+  expect(await missingPermission(orgs[0]!,manager,pRequired)).toBe('billing.read.all');
   const malformed=createCanonicalId('product');productIds.push(malformed);
   await admin.query("INSERT INTO products(id,product_key,display_name,catalog_status,catalog_metadata) VALUES($1,$2,'Invalid','ready',$3)",[malformed,`invalid-${suffix}`,{...metadata,requiredPermissions:['unknown.permission']}]);
-  expect((await admin.query("SELECT company_human_private.missing_product_permission($1,$2,$3) missing",[orgs[0],contributorA,malformed])).rows[0].missing).toBe('catalog.invalid');
+  expect(await missingPermission(orgs[0]!,contributorA,malformed)).toBe('catalog.invalid');
   const malformedInstance=createCanonicalId('productInstance');
   await admin.query("INSERT INTO product_instances(id,organization_id,product_id,instance_key,mode,provisioning_status,external_organization_id,created_by_user_id) VALUES($1,$2,$3,'invalid','connected','active',$2,$4)",[malformedInstance,orgs[0],malformed,users[0]]);
   const malformedMapping=await requestProductMembership(service,{actorUserId:users[0]!,organizationId:orgs[0]!,productInstanceId:malformedInstance,membershipId:legacyMember});
@@ -152,7 +160,7 @@ it.skipIf(!url)('invalidates every missing catalog permission with fenced, tenan
   expect((await authorizations(malformedMapping))[0].source_authorization).toMatchObject({reason:'preexisting_authorization_gap',permission:'catalog.invalid'});
   const nonArray=createCanonicalId('product');productIds.push(nonArray);
   await admin.query("INSERT INTO products(id,product_key,display_name,catalog_status,catalog_metadata) VALUES($1,$2,'Malformed','ready',$3)",[nonArray,`nonarray-${suffix}`,{...metadata,requiredPermissions:'product.use'}]);
-  expect((await admin.query("SELECT company_human_private.missing_product_permission($1,$2,$3) missing",[orgs[0],contributorA,nonArray])).rows[0].missing).toBe('catalog.invalid');
+  expect(await missingPermission(orgs[0]!,contributorA,nonArray)).toBe('catalog.invalid');
   expect(await historical()).toBe(0);
   for(const runtimeRole of ['company_human_service','company_human_app','company_human_bootstrap_worker']){
    expect((await admin.query("SELECT has_function_privilege($1,'company_human_private.block_missing_authorization_binding(text,text)','EXECUTE') allowed",[runtimeRole])).rows[0].allowed).toBe(false);
