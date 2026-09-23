@@ -209,6 +209,8 @@ Usage reporting uses verified canonical user identity, a restricted reader conne
 
 Human usage provenance is enforced in both the event parser and database. Signed events cannot attribute a nonexistent or different user to a membership, use a foreign tenant membership/team, or bypass this check with direct SQL under the ingestion role. Historical suspended memberships remain valid attribution references.
 
+An event can still name a different team in the same organization without proving that the attributed member belonged to it at occurrence time. Team membership reactivation currently overwrites its only end marker. This is a known team-budget bypass risk; team budget enforcement remains disabled pending durable assignment intervals and an ingestion-time historical membership guard. Pre-cutover assignment history is not certified.
+
 Quarantine release requires budgets.manage in the event organization. The service role cannot insert release receipts directly; a narrowly owned SECURITY DEFINER function with fixed search_path performs validation and append. Customer readers receive event/organization references only, subject to their usage scope. POST release also requires same-origin and verified canonical actor identity.
 
 Member denial journaling uses a non-login restricted trigger owner; runtime workers cannot directly mutate access_revision. Completion revalidates organization/member/provider target and revision against immutable intent. Higher-revision denial can proceed while older work is outstanding. Stale receipts cannot satisfy current delivery. Real providers must enforce the same revision ordering at execution time.
