@@ -138,10 +138,10 @@ BEGIN
  END IF;
 END $$;
 REVOKE ALL ON FUNCTION company_human_private.lock_member_request_context(text,text,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION company_human_private.lock_member_request_context(text,text,text) TO company_human_service;
 GRANT CREATE ON SCHEMA company_human_private TO company_human_identity_offboarding;
 ALTER FUNCTION company_human_private.lock_member_request_context(text,text,text) OWNER TO company_human_identity_offboarding;
 REVOKE CREATE ON SCHEMA company_human_private FROM company_human_identity_offboarding;
-GRANT EXECUTE ON FUNCTION company_human_private.lock_member_request_context(text,text,text) TO company_human_service;
 
 -- Lock catalog, tenant authorization and organization status before either
 -- member parent. The VOLATILE policy rechecks every fact after any wait.
