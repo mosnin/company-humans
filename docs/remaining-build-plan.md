@@ -1,6 +1,6 @@
 # Company Human — remaining phased build plan
 
-Updated2026-09-22 against verified policy checkpoint a69d29c and current hosted migration evidence. Canonical Notion phases and product requirements are unchanged. Destination:`mosnin/company-humans`; source `company-os-web` remains untouched. Dated implementation evidence lives in implementation-status.md.
+Updated 2026-09-22 against the current 0067 release evidence. Canonical Notion phases and product requirements are unchanged. Destination: `mosnin/company-humans`; source `company-os-web` remains untouched. Dated implementation evidence lives in implementation-status.md.
 
 ## Current position and evidence
 
@@ -8,8 +8,8 @@ Updated2026-09-22 against verified policy checkpoint a69d29c and current hosted 
 - **Phase 01: in progress.** Identity, membership, permissions and tenant protections exist; real Convex OAuth and authenticated two-organization acceptance remain open.
 - **Phase 02: in progress.** Catalog/setup intent, provisioning journals, suspended member binding, capability and limit delivery machinery, diagnostics and durable health collection exist. Real Scalar access, final activation, reconciliation and hosted worker operation remain incomplete.
 - **Phase03: in progress.** Signed immutable usage ingestion, scoped exact aggregation, quarantine recovery and usage presentation exist. Live Scalar emission, budget reservations/enforcement, durable billing windows and financial projections remain open. Phases04–15 are unfinished;16 is conditional.
-- Dedicated Convex, PostgreSQL and Vercel resources already exist. Do not create replacement projects. The verified production web baseline is `0726914`; live health and anonymous mobile/API checks passed.
-- Latest verified CI:**35753046050 succeeded at a69d29c**. Local340 automated tests, typecheck, lint and production build passed for that policy release. Hosted targeted policy tests passed; production migrations through0053 are applied. Real Google/email and live provider acceptance remain open.
+- Dedicated Convex, PostgreSQL and Vercel resources already exist. Do not create replacement projects. Production web health reports exact revision `77ac96c425bb1efb0e7a245dcdb901f36c2e7624`; anonymous API checks deny access.
+- CI 35809446576 passed at that revision. A fresh local 67-migration replay and 356 tests, typecheck, lint and production build passed. Hosted verification passed the focused registry comparison test, and production migrations through 0067 are applied. Real Google/email and live provider acceptance remain open.
 - Browser fixtures and adapter test doubles do not establish live OAuth, native product access, hard stops or payouts. No phase is closed by this plan.
 
 ## First usable release
@@ -23,7 +23,7 @@ This is the next delivery milestone across Phases 01–03. Complete it before br
 1. **Complete authenticated health and usage acceptance.** Both displays and permission tests exist and pass locally. Verify them with real authenticated users; scheduling and real Scalar health/usage observations remain outstanding.
 2. **Complete real identity acceptance.** Configure OAuth on the existing dedicated Convex project, use the verified isolated local backend with separate OAuth configuration, deploy the tested revision and run two-account/two-organization invite, role, switching and suspension journeys.
 3. **Resolve the audited Scalar control gaps.** Use the completed source assessment to establish the real provider contract and test organization. Required provider-side changes must be scoped and documented; another generic worker cannot supply missing Scalar enforcement.
-4. **Finish suspended-to-active orchestration.** Reuse existing workers to apply current capabilities and finite limits, verify acknowledgements, fence activation against revoked membership/policy, and reconcile ambiguous outcomes. Implement safe resume/restore. Remaining prerequisites include complete authorization/org/catalog invalidation, all catalog-required permission checks, exact current capability and full finite-limit readback coverage, and atomic shared-fence grant registration. Truly unmetered applications need an explicit contract decision; do not invent a dummy limit.
+4. **Finish suspended-to-active orchestration.** Current authorization/org/catalog invalidation, catalog-required permission checks and an advisory activation diagnostic are implemented. Build exact V2 finite-limit delivery and registered-meter coverage, independently prove provider hard stops, then add a fenced grant worker, safe resume/restore and ambiguous-result reconciliation. Truly unmetered applications need an explicit contract decision; do not invent a dummy limit.
 5. **Operate and prove the lifecycle.** Configure restricted hosted workers, scheduling, actual health collection and recovery controls. Prove create/connect, provision, suspend, resume, remove and product disable with real Scalar receipts.
 6. **Implement measured usage and actual hard stops.** Add the Phase 03 event, budget, reservation and commercial flows; test concurrent spend and exhaustion before broader access.
 7. **Continue Phases 04–15 in order.** Deliver the human workspace, CRM/context, real attribution-to-payout loop, remaining products and production acceptance. Phase 16 remains conditional.
@@ -50,7 +50,7 @@ Audit cleanup belongs to the phase touching that code: classify copied source as
 **Tracker:** CH-6–CH-12. **Status:** In progress.
 
 1. Configure Google OAuth and email magic-link delivery for dedicated Convex Auth; verify callback, verified email, session issuance, canonical user synchronization and logout/revocation. Clerk remains excluded.
-2. Establish an isolated nonproduction auth/database configuration; resolve the additional Convex deployment quota or document a supported local test arrangement. Never give arbitrary previews production credentials.
+2. Preserve the implemented isolated local Convex development backend; configure separate local OAuth credentials and test the real identity flow. Do not give arbitrary previews production credentials.
 3. Deploy the current verified identity revision and verify its exact source and migrations.
 4. Complete any missing organization creation, switching, team/role assignment, invitation acceptance/expiry/revocation, suspension/removal and session feedback exposed by real browser testing.
 5. Exercise owner, admin, manager and contributor permissions with separate real accounts and two organizations. Check direct API access and restricted database connections, not only hidden UI.
