@@ -171,6 +171,8 @@ describe("versioned pre-cost reservation contract", () => {
 
   it("binds retries to source operation identity independently of the transport key", () => {
     expect(BudgetReservationRequestV1Schema.safeParse({ ...request, source: undefined }).success).toBe(false);
+    expect(BudgetReservationRequestV1Schema.safeParse({ ...request,
+      source: { system: "scalar", operationId: "line\nbreak" } }).success).toBe(false);
     expect(classifyBudgetReservationRetryV1(request, { ...request, idempotencyKey: "a-new-transport-key" })).toBe("replay");
     expect(() => classifyBudgetReservationRetryV1(request, { ...request, idempotencyKey: "a-new-transport-key",
       requestedQuantity: "2" })).toThrow(/idempotency conflict/);
@@ -273,5 +275,8 @@ describe("versioned pre-cost reservation contract", () => {
     expect(validateBudgetReservationLateReconciliationV1(original, {
       ...late, afterState: "released", occurredAt: "2026-09-23T12:05:30Z",
     }).afterState).toBe("released");
+    expect(validateBudgetReservationLateReconciliationV1(original, {
+      ...late, afterState: "settled", occurredAt: "2026-09-23T12:05:30Z",
+    }).afterState).toBe("settled");
   });
 });

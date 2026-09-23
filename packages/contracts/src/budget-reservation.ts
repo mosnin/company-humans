@@ -15,7 +15,7 @@ const UtcInstantSchema = z.iso.datetime({ offset: true })
   .refine(value => value.endsWith("Z"), "Reservation timestamps must be UTC");
 const SourceOperationSchema = z.object({
   system: z.string().regex(/^[a-z][a-z0-9._-]*$/),
-  operationId: z.string().min(1).max(256),
+  operationId: z.string().min(1).max(256).regex(/^[^\u0000-\u001f\u007f]+$/u),
 }).strict();
 const AuditProvenanceSchema = z.object({
   auditId: AuditIdSchema,
@@ -415,8 +415,9 @@ export function validateBudgetReservationTransitionV1(
   return transition;
 }
 
-/** Actual usage reported after capacity release/expiry is appended separately.
- * It never rewrites the terminal capacity state. A future ledger must verify
+/** Actual usage reported after settlement, capacity release or expiry is
+ * appended separately. It never rewrites the terminal capacity state. A
+ * provider operation can emit more than one signed usage event. A future ledger must verify
  * that terminal state, enforce unique event identity and reconcile budget/cost
  * without double counting.
  */
@@ -424,7 +425,7 @@ export const BudgetReservationLateReconciliationV1Schema = z.object({
   schemaVersion: z.literal(1),
   reservationId: BudgetReservationIdSchema,
   sequence: z.number().int().positive().max(2147483647),
-  afterState: z.enum(["released", "expired"]),
+  afterState: z.enum(["settled", "released", "expired"]),
   evidence: BudgetReservationUsageEvidenceV1Schema,
   occurredAt: UtcInstantSchema,
   provenance: AuditProvenanceSchema,
