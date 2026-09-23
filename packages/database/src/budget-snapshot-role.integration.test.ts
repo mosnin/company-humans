@@ -289,6 +289,10 @@ describe.skipIf(!databaseUrl || !enabled)("budget snapshot database role", () =>
         envelope_select: boolean;
         signature_select: boolean;
         provider_receipt_select: boolean;
+        catalog_revision_select: boolean;
+        member_user_select: boolean;
+        team_role_select: boolean;
+        mapping_revision_select: boolean;
       }>(
         `SELECT
           has_schema_privilege($1,'public','CREATE') AS public_create,
@@ -302,7 +306,11 @@ describe.skipIf(!databaseUrl || !enabled)("budget snapshot database role", () =>
           has_column_privilege($1,'public.usage_events','capability_key','SELECT') AS capability_select,
           has_column_privilege($1,'public.usage_events','envelope','SELECT') AS envelope_select,
           has_column_privilege($1,'public.usage_events','signature','SELECT') AS signature_select,
-          has_column_privilege($1,'public.product_memberships','provider_receipt_reference','SELECT') AS provider_receipt_select`,
+          has_column_privilege($1,'public.product_memberships','provider_receipt_reference','SELECT') AS provider_receipt_select,
+          has_column_privilege($1,'public.products','access_contract_revision','SELECT') AS catalog_revision_select,
+          has_column_privilege($1,'public.memberships','user_id','SELECT') AS member_user_select,
+          has_column_privilege($1,'public.team_memberships','team_role','SELECT') AS team_role_select,
+          has_column_privilege($1,'public.product_memberships','access_revision','SELECT') AS mapping_revision_select`,
         [snapshotRole],
       );
       expect(privilegeState.rows[0]).toEqual({
@@ -318,6 +326,10 @@ describe.skipIf(!databaseUrl || !enabled)("budget snapshot database role", () =>
         envelope_select: false,
         signature_select: false,
         provider_receipt_select: false,
+        catalog_revision_select: false,
+        member_user_select: false,
+        team_role_select: false,
+        mapping_revision_select: false,
       });
 
       const visible = await readSnapshot(owner, organization.organizationId, async (client) => {
@@ -349,7 +361,7 @@ describe.skipIf(!databaseUrl || !enabled)("budget snapshot database role", () =>
           [product],
         );
         const productContext = await client.query(
-          `SELECT id,catalog_status,catalog_metadata,access_contract_revision
+          `SELECT id,catalog_status,catalog_metadata
            FROM products WHERE id=$1`,
           [product],
         );
@@ -374,7 +386,7 @@ describe.skipIf(!databaseUrl || !enabled)("budget snapshot database role", () =>
       ]);
       expect(visible.meter).toEqual([{ product_id: product, meter_key: "events", version: 1, unit: "event", aggregation: "sum" }]);
       expect(visible.productContext[0]?.catalog_status).toBe("ready");
-      expect(visible.productContext[0]?.access_contract_revision).toBe("0");
+      expect(visible.productContext[0]?.catalog_metadata).toMatchObject(metadata);
 
       const foreignCounts = await readSnapshot(owner, organization.organizationId, async (client) => {
         const result = await client.query<{ policies: number; instances: number; usage: number }>(

@@ -135,7 +135,6 @@ type CatalogRow = {
   id: string;
   catalog_status: string;
   catalog_metadata: unknown;
-  access_contract_revision: string | number;
 };
 
 type InstanceRow = {
@@ -149,7 +148,6 @@ type InstanceRow = {
 type MembershipRow = {
   id: string;
   organization_id: string;
-  user_id: string;
   status: string;
 };
 
@@ -160,19 +158,16 @@ type TeamRow = {
 };
 
 type ProductMembershipRow = {
-  id: string;
   organization_id: string;
   product_instance_id: string;
   membership_id: string;
   desired_enabled: boolean;
   provisioning_status: string;
   policy_blocked: boolean;
-  access_revision: number;
-  desired_revision: number;
 };
 
 async function verifyOperationBindings(client: Client, operation: BudgetOperationV1): Promise<"sum" | "maximum" | "last"> {
-  const catalogResult = await client.query<CatalogRow>(`SELECT id,catalog_status,catalog_metadata,access_contract_revision
+  const catalogResult = await client.query<CatalogRow>(`SELECT id,catalog_status,catalog_metadata
     FROM public.products WHERE id=$1`, [operation.productId]);
   const instanceResult = await client.query<InstanceRow>(`SELECT id,organization_id,product_id,desired_enabled,provisioning_status
     FROM public.product_instances
@@ -209,7 +204,7 @@ async function verifyOperationBindings(client: Client, operation: BudgetOperatio
   }
 
   if (operation.membershipId !== null) {
-    const member = await client.query<MembershipRow>(`SELECT id,organization_id,user_id,status
+    const member = await client.query<MembershipRow>(`SELECT id,organization_id,status
       FROM public.memberships WHERE id=$1 AND organization_id=$2`,
     [operation.membershipId, operation.organizationId]);
     const membership = member.rows[0];
@@ -219,8 +214,8 @@ async function verifyOperationBindings(client: Client, operation: BudgetOperatio
       );
     }
 
-    const mapping = await client.query<ProductMembershipRow>(`SELECT id,organization_id,product_instance_id,membership_id,
-        desired_enabled,provisioning_status,policy_blocked,access_revision,desired_revision
+    const mapping = await client.query<ProductMembershipRow>(`SELECT organization_id,product_instance_id,membership_id,
+        desired_enabled,provisioning_status,policy_blocked
       FROM public.product_memberships
       WHERE organization_id=$1 AND product_instance_id=$2 AND membership_id=$3`,
     [operation.organizationId, operation.productInstanceId, operation.membershipId]);
