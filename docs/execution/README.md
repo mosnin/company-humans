@@ -18,7 +18,7 @@ First connected proof: real OAuth workspace creation and invite, real sponsored 
 
 ## Preserved baseline
 
-Foundation acceptance and later bounded releases are recorded in `../implementation-status.md`. The latest product release, `88ae1c9`, passed [CI 35842595718](https://github.com/mosnin/company-humans/actions/runs/35842595718) and deployed the first native Human Work slice. Identity has source, local/CI tests and a deployed Convex backend; real OAuth and the complete identity browser journey remain unverified. The route deliberately does not infer independent phase acceptance from tracker status or compiler validation.
+Foundation acceptance and later bounded releases are recorded in `../implementation-status.md`. The latest product release, `6eaa31f`, passed [CI 35843895701](https://github.com/mosnin/company-humans/actions/runs/35843895701) and deployed the first native Human Work slice plus its administrator Work module control. Identity has source, local/CI tests and a deployed Convex backend; real OAuth and the complete identity browser journey remain unverified. The route deliberately does not infer independent phase acceptance from tracker status or compiler validation.
 
 ## Current blockers and next work
 

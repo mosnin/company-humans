@@ -1,6 +1,6 @@
 # Implementation status
 
-Updated 2026-09-22. Destination: `mosnin/company-humans`, branch `codex/company-human-foundation`, [draft PR 1](https://github.com/mosnin/company-humans/pull/1). Company OS remains unchanged.
+Updated 2026-09-23. Destination: `mosnin/company-humans`, branch `codex/company-human-foundation`, [draft PR 1](https://github.com/mosnin/company-humans/pull/1). Company OS remains unchanged.
 
 Current remaining work and acceptance gates: [remaining phased build plan](remaining-build-plan.md), refreshed against the canonical Notion roadmap; subsequent health-page and isolated-runtime delivery evidence is recorded below. Historical sections below retain their original evidence counts and deployment state.
 
@@ -14,7 +14,7 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 - Invitation acceptance requires the authenticated Convex OAuth profile's verified email. The token survives sign-in across same-origin tabs with a 30-minute application expiry and clears on acceptance/sign-out.
 - Google and email magic-link authentication replace GitHub. Library lifecycle, token replay/expiry, cross-tab invite return and request limits have local verification; actual provider credentials and authenticated acceptance remain outstanding.
 - Signed usage ingestion, exact scoped aggregation and audited quarantine recovery have local database and HTTP evidence. CI at ec564ab passed in run35747591915:308 automated tests,84 fixture browser checks,4 real anonymous runtime checks and actual signed HTTP/database concurrency verification. Detailed counts below are dated checkpoints.
-- Migrations through0067 are applied on hosted verification and production. Request eligibility, access readers and bootstrap worker source are deployed on the production web, but no hosted bootstrap scheduler or live adapter is configured. Seven reference products remain catalog entries, not live integrations. Restricted credentials stay in ignored environment files.
+- Migrations through 0078 are applied on hosted verification and production. Request eligibility, access readers and bootstrap worker source are deployed on the production web, but no hosted bootstrap scheduler or live adapter is configured. Seven reference products remain catalog entries, not live integrations. Restricted credentials stay in ignored environment files.
 
 
 ## Phase gates
@@ -26,8 +26,8 @@ Current remaining work and acceptance gates: [remaining phased build plan](remai
 | 01 Identity kernel | In progress | Real Convex OAuth sign-in/sign-out, browser create/invite/accept/assign/switch/suspend scenario, and acceptance of the latest deployed revision. Restricted web credentials are configured. |
 | 02 Provisioning | In progress | Real Scalar adapter, fenced activation/denial orchestration, hosted workers and full lifecycle proof. Suspended bootstrap, policy staging/readback and health administration have local coverage. Mapping and pending intent grant no access. |
 | 03 Metering and billing | In progress; independent preparation | Signed storage/API, scoped aggregation and quarantine recovery implemented locally. Real Scalar emission, durable billing windows, budgets, hard stops, valuation and billing remain open. |
-| 04 Human workspace | In progress | Native module settings foundation is released; contributor Work, Context, Earnings, Leaderboard, Team and manager workflows remain. Apps assignment visibility does not launch real sponsored access. |
-| 05 CRM and human work | Not started | Native records, assignments, visibility, actor attribution, Scalar sync. |
+| 04 Human workspace | In progress | Work assignments and reports, role-aware Work navigation, and a bounded admin Work control are released. Remaining native modules, contributor Home, broader manager workflows and authenticated production proof remain. Apps assignment visibility does not launch real sponsored access. |
+| 05 CRM and human work | In progress, initial Human Work subset only | CRM records, richer work states/sources, related objects, outcome verification, actor attribution and Scalar sync remain. |
 | 06 Company OS context | Not started | Real connection, approved scopes, freshness, revocation, denial. |
 | 07 Attribution | Not started | Merchant links, SDKs, verified Chippi events and recoverable attribution. |
 | 08 Commission and payout | Not started | Provider-neutral ledger, real provider execution and reconciliation. |
@@ -710,3 +710,5 @@ Hosted verification and production applied the exact committed 0078 SQL and repl
 Organization managers now have a Workspace settings page showing the eight native module keys and their effective requested state. The only actionable public control is Work; its same-origin PUT saves a revision through the existing 0077 audited service boundary and requires a matching revision receipt. The other seven experiences are marked unavailable and cannot be enabled through the public API, including when an older database request is on. The settings link appears only with `organization.manage`; the Work link still requires the Work setting and assignment-read permission. Connected product access is administered separately. Full CH-27 remains in progress because the other native experiences and entitlement-aware connected-product navigation do not yet exist.
 
 Local candidate evidence: 114 contract tests, 373 web tests, typecheck, lint, production build, and two desktop/mobile browser fixture checks passed. A built Next server redirected anonymous settings to sign-in, denied anonymous Work configuration with 401, and rejected a foreign origin with 403. The screenshots were inspected with no horizontal overflow. The independent reviewer accepted this bounded slice and found no concrete tenant or role bypass. The browser API response is mocked; authenticated production configuration remains unverified. There is no new migration in this slice.
+
+Commit `6eaa31f76d24e9129131fe96e87417023b35ec58` passed [CI run 35843895701](https://github.com/mosnin/company-humans/actions/runs/35843895701). Production deployment `dpl_AA4GorU21FUMvQEMMPomr8nBaATm` is READY at https://company-humans.vercel.app; live health reports the exact SHA. The anonymous settings page redirects to sign-in, anonymous Work configuration returns 401, and a foreign-origin PUT returns 403. No live authenticated configuration or Work toggle was exercised. CH-27 and Phase 04 remain in progress.

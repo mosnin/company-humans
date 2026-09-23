@@ -8,6 +8,8 @@ At commit `88ae1c972f1cc2b5578209bbd1b6b62c6282c256`, a fresh disposable Postgre
 
 The Work-only administrator control reuses the previously verified 0077 database revision and audit boundary; this slice adds no migration. On the local candidate, 114 contract tests, 373 web tests, typecheck, lint, and production build passed. Two desktop/mobile browser fixture checks passed for the Work setting and disabled future modules; screenshots were inspected for layout and overflow. A built local Next server returned 307 for anonymous settings, 401 for anonymous Work configuration, and 403 for a foreign-origin PUT. The independent reviewer accepted the bounded UI/API security boundary. No authenticated configuration or persistence was proved by the mocked browser fixture.
 
+Commit `6eaa31f76d24e9129131fe96e87417023b35ec58` passed [CI 35843895701](https://github.com/mosnin/company-humans/actions/runs/35843895701). Production deployment `dpl_AA4GorU21FUMvQEMMPomr8nBaATm` reports the exact revision; live anonymous settings/Work PUT/foreign-origin PUT checks returned 307/401/403. Authenticated production configuration remains unverified.
+
 Use Node 24 and a dedicated PostgreSQL test database. Never point integration tests at production: they create disposable identities, organizations and login roles, then clean up their own records.
 
 ```sh
